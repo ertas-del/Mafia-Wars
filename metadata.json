@@ -1,0 +1,6 @@
+{
+  "name": "The Commission: New York 1984",
+  "description": "A gritty 1980s Five Families 2D open-world crime syndicate, turf war, and racket tycoon game across the five boroughs of New York City.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
