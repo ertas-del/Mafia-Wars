@@ -147,7 +147,7 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
                     soundEngine.playUiClick();
                     onSelectBorough(b.id);
                   }}
-                  className={`px-2 py-0.5 text-[10px] font-mono rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer short:hidden ${
+                  className={`px-2 py-0.5 text-[10px] font-mono rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer short:hidden touch:min-h-11 touch:min-w-11 ${
                     b.id === currentBoroughId
                       ? 'bg-[#B91C1C] border-[#EF4444] text-white font-bold'
                       : 'bg-[#181512] border-[#2C2520] text-[#A89F91] hover:text-[#F5F0E6]'
