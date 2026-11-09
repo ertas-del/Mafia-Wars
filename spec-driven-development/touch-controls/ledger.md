@@ -576,7 +576,7 @@
     },
     {
       "id": "T-003",
-      "state": "IN_PROGRESS",
+      "state": "IMPLEMENTED",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-003",
@@ -597,6 +597,13 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "wave-1 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 35,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commit e50aedb on wt/T-003; scope limited to five owned files"
         }
       ],
       "evidence": []
@@ -670,7 +677,7 @@
     },
     {
       "id": "T-005",
-      "state": "DONE",
+      "state": "IN_PROGRESS",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-005",
@@ -729,6 +736,15 @@
           "from": "COMMITTED",
           "to": "DONE",
           "evidence": "merged at b3c90f2; CLAUDE.md text written at 5617f0d"
+        },
+        {
+          "sequence": 8,
+          "event_sequence": 34,
+          "event": "REOPENED",
+          "from": "DONE",
+          "to": "IN_PROGRESS",
+          "invalid_evidence": "EV-005",
+          "reason": "CI Check run 42546340972 failed at npm install: pre-existing ERESOLVE between devDependency esbuild ^0.25.0 and vite 8 peerOptional esbuild ^0.27 || ^0.28; workflow fix lies in T-005's owned files"
         }
       ],
       "evidence": [
