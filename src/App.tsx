@@ -19,6 +19,8 @@ import { PauseOrEndModal, TitleScreenOverlay } from './components/TitleAndEndMod
 import { DrawerTab, SyndicateDrawerModal } from './components/SyndicateDrawers';
 import { PerimeterHud } from './components/PerimeterHud';
 import { soundEngine } from './audio/soundEngine';
+import { enterPhoneFullscreen, isFullscreen, isTouchDevice, isTouchModeAttr } from './input/fullscreen';
+import { RotateCard } from './components/RotateCard';
 
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER';
 
@@ -285,9 +287,48 @@ export default function App() {
     contacts,
   ]);
 
+  // Phone play: touch mode (pinned <html data-input="touch">), portrait orientation, fullscreen exit
+  const [isTouchMode, setIsTouchMode] = useState<boolean>(() => isTouchModeAttr());
+  const [isPortrait, setIsPortrait] = useState<boolean>(
+    () => typeof window !== 'undefined' && window.matchMedia('(orientation: portrait)').matches,
+  );
+  const gameStateRef = useRef<GameState>(gameState);
+  useEffect(() => {
+    gameStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const observer = new MutationObserver(() => setIsTouchMode(isTouchModeAttr()));
+    observer.observe(root, { attributes: true, attributeFilter: ['data-input'] });
+    setIsTouchMode(isTouchModeAttr());
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    const mql = window.matchMedia('(orientation: portrait)');
+    const onChange = (e: MediaQueryListEvent) => setIsPortrait(e.matches);
+    setIsPortrait(mql.matches);
+    mql.addEventListener('change', onChange);
+    return () => mql.removeEventListener('change', onChange);
+  }, []);
+
+  useEffect(() => {
+    const onFullscreenChange = () => {
+      if (!isFullscreen() && gameStateRef.current === 'PLAYING' && isTouchModeAttr()) {
+        setGameState('PAUSED');
+      }
+    };
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', onFullscreenChange);
+  }, []);
+
+  // Portrait on a touch device during play: rotate card covers everything and the whole simulation halts
+  const isPortraitBlocked = isPortrait && isTouchMode && gameState === 'PLAYING';
+
   // Continuous 1-second Idle Territory Tick & Rival Leaderboard Tick
   useEffect(() => {
-    if (gameState !== 'PLAYING') return;
+    if (gameState !== 'PLAYING' || isPortraitBlocked) return;
 
     const interval = setInterval(() => {
       const autoBagmenUnlocked = unlockedSkills.includes('earn_3');
@@ -337,7 +378,7 @@ export default function App() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [gameState, unlockedSkills, contacts, cashIncomeMultiplier, hourlyCashIncome, hourlyContrabandIncome]);
+  }, [gameState, isPortraitBlocked, unlockedSkills, contacts, cashIncomeMultiplier, hourlyCashIncome, hourlyContrabandIncome]);
 
   // Global keyboard shortcuts (Enter/Space on Title Screen, Tab for Dossier, Esc for Pause/Close)
   useEffect(() => {
@@ -742,7 +783,7 @@ export default function App() {
       {/* Isolated 60fps 2D NYC Open-World Simulation Canvas */}
       <NycWorldCanvas
         isTitleScreen={gameState === 'TITLE_MENU'}
-        isPaused={gameState !== 'PLAYING' && gameState !== 'TITLE_MENU'}
+        isPaused={(gameState !== 'PLAYING' && gameState !== 'TITLE_MENU') || isPortraitBlocked}
         playerFamily={playerFamily}
         equippedWeapon={equippedWeapon}
         unlockedWeapons={unlockedWeapons}
@@ -767,7 +808,11 @@ export default function App() {
           setDonName={setDonName}
           selectedFamily={playerFamily}
           setSelectedFamily={setPlayerFamily}
-          onStartGame={() => setGameState('PLAYING')}
+          onStartGame={() => {
+            // Not awaited: the game starts even if fullscreen or the landscape lock is refused
+            if (isTouchDevice()) void enterPhoneFullscreen();
+            setGameState('PLAYING');
+          }}
           hasSavedEmpire={hasSavedEmpire}
           onResetEmpire={handleResetEmpire}
         />
@@ -879,7 +924,10 @@ export default function App() {
           netWorth={netWorth}
           controlledRacketsCount={controlledRacketsCount}
           alliancesCount={alliancesCount}
-          onResume={() => setGameState('PLAYING')}
+          onResume={() => {
+            if (isTouchDevice()) void enterPhoneFullscreen();
+            setGameState('PLAYING');
+          }}
           onRestartOrRecover={() => {
             if (gameState === 'GAME_OVER') {
               setCash((c) => Math.max(500, Math.round(c * 0.9)));
@@ -895,6 +943,9 @@ export default function App() {
           }}
         />
       )}
+
+      {/* PHONE PORTRAIT GUARD: covers everything while the simulation is halted */}
+      {isPortraitBlocked && <RotateCard />}
     </main>
   );
 }
