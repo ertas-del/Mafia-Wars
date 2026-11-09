@@ -1272,15 +1272,15 @@
       "user answers in the current session",
       "repository instructions: CLAUDE.md",
       "track: critical — adds CI and a GitHub Pages deployment workflow (release behavior) and carries more than twelve requirements",
-      "subagents: opus, effort high — user answer at preflight"
+      "subagents: opus, effort high — user answer at preflight",
+      "user instruction 2026-11-09: 'Changes on github then push controls' — grants merging the feature branch into main"
     ],
     "permitted_external_effects": [
       "local repository edits and commits on branch ertas-del/new/touch-controls",
-      "push of branch ertas-del/new/touch-controls to origin"
+      "push of branch ertas-del/new/touch-controls to origin",
+      "merge of ertas-del/new/touch-controls into main and push of main"
     ],
     "prohibited_external_effects": [
-      "merge into main",
-      "push to main",
       "changing repository visibility or settings",
       "running a deployment",
       "publishing a GitHub release"
@@ -1318,7 +1318,7 @@ The specification and plan bindings are recorded in the contract.
 
 ## Authority
 
-The user authorized commits on the feature branch and a push of that branch. Merging into main, which deploys the game, is the user's own step, as are making the repository public and choosing GitHub Actions as the Pages source.
+The user authorized commits on the feature branch and a push of that branch. On 2026-11-09 the user granted merging into main ("push controls"); previously that was the user's own step, as are making the repository public and choosing GitHub Actions as the Pages source.
 
 ## Workflow History
 
