@@ -15,9 +15,57 @@ jobs:
           node-version: 22
       - run: npm install --legacy-peer-deps
       - run: npm run lint
-      - run: npm run build
+      - id: build
+        run: npm run build
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: dist
           path: dist
           if-no-files-found: error
+      - name: Portrait check
+        shell: bash
+        run: |
+          set -uo pipefail
+          fail=0
+          shopt -s nullglob
+          jpgs=(dist/assets/*.jpg)
+          echo "PORTRAIT_CHECK jpg files in dist/assets: ${#jpgs[@]}"
+          for f in "${jpgs[@]}"; do echo "PORTRAIT_CHECK file $(basename "$f")"; done
+          js=(dist/assets/*.js)
+          if [ ${#js[@]} -eq 0 ]; then echo "PORTRAIT_CHECK FAIL no JS bundle in dist/assets"; exit 1; fi
+          for base in don_castellano consigliere_gallo detective_rossi union_boss_omalley; do
+            matches=(dist/assets/${base}_portrait*-*.jpg)
+            if [ ${#matches[@]} -ne 1 ]; then
+              echo "PORTRAIT_CHECK FAIL ${base}: expected 1 hashed jpg, found ${#matches[@]}"
+              fail=1
+              continue
+            fi
+            name=$(basename "${matches[0]}")
+            if grep -lF "$name" "${js[@]}" >/dev/null; then
+              echo "PORTRAIT_CHECK OK ${base} ${name} referenced in $(grep -lF "$name" "${js[@]}" | xargs -n1 basename | tr '\n' ' ')"
+            else
+              echo "PORTRAIT_CHECK FAIL ${base} ${name} not referenced in the JS bundle"
+              fail=1
+            fi
+          done
+          if [ ${#jpgs[@]} -ne 4 ]; then
+            echo "PORTRAIT_CHECK FAIL expected exactly 4 jpg files, found ${#jpgs[@]}"
+            fail=1
+          fi
+          if [ $fail -ne 0 ]; then echo "PORTRAIT_CHECK RESULT FAIL"; exit 1; fi
+          echo "PORTRAIT_CHECK RESULT PASS"
+      - name: Install Playwright Chromium
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          npm install --no-save --legacy-peer-deps playwright@1.63
+          npx playwright install --with-deps chromium
+      - name: Phone-layout check
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: node scripts/phone-layout-check.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phone-layout-shots
+          path: phone-layout-shots
+          if-no-files-found: warn
