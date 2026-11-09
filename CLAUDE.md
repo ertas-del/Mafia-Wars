@@ -23,7 +23,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
   - `npm run dev` — Starts Vite dev server on port `3000`
   - `npm run build` — Production build (`vite build`)
   - `npm run lint` — TypeScript check (`tsc --noEmit`)
-- **CI**: `.github/workflows/check.yml` ("Check") runs `npm install --legacy-peer-deps`, `npm run lint` and `npm run build` on every push and pull request, and uploads the built `dist/` as an artifact named `dist` (failing if it is missing). The flag works around a pre-existing esbuild peer conflict with Vite 8.
+- **CI**: `.github/workflows/check.yml` ("Check") runs `npm install --legacy-peer-deps`, `npm run lint` and `npm run build` on every push and pull request, uploads `dist/` as an artifact named `dist`, then runs a portrait check (exactly four hashed portrait `.jpg` files in `dist/assets`, each referenced from the bundle) and `scripts/phone-layout-check.mjs` (Playwright Chromium at 915×412 touch: title, play, five dossier tabs, pause; fails on horizontal overflow or any control under 44 px; screenshots uploaded as `phone-layout-shots`). The install flag works around a pre-existing esbuild peer conflict with Vite 8. Unit tests: `node --test src/input/*.test.ts`.
 - **Hosting**: `.github/workflows/pages.yml` ("Deploy to GitHub Pages") builds with `--base` set to the repository name (currently `/Mafia-Wars/`) on every push to `main` or a manual run, and deploys to https://ertas-del.github.io/Mafia-Wars/. Pages must be set to "GitHub Actions" under repo Settings → Pages.
 
 ---
@@ -41,12 +41,16 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 │   │   └── soundEngine.ts            # Procedural Web Audio API synth (gunshots, melee, cash, turf horn, siren)
 │   ├── data/
 │   │   └── nyc1984Data.ts            # Static definitions: 5 Families, 5 Boroughs, 15 Rackets, 6 Contacts, 15 Skills, 4 Weapons, 5 Narrative Acts
+│   ├── input/                        # Phone input: touchMode, touchSticks, haptics, fullscreen (+ *.test.ts)
 │   ├── components/
 │   │   ├── NycWorldCanvas.tsx        # Isolated 60fps 2D Canvas engine (3200x2120 NYC map, AI, bullets, rain, traffic)
 │   │   ├── PerimeterHud.tsx          # Low-occlusion (<15% screen) HUD, borough fast-travel, weapon bar, context prompts
 │   │   ├── SyndicateDrawers.tsx      # 5-tab modal dossier (Turf, Inner Circle, Skill Tree, Offline Vault, Leaderboard)
+│   │   ├── RotateCard.tsx            # "Turn your phone sideways" overlay shown in portrait during play
 │   │   └── TitleAndEndModals.tsx     # Title screen (inline SVG lockup + family selector) & Pause/Victory/Recovery modals
-│   └── assets/images/                # Generated painterly 1984 character portraits
+│   └── assets/images/                # Generated painterly 1984 character portraits (imported as modules in nyc1984Data.ts)
+├── scripts/phone-layout-check.mjs    # CI phone-layout check
+└── .github/workflows/                # check.yml (CI) and pages.yml (GitHub Pages deploy)
 ```
 
 ---
@@ -86,7 +90,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 ## 5. Design & UI Guardrails (Maintain on Future Edits)
 1. **Low-Occlusion Perimeter UI**: Keep at least 85% of the playfield unobstructed during active play. Never apply `backdrop-filter` (`backdrop-blur-*`) over the active `<canvas>`.
 2. **Tabular Numerals**: Always use `font-mono tabular-nums` on currency, timers, health/heat percentages, and leaderboard tables.
-3. **Zero Broken Images**: Character portraits in `SyndicateDrawers.tsx` track `onError` in `failedImages` state and fall back to a styled monogram dossier card if an asset fails to load.
+3. **Zero Broken Images**: Portraits are imported as modules in `nyc1984Data.ts` (a new portrait needs an import, and the CI portrait check expects exactly four `.jpg` files). Character portraits in `SyndicateDrawers.tsx` track `onError` in `failedImages` state and fall back to a styled monogram dossier card if an asset fails to load.
 4. **Phone Variants**: `touch:` styles apply once `<html data-input="touch">` is set after the first touch (put `touch:min-h-11` on every control), `short:` applies at viewport height ≤ 500px for the compact phone-landscape layout, and title hints use `pointer-coarse:`.
 
 ---

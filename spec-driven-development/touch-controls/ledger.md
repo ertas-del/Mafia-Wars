@@ -1259,9 +1259,13 @@
     }
   ],
   "completion_evidence": {
-    "final_verification": [],
+    "final_verification": [
+      "EV-007",
+      "EV-008",
+      "EV-009"
+    ],
     "blocking_findings": [],
-    "documentation": "pending"
+    "documentation": "complete"
   },
   "authority": {
     "sources": [
@@ -1294,10 +1298,10 @@
   },
   "landing": {
     "implemented": "complete",
-    "verified": "not-yet",
-    "committed": "not-yet",
+    "verified": "verified",
+    "committed": "complete",
     "merged": "not-authorized",
-    "pushed": "not-yet",
+    "pushed": "complete",
     "deployed": "not-authorized",
     "emulator_tested": "not-required",
     "device_tested": "not-yet",
@@ -1334,4 +1338,4 @@ Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-
 
 ## Landing State
 
-Implementation is complete on the feature branch, which is pushed; whole-change verification and the user's device test remain. Merge, deployment and release are the user's.
+Implementation is complete, verified by Check run 42549204481 and a fresh whole-change review (PASS), committed and pushed on the feature branch. The workflow parks in EXECUTING until the user merges to main, Pages deploys, and T-007's device test is done. Merge, deployment and release are the user's.
