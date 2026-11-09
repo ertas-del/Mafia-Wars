@@ -1,0 +1,10 @@
+PORTRAIT_CHECK jpg files in dist/assets: 4
+PORTRAIT_CHECK file consigliere_gallo_portrait_1794180052203-CjttL-tG.jpg
+PORTRAIT_CHECK file detective_rossi_portrait_1794180052934-4YwC1jR3.jpg
+PORTRAIT_CHECK file don_castellano_portrait_1794180050986-DaXYmbgQ.jpg
+PORTRAIT_CHECK file union_boss_omalley_portrait_1794180053732-BI1L5-dD.jpg
+PORTRAIT_CHECK OK don_castellano don_castellano_portrait_1794180050986-DaXYmbgQ.jpg referenced in index-Iwe3OSpq.js 
+PORTRAIT_CHECK OK consigliere_gallo consigliere_gallo_portrait_1794180052203-CjttL-tG.jpg referenced in index-Iwe3OSpq.js 
+PORTRAIT_CHECK OK detective_rossi detective_rossi_portrait_1794180052934-4YwC1jR3.jpg referenced in index-Iwe3OSpq.js 
+PORTRAIT_CHECK OK union_boss_omalley union_boss_omalley_portrait_1794180053732-BI1L5-dD.jpg referenced in index-Iwe3OSpq.js 
+PORTRAIT_CHECK RESULT PASS
