@@ -10,6 +10,17 @@ import {
   WeaponId,
 } from '../data/nyc1984Data';
 import { soundEngine } from '../audio/soundEngine';
+import { installTouchMode, isTouchMode } from '../input/touchMode';
+import {
+  STICK_RADIUS,
+  clearSticks,
+  createTwinSticks,
+  getAim,
+  getMove,
+  touchEnd,
+  touchMove,
+  touchStart,
+} from '../input/touchSticks';
 
 export interface WorldNpc {
   id: string;
@@ -253,6 +264,10 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       isDown: false,
       justClicked: false,
     };
+
+    // Twin-stick touch input (active only in touch mode)
+    installTouchMode();
+    const sticks = createTwinSticks();
 
     const npcs: WorldNpc[] = [];
     const bullets: Bullet[] = [];
@@ -539,6 +554,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       heldKeys.clear();
       justPressedKeys.clear();
       mouse.isDown = false;
+      clearSticks(sticks);
     };
 
     const handleMouseMove = (e: MouseEvent) => {
@@ -558,6 +574,46 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         mouse.isDown = false;
       }
     };
+
+    // Touch listeners: preventDefault on every canvas touch event so no
+    // synthesized mouse events, scroll, zoom or long-press menu follow.
+    const canStartSticks = () => !stateRef.current.isPaused && !stateRef.current.isTitleScreen;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      if (!canStartSticks()) return;
+      const rect = canvas.getBoundingClientRect();
+      for (const t of Array.from(e.changedTouches)) {
+        if (t.target !== canvas) continue;
+        touchStart(sticks, t.identifier, t.clientX - rect.left, t.clientY - rect.top, rect.width);
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      for (const t of Array.from(e.changedTouches)) {
+        touchMove(sticks, t.identifier, t.clientX - rect.left, t.clientY - rect.top);
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      e.preventDefault();
+      for (const t of Array.from(e.changedTouches)) {
+        touchEnd(sticks, t.identifier);
+      }
+    };
+
+    const handleTouchCancel = (e: TouchEvent) => {
+      e.preventDefault();
+      clearSticks(sticks);
+    };
+
+    const touchOpts: AddEventListenerOptions = { passive: false };
+    canvas.addEventListener('touchstart', handleTouchStart, touchOpts);
+    canvas.addEventListener('touchmove', handleTouchMove, touchOpts);
+    canvas.addEventListener('touchend', handleTouchEnd, touchOpts);
+    canvas.addEventListener('touchcancel', handleTouchCancel, touchOpts);
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
@@ -645,6 +701,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       const dt = Math.min(rawDt, 0.05);
 
       const st = stateRef.current;
+      const touchActive = isTouchMode();
+      if (st.isPaused || st.isTitleScreen) clearSticks(sticks);
 
       // Hitstop simulation pause for weighty impacts
       if (hitstopTimer > 0) {
@@ -659,19 +717,29 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           // Player movement
           let moveX = 0;
           let moveY = 0;
-          if (heldKeys.has('KeyW') || heldKeys.has('ArrowUp')) moveY -= 1;
-          if (heldKeys.has('KeyS') || heldKeys.has('ArrowDown')) moveY += 1;
-          if (heldKeys.has('KeyA') || heldKeys.has('ArrowLeft')) moveX -= 1;
-          if (heldKeys.has('KeyD') || heldKeys.has('ArrowRight')) moveX += 1;
+          let isSprinting = false;
+          if (touchActive) {
+            // Analog stick: magnitude 0..1 from deflection beyond the dead zone (not normalized)
+            const stickMove = getMove(sticks);
+            moveX = stickMove.x;
+            moveY = stickMove.y;
+            if (moveX !== 0 || moveY !== 0) player.walkCycle += dt * 12;
+            isSprinting = stickMove.sprint;
+          } else {
+            if (heldKeys.has('KeyW') || heldKeys.has('ArrowUp')) moveY -= 1;
+            if (heldKeys.has('KeyS') || heldKeys.has('ArrowDown')) moveY += 1;
+            if (heldKeys.has('KeyA') || heldKeys.has('ArrowLeft')) moveX -= 1;
+            if (heldKeys.has('KeyD') || heldKeys.has('ArrowRight')) moveX += 1;
 
-          if (moveX !== 0 || moveY !== 0) {
-            const len = Math.hypot(moveX, moveY);
-            moveX /= len;
-            moveY /= len;
-            player.walkCycle += dt * 12;
+            if (moveX !== 0 || moveY !== 0) {
+              const len = Math.hypot(moveX, moveY);
+              moveX /= len;
+              moveY /= len;
+              player.walkCycle += dt * 12;
+            }
+
+            isSprinting = heldKeys.has('ShiftLeft') || heldKeys.has('ShiftRight');
           }
-
-          const isSprinting = heldKeys.has('ShiftLeft') || heldKeys.has('ShiftRight');
           const baseSpeed = (isSprinting ? 295 : 220) * st.speedMultiplier;
           player.vx = moveX * baseSpeed;
           player.vy = moveY * baseSpeed;
@@ -682,14 +750,22 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           // Update mouse world position and player facing angle
           mouse.worldX = camera.x - canvas.width / 2 + mouse.screenX;
           mouse.worldY = camera.y - canvas.height / 2 + mouse.screenY;
-          player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+          const aim = getAim(sticks);
+          if (touchActive) {
+            // Aim stick sets facing; the last facing is kept after release
+            if (aim.angle !== null) player.angle = aim.angle;
+          } else {
+            player.angle = Math.atan2(mouse.worldY - player.y, mouse.worldX - player.x);
+          }
 
           if (player.attackCooldown > 0) player.attackCooldown -= dt;
           if (player.hitFlash > 0) player.hitFlash -= dt;
           player.squash += (1 - player.squash) * Math.min(1, dt * 14);
 
-          // Attack via Space or Left Mouse
-          if (heldKeys.has('Space') || mouse.isDown || mouse.justClicked) {
+          // Attack via Space or Left Mouse; in touch mode via the aim stick (mouse ignored)
+          if (touchActive) {
+            if (aim.attack) triggerPlayerAttack();
+          } else if (heldKeys.has('Space') || mouse.isDown || mouse.justClicked) {
             triggerPlayerAttack();
           }
 
@@ -1489,6 +1565,22 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       grad.addColorStop(1, 'rgba(9,8,7,0.55)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Screen-space twin sticks: translucent base and knob, only while held
+      for (const stick of [sticks.move, sticks.aim]) {
+        if (!stick) continue;
+        ctx.fillStyle = 'rgba(250, 250, 250, 0.08)';
+        ctx.strokeStyle = 'rgba(250, 250, 250, 0.28)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(stick.baseX, stick.baseY, STICK_RADIUS, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = stick === sticks.aim ? 'rgba(220, 38, 38, 0.45)' : 'rgba(245, 158, 11, 0.45)';
+        ctx.beginPath();
+        ctx.arc(stick.knobX, stick.knobY, 24, 0, Math.PI * 2);
+        ctx.fill();
+      }
     };
 
     animId = requestAnimationFrame(loop);
@@ -1502,12 +1594,20 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
+      canvas.removeEventListener('touchstart', handleTouchStart, touchOpts);
+      canvas.removeEventListener('touchmove', handleTouchMove, touchOpts);
+      canvas.removeEventListener('touchend', handleTouchEnd, touchOpts);
+      canvas.removeEventListener('touchcancel', handleTouchCancel, touchOpts);
     };
   }, [bridgeRef]);
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#09090B]">
-      <canvas ref={canvasRef} className="block w-full h-full cursor-crosshair" />
+      <canvas
+        ref={canvasRef}
+        className="block w-full h-full cursor-crosshair select-none"
+        style={{ touchAction: 'none', WebkitTouchCallout: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+      />
     </div>
   );
 };
