@@ -1,5 +1,13 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+/* Touch mode: html[data-input="touch"] is set by src/input/touchMode.ts after the first touch */
+@custom-variant touch (&:where([data-input="touch"], [data-input="touch"] *));
+/* Short viewport: phones in landscape (Samsung S26 is about 915x412 CSS px) */
+@custom-variant short {
+  @media (max-height: 500px) {
+    @slot;
+  }
+}
 
 @layer base {
   :root {

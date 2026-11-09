@@ -114,17 +114,17 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
   const selectedContact = contacts.find((c) => c.id === activeContactId) || contacts[0];
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 md:p-8 bg-black/75">
-      <div className="w-full max-w-6xl h-[86vh] bg-[#12100E] border border-[#3A322B] rounded-lg shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 md:p-8 bg-black/75 short:p-0">
+      <div className="w-full max-w-6xl h-[86vh] max-h-[100dvh] bg-[#12100E] border border-[#3A322B] rounded-lg shadow-2xl flex flex-col overflow-hidden overflow-x-hidden short:h-[100dvh] short:max-w-none short:rounded-none short:border-0 short:block short:overflow-y-auto">
         {/* Modal Header Bar */}
-        <div className="flex items-center justify-between gap-4 px-6 py-4 bg-[#181512] border-b border-[#2C2520]">
-          <div className="flex items-center gap-6 overflow-x-auto">
-            <h2 className="text-lg font-bold text-[#F5F0E6] whitespace-nowrap shrink-0">
+        <div className="flex items-center justify-between gap-4 px-6 py-4 bg-[#181512] border-b border-[#2C2520] short:sticky short:top-0 short:z-10 short:gap-2 short:px-[max(0.75rem,env(safe-area-inset-left))] short:py-1.5">
+          <div className="flex items-center gap-6 overflow-x-auto min-w-0 short:gap-2">
+            <h2 className="text-lg font-bold text-[#F5F0E6] whitespace-nowrap shrink-0 short:hidden">
               Commission Dossier · 1984
             </h2>
 
             {/* Segmented Tab Controls */}
-            <div className="flex items-center gap-1 p-1 bg-[#12100E] border border-[#2C2520] rounded-md">
+            <div className="flex items-center gap-1 p-1 bg-[#12100E] border border-[#2C2520] rounded-md shrink-0">
               {(
                 [
                   { id: 'turf', label: `Boroughs & Rackets (${playerRacketsCount}/15)` },
@@ -141,7 +141,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                     soundEngine.playUiClick();
                     setActiveTab(tab.id);
                   }}
-                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                  className={`px-3 py-1.5 text-xs font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer short:px-2 touch:min-h-11 ${
                     activeTab === tab.id
                       ? 'bg-[#B91C1C] text-white'
                       : 'text-[#A89F91] hover:text-[#F5F0E6]'
@@ -159,15 +159,15 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
               soundEngine.playUiClick();
               onClose();
             }}
-            className="px-3.5 py-1.5 bg-[#26211D] hover:bg-[#3A322B] text-xs font-medium text-[#F5F0E6] rounded border border-[#3A322B] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="px-3.5 py-1.5 bg-[#26211D] hover:bg-[#3A322B] text-xs font-medium text-[#F5F0E6] rounded border border-[#3A322B] transition-colors whitespace-nowrap shrink-0 cursor-pointer short:px-2.5 touch:min-h-11"
           >
-            Return to Street (Esc)
+            <span className="short:hidden">Return to </span>Street<span className="touch:hidden"> (Esc)</span>
           </button>
         </div>
 
         {/* Sub-bar: Active 1984 Narrative Arc & Quick Telemetry */}
-        <div className="px-6 py-3 bg-[#161310] border-b border-[#2C2520] flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-xs">
+        <div className="px-6 py-3 bg-[#161310] border-b border-[#2C2520] flex flex-wrap items-center justify-between gap-4 short:px-3 short:py-2 short:gap-2">
+          <div className="flex flex-wrap items-center gap-3 text-xs min-w-0 short:gap-x-2 short:gap-y-0.5">
             <span className="font-mono font-semibold text-[#F59E0B]">{currentChapter.year}</span>
             <span aria-hidden="true" className="text-[#574C41]">·</span>
             <span className="font-semibold text-[#F5F0E6]">{currentChapter.title}</span>
@@ -175,7 +175,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
             <span className="text-[#A89F91]">{currentChapter.objectiveText}</span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4 short:gap-2">
             {isChapterComplete && currentActIndex < NARRATIVE_CHAPTERS.length && (
               <button
                 type="button"
@@ -183,12 +183,12 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                   soundEngine.playTurfCaptured();
                   onClaimChapterReward();
                 }}
-                className="px-3 py-1 bg-[#10B981] hover:bg-[#059669] text-[#052E16] font-bold text-xs rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                className="px-3 py-1 bg-[#10B981] hover:bg-[#059669] text-[#052E16] font-bold text-xs rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer font-mono tabular-nums touch:min-h-11"
               >
                 Complete {currentChapter.title.split(':')[0]} (+${currentChapter.rewardCash.toLocaleString()} & +{currentChapter.rewardSkillPoints} SP)
               </button>
             )}
-            <div className="flex items-center gap-3 text-xs font-mono tabular-nums text-[#D6CFC2]">
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono tabular-nums text-[#D6CFC2] short:gap-x-2 short:gap-y-0.5">
               <span>Cash: <strong className="text-[#10B981]">${cash.toLocaleString()}</strong></span>
               <span aria-hidden="true">·</span>
               <span>Contraband: <strong className="text-[#F59E0B]">{contraband} Crates</strong></span>
@@ -199,14 +199,14 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
         </div>
 
         {/* Main Content Body */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-6 short:overflow-visible short:p-3 short:pl-[max(0.75rem,env(safe-area-inset-left))] short:pr-[max(0.75rem,env(safe-area-inset-right))]">
           {/* TAB 1: BOROUGHS & RACKETS */}
           {activeTab === 'turf' && (
             <div className="space-y-6">
               {/* 5 NYC Borough Risk-Reward Selector Cards */}
               <div>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
+                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                  <div className="min-w-0">
                     <h3 className="text-base font-bold text-[#F5F0E6]">
                       01. New York City Five Boroughs — Dynamic Risk-Reward Zones
                     </h3>
@@ -214,11 +214,11 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                       Select a borough to filter rackets or dispatch your Cadillac directly to its avenues.
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setSelectedBoroughFilter('all')}
-                      className={`px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                      className={`px-3 py-1.5 text-xs font-medium rounded border transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11 ${
                         selectedBoroughFilter === 'all'
                           ? 'bg-[#26211D] border-[#D97706] text-[#F5F0E6]'
                           : 'bg-[#181512] border-[#2C2520] text-[#A89F91]'
@@ -233,7 +233,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           soundEngine.playCashCollect();
                           onCollectAllEnvelopes();
                         }}
-                        className="px-3.5 py-1.5 bg-[#10B981] hover:bg-[#059669] text-[#052E16] text-xs font-bold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer font-mono tabular-nums"
+                        className="px-3.5 py-1.5 bg-[#10B981] hover:bg-[#059669] text-[#052E16] text-xs font-bold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer font-mono tabular-nums touch:min-h-11"
                       >
                         Collect All Street Envelopes (+${totalUncollected.toLocaleString()})
                       </button>
@@ -241,7 +241,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 short:grid-cols-3 short:gap-2">
                   {NYC_BOROUGHS.map((b) => {
                     const boroughRackets = rackets.filter((r) => r.boroughId === b.id);
                     const ownedInBorough = boroughRackets.filter((r) => r.ownerFamily === 'player').length;
@@ -251,7 +251,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                       <div
                         key={b.id}
                         onClick={() => setSelectedBoroughFilter(b.id)}
-                        className={`p-3.5 rounded-lg border transition-colors cursor-pointer flex flex-col justify-between ${
+                        className={`p-3.5 rounded-lg border transition-colors cursor-pointer flex flex-col justify-between min-w-0 short:p-2.5 ${
                           isSelected
                             ? 'bg-[#211C18] border-[#D97706]'
                             : 'bg-[#181512] border-[#2C2520] hover:border-[#4A3F36]'
@@ -267,7 +267,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="mt-3 pt-2.5 border-t border-[#2C2520] flex items-center justify-between">
+                        <div className="mt-3 pt-2.5 border-t border-[#2C2520] flex flex-wrap items-center justify-between gap-1">
                           <span className="text-[11px] text-[#A89F91] font-mono">
                             Contraband {b.contrabandMultiplier}x
                           </span>
@@ -279,7 +279,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                               onTravelToBorough(b.id);
                               onClose();
                             }}
-                            className="px-2.5 py-1 bg-[#26211D] hover:bg-[#B91C1C] text-[#F5F0E6] text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                            className="px-2.5 py-1 bg-[#26211D] hover:bg-[#B91C1C] text-[#F5F0E6] text-[11px] font-medium rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11"
                           >
                             Travel Here
                           </button>
@@ -295,7 +295,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                 <h3 className="text-base font-bold text-[#F5F0E6] mb-3">
                   02. Syndicate Rackets & Front Operations
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 short:grid-cols-2 short:gap-2">
                   {filteredRackets.map((r) => {
                     const isOwned = r.ownerFamily === 'player';
                     const isFocused = r.id === focusedRacketId;
@@ -306,7 +306,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                     return (
                       <div
                         key={r.id}
-                        className={`p-4 rounded-lg border flex flex-col justify-between ${
+                        className={`p-4 rounded-lg border flex flex-col justify-between min-w-0 short:p-3 ${
                           isFocused
                             ? 'bg-[#231D18] border-[#F59E0B]'
                             : isOwned
@@ -315,7 +315,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                         }`}
                       >
                         <div>
-                          <div className="flex items-center justify-between text-xs text-[#A89F91] font-mono">
+                          <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-[#A89F91] font-mono tabular-nums">
                             <span>{r.category}</span>
                             <span>
                               {isOwned ? `YOUR TURF · LV.${r.level}/5` : `HELD BY ${r.ownerFamily.toUpperCase()}`}
@@ -350,7 +350,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                                   soundEngine.playCashCollect();
                                   onUpgradeRacket(r.id);
                                 }}
-                                className={`flex-1 py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                                className={`flex-1 py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums touch:min-h-11 ${
                                   r.level >= 5
                                     ? 'bg-[#26211D] text-[#78716C] cursor-not-allowed'
                                     : cash >= upgradeCost
@@ -372,7 +372,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                                   onRaidRacketInWorld(r);
                                   onClose();
                                 }}
-                                className="flex-1 py-2 px-3 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                                className="flex-1 py-2 px-3 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11"
                               >
                                 Raid Turf in 2D World
                               </button>
@@ -383,7 +383,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                                   soundEngine.playTurfCaptured();
                                   onBuyoutRacket(r.id);
                                 }}
-                                className={`py-2 px-3 rounded text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                                className={`py-2 px-3 rounded text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums touch:min-h-11 ${
                                   cash >= r.takeoverCostCash
                                     ? 'bg-[#26211D] hover:bg-[#3A322B] text-[#F59E0B] border-[#D97706] cursor-pointer'
                                     : 'bg-[#181512] text-[#78716C] border-[#2C2520] cursor-not-allowed'
@@ -422,7 +422,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                         setActiveContactId(c.id);
                         setQuoteIdx(0);
                       }}
-                      className={`w-full p-3 rounded-lg border text-left transition-colors flex items-center justify-between gap-3 cursor-pointer ${
+                      className={`w-full p-3 rounded-lg border text-left transition-colors flex items-center justify-between gap-3 cursor-pointer touch:min-h-11 short:p-2 ${
                         isSelected
                           ? 'bg-[#241E1A] border-[#D97706]'
                           : 'bg-[#181512] border-[#2C2520] hover:border-[#4A3F36]'
@@ -447,7 +447,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
 
               {/* Right Detailed Sit-Down & Favor Trading Panel */}
               {selectedContact && (
-                <div className="lg:col-span-7 bg-[#181512] border border-[#2C2520] rounded-lg p-6 flex flex-col justify-between">
+                <div className="lg:col-span-7 bg-[#181512] border border-[#2C2520] rounded-lg p-6 flex flex-col justify-between min-w-0 short:p-3">
                   <div>
                     <div className="flex flex-col sm:flex-row gap-5 items-start">
                       {/* Character Portrait with Zero-Broken-Image Resilient Fallback */}
@@ -472,7 +472,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                         )}
                       </div>
 
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="text-xs font-mono text-[#D97706]">
                           {selectedContact.familyOrFaction} · {selectedContact.boroughId.replace('_', ' ').toUpperCase()}
                         </div>
@@ -484,7 +484,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
 
                     {/* Respect Meter & Alliance Thresholds */}
                     <div className="mt-5 p-4 bg-[#12100E] border border-[#2C2520] rounded">
-                      <div className="flex items-center justify-between text-xs font-mono tabular-nums mb-1.5">
+                      <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs font-mono tabular-nums mb-1.5">
                         <span className="text-[#D6CFC2]">Omertà Respect & Trust</span>
                         <span className="text-[#F59E0B] font-bold">
                           {selectedContact.respect} / 100 ({Math.floor(selectedContact.respect / 10)} / 10 Hearts)
@@ -508,7 +508,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
 
                     {/* Backroom Sit-Down Quote Box */}
                     <div className="mt-4 p-4 bg-[#141210] border border-[#2C2520] rounded">
-                      <div className="flex items-center justify-between text-xs text-[#A89F91] mb-1">
+                      <div className="flex flex-wrap items-center justify-between gap-x-2 text-xs text-[#A89F91] mb-1">
                         <span> Ravenite Backroom Sit-Down Wire</span>
                         <button
                           type="button"
@@ -516,7 +516,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                             soundEngine.playUiClick();
                             setQuoteIdx((q) => (q + 1) % selectedContact.sitDownQuotes.length);
                           }}
-                          className="text-[#F59E0B] hover:underline cursor-pointer"
+                          className="text-[#F59E0B] hover:underline cursor-pointer touch:min-h-11 touch:px-2"
                         >
                           Next Sit-Down Topic →
                         </button>
@@ -551,7 +551,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           soundEngine.playFavorComplete();
                           onSendGiftToContact(selectedContact.id);
                         }}
-                        className={`mt-3 w-full py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                        className={`mt-3 w-full py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 touch:min-h-11 ${
                           cash >= selectedContact.giftCostCash &&
                           contraband >= selectedContact.giftCostContraband
                             ? 'bg-[#D97706] hover:bg-[#F59E0B] text-[#090807] cursor-pointer'
@@ -581,7 +581,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           soundEngine.playFavorComplete();
                           onExecuteFavorTrade(selectedContact.id);
                         }}
-                        className={`mt-3 w-full py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                        className={`mt-3 w-full py-2 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 touch:min-h-11 ${
                           favorTokens >= selectedContact.favorCostTokens
                             ? 'bg-[#B91C1C] hover:bg-[#DC2626] text-white cursor-pointer'
                             : 'bg-[#26211D] text-[#78716C] cursor-not-allowed'
@@ -608,12 +608,12 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                     Earn Omertà Skill Points (SP) by seizing rackets, completing 1984 Narrative Chapters, and eliminating rival Capos.
                   </p>
                 </div>
-                <div className="px-4 py-2 bg-[#181512] border border-[#D97706] rounded font-mono text-xs text-[#F59E0B]">
+                <div className="px-4 py-2 bg-[#181512] border border-[#D97706] rounded font-mono tabular-nums text-xs text-[#F59E0B]">
                   Available Omertà Skill Points: <strong>{skillPoints} SP</strong>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 short:gap-2">
                 {(
                   [
                     {
@@ -635,7 +635,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                 ).map((col) => {
                   const nodes = SKILL_TREE_NODES.filter((n) => n.branch === col.branch);
                   return (
-                    <div key={col.branch} className="bg-[#181512] border border-[#2C2520] rounded-lg p-4 space-y-3">
+                    <div key={col.branch} className="bg-[#181512] border border-[#2C2520] rounded-lg p-4 space-y-3 min-w-0 short:p-2.5">
                       <div className="pb-3 border-b border-[#2C2520]">
                         <h4 className="text-sm font-bold text-[#F5F0E6]">{col.title}</h4>
                         <p className="text-xs text-[#A89F91] mt-0.5">{col.subtitle}</p>
@@ -673,7 +673,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                                   soundEngine.playTurfCaptured();
                                   onUnlockSkill(node.id);
                                 }}
-                                className={`mt-3 w-full py-1.5 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                                className={`mt-3 w-full py-1.5 px-3 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 touch:min-h-11 ${
                                   canAfford
                                     ? 'bg-[#B91C1C] hover:bg-[#DC2626] text-white cursor-pointer'
                                     : 'bg-[#26211D] text-[#78716C] cursor-not-allowed'
@@ -695,8 +695,8 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
           {/* TAB 4: OFFLINE PROGRESSION VAULT & CONTRABAND LIQUIDATION */}
           {activeTab === 'vault' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 space-y-4">
-                <div className="bg-[#181512] border border-[#2C2520] rounded-lg p-5">
+              <div className="lg:col-span-7 space-y-4 min-w-0">
+                <div className="bg-[#181512] border border-[#2C2520] rounded-lg p-5 short:p-3">
                   <h3 className="text-base font-bold text-[#F5F0E6]">
                     01. Passive Offline Progression & Idle Tribute Engine
                   </h3>
@@ -744,7 +744,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           soundEngine.playCashCollect();
                           onClaimOfflineReport();
                         }}
-                        className="mt-3 px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-[#052E16] text-xs font-bold rounded transition-colors cursor-pointer"
+                        className="mt-3 px-4 py-2 bg-[#10B981] hover:bg-[#059669] text-[#052E16] text-xs font-bold rounded transition-colors cursor-pointer touch:min-h-11"
                       >
                         Collect Offline Tribute Into Vault
                       </button>
@@ -759,14 +759,14 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                           Fast-forward the 1984 Commission clock to immediately test returning boss passive tribute collection.
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             soundEngine.playCashCollect();
                             onSimulateOfflineHours(4);
                           }}
-                          className="px-3 py-1.5 bg-[#26211D] hover:bg-[#3A322B] text-xs font-mono text-[#F59E0B] border border-[#D97706] rounded cursor-pointer whitespace-nowrap shrink-0"
+                          className="px-3 py-1.5 bg-[#26211D] hover:bg-[#3A322B] text-xs font-mono tabular-nums text-[#F59E0B] border border-[#D97706] rounded cursor-pointer whitespace-nowrap shrink-0 touch:min-h-11"
                         >
                           Simulate +4h Away
                         </button>
@@ -776,7 +776,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                             soundEngine.playCashCollect();
                             onSimulateOfflineHours(12);
                           }}
-                          className="px-3 py-1.5 bg-[#B91C1C] hover:bg-[#DC2626] text-xs font-mono text-white rounded cursor-pointer whitespace-nowrap shrink-0"
+                          className="px-3 py-1.5 bg-[#B91C1C] hover:bg-[#DC2626] text-xs font-mono tabular-nums text-white rounded cursor-pointer whitespace-nowrap shrink-0 touch:min-h-11"
                         >
                           Simulate +12h Away
                         </button>
@@ -787,7 +787,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
               </div>
 
               {/* Right Column: Contraband Fence & Liquidation */}
-              <div className="lg:col-span-5 bg-[#181512] border border-[#2C2520] rounded-lg p-5 flex flex-col justify-between">
+              <div className="lg:col-span-5 bg-[#181512] border border-[#2C2520] rounded-lg p-5 flex flex-col justify-between min-w-0 short:p-3">
                 <div>
                   <h3 className="text-base font-bold text-[#F5F0E6]">
                     02. Waterfront Fence & Contraband Liquidation
@@ -813,7 +813,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                       soundEngine.playCashCollect();
                       onLiquidateContraband(10);
                     }}
-                    className={`w-full py-2.5 px-4 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                    className={`w-full py-2.5 px-4 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums touch:min-h-11 ${
                       contraband >= 10
                         ? 'bg-[#26211D] hover:bg-[#3A322B] text-[#F5F0E6] border border-[#3A322B] cursor-pointer'
                         : 'bg-[#12100E] text-[#78716C] border border-[#26211D] cursor-not-allowed'
@@ -828,7 +828,7 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                       soundEngine.playCashCollect();
                       onLiquidateContraband(contraband);
                     }}
-                    className={`w-full py-2.5 px-4 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 ${
+                    className={`w-full py-2.5 px-4 rounded text-xs font-semibold transition-colors whitespace-nowrap shrink-0 font-mono tabular-nums touch:min-h-11 ${
                       contraband > 0
                         ? 'bg-[#10B981] hover:bg-[#059669] text-[#052E16] cursor-pointer'
                         : 'bg-[#12100E] text-[#78716C] border border-[#26211D] cursor-not-allowed'
@@ -859,22 +859,22 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                     soundEngine.playCashCollect();
                     onSyncLeaderboard();
                   }}
-                  className="px-4 py-2 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                  className="px-4 py-2 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11"
                 >
                   Broadcast Empire Valuation to Global Wire
                 </button>
               </div>
 
-              <div className="bg-[#181512] border border-[#2C2520] rounded-lg overflow-hidden">
+              <div className="bg-[#181512] border border-[#2C2520] rounded-lg overflow-hidden max-w-full overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-[#2C2520] text-[11px] font-mono text-[#A89F91] bg-[#141210]">
-                      <th className="py-3 px-4">Rank</th>
-                      <th className="py-3 px-4">Crime Boss / Don</th>
-                      <th className="py-3 px-4">Five Families Allegiance</th>
-                      <th className="py-3 px-4">Rackets Held</th>
-                      <th className="py-3 px-4">Omertà Respect</th>
-                      <th className="py-3 px-4 text-right">Total Empire Valuation</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2">Rank</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2">Crime Boss / Don</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2">Five Families Allegiance</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2">Rackets Held</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2">Omertà Respect</th>
+                      <th className="py-3 px-4 short:py-2 short:px-2 text-right">Total Empire Valuation</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#2C2520] text-xs font-mono tabular-nums">
@@ -887,17 +887,17 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                             : 'hover:bg-[#1E1A17] text-[#D6CFC2]'
                         }
                       >
-                        <td className="py-3 px-4 font-bold text-[#F59E0B]">#{entry.rank}</td>
-                        <td className="py-3 px-4 font-sans">
+                        <td className="py-3 px-4 short:py-2 short:px-2 font-bold text-[#F59E0B]">#{entry.rank}</td>
+                        <td className="py-3 px-4 short:py-2 short:px-2 font-sans">
                           <div className="font-bold text-[#F5F0E6]">
                             {entry.donName} {entry.isPlayer ? '(YOU)' : ''}
                           </div>
                           <div className="text-[11px] text-[#A89F91]">{entry.title} · {entry.updatedAgo}</div>
                         </td>
-                        <td className="py-3 px-4 font-sans text-[#D6CFC2]">{entry.familyName}</td>
-                        <td className="py-3 px-4">{entry.racketsControlled} / 15</td>
-                        <td className="py-3 px-4 text-[#F59E0B]">{entry.respectScore}</td>
-                        <td className="py-3 px-4 text-right font-bold text-[#10B981]">
+                        <td className="py-3 px-4 short:py-2 short:px-2 font-sans text-[#D6CFC2]">{entry.familyName}</td>
+                        <td className="py-3 px-4 short:py-2 short:px-2">{entry.racketsControlled} / 15</td>
+                        <td className="py-3 px-4 short:py-2 short:px-2 text-[#F59E0B]">{entry.respectScore}</td>
+                        <td className="py-3 px-4 short:py-2 short:px-2 text-right font-bold text-[#10B981]">
                           ${entry.netWorth.toLocaleString()}
                         </td>
                       </tr>
