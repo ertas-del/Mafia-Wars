@@ -508,7 +508,7 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "IN_PROGRESS",
+      "state": "REVIEWED",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-001",
@@ -529,9 +529,33 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "wave-1 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 19,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commit 274e935 on wt/T-001; scope limited to four owned files"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 20,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "EV-001: controller ran node --test src/input/touchSticks.test.ts, 6 pass 0 fail"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 21,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "EV-002: fresh opus reviewer PASS, no blocking findings"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "id": "T-003",
@@ -562,7 +586,7 @@
     },
     {
       "id": "T-004",
-      "state": "IN_PROGRESS",
+      "state": "REVIEWED",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-004",
@@ -583,9 +607,32 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "wave-1 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 22,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commits de26248 and fix 7547695 on wt/T-004; scope limited to three owned files"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 23,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "controller read the fix diff: isTouchDevice removed, Start and Resume gated on isTouchModeAttr exactly as the reviewer prescribed"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 24,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "EV-004: fresh opus reviewer found one blocking finding (touchscreen laptop fullscreen); fix round 1 applied the prescribed minimal fix; all other paths PASS"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-004"
+      ]
     },
     {
       "id": "T-005",

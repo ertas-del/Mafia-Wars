@@ -23,6 +23,8 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
   - `npm run dev` — Starts Vite dev server on port `3000`
   - `npm run build` — Production build (`vite build`)
   - `npm run lint` — TypeScript check (`tsc --noEmit`)
+- **CI**: `.github/workflows/check.yml` ("Check") runs `npm install`, `npm run lint` and `npm run build` on every push and pull request, and uploads the built `dist/` as an artifact named `dist`.
+- **Hosting**: `.github/workflows/pages.yml` ("Deploy to GitHub Pages") builds with `--base=/mafia-wars/` on every push to `main` or a manual run, and deploys to https://ertas-del.github.io/mafia-wars/. Pages must be set to "GitHub Actions" under repo Settings → Pages.
 
 ---
 
@@ -54,6 +56,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 ### A. Game State Machine (`src/App.tsx`)
 - `type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER'`
 - **Persistence**: Automatically saves to `localStorage` under key `commission_1984_empire_v1`.
+- **Phone play**: In touch mode (`data-input="touch"`), Start and Resume call `enterPhoneFullscreen()` (fullscreen plus landscape lock, errors caught, not awaited); leaving fullscreen during PLAYING sets PAUSED; portrait during PLAYING shows `RotateCard` and pauses the canvas and the one-second tick through `isPortraitBlocked`, without a new `GameState`.
 - **Offline Progression Calculation**:
   - On mount, compares `Date.now()` against `parsed.lastSaveTimestamp`.
   - If `elapsedSec >= 45` (capped at 24 hours), computes `offlineCash` and `offlineCrates` based on owned rackets and the `earn_4` (*Cayman Islands Numbered Accounts*) multiplier, populating `offlineReport`.
@@ -70,6 +73,8 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 ### C. Combat & Encounter Feel
 - **Clamped Delta Time**: `const dt = Math.min(rawDt, 0.05)` prevents physics tunneling on tab switches.
 - **Input Separation**: Continuous `heldKeys` (`WASD`, `Shift`, `Space`) are separated from edge-triggered `justPressedKeys` (`E` to interact, `1–4` weapon hotkeys) and cleared on `window.blur`.
+- **Touch Mode**: `src/input/touchMode.ts` turns touch mode on at any `touchstart` and off at any `keydown` (mouse never changes it) and mirrors it to `<html data-input="touch|keyboard">`; outside touch mode the keyboard and mouse paths are unchanged.
+- **Twin Sticks**: Pure `src/input/touchSticks.ts` (radius 60 px, 15% dead zone, sprint at 85%) runs a floating move stick on the left half and an aim stick on the right half that sets `player.angle` and attacks beyond the dead zone. Canvas touch handlers are `passive:false` and always call `preventDefault`; sticks are drawn in screen space only while held. Tests: `node --test src/input/*.test.ts`.
 - **Enemy Windup Telegraphs**:
   - `brawler` NPCs render a translucent crimson melee arc for `0.48s` before lunging.
   - `soldato` and `capo` gunmen render a dashed red laser-sight line for `0.60s` before firing bursts.
