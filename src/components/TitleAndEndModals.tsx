@@ -137,13 +137,15 @@ export const TitleScreenOverlay: React.FC<TitleScreenOverlayProps> = ({
                           soundEngine.playUiClick();
                           setSelectedFamily(fam.id);
                         }}
-                        className={`px-3 py-2 rounded text-left transition-colors border whitespace-nowrap shrink-0 truncate ${
+                        className={`px-3 py-2 rounded text-left transition-colors border whitespace-nowrap shrink-0 truncate cursor-pointer ${
                           isSelected
                             ? 'bg-[#26211D] border-[#D97706] text-[#F5F0E6]'
                             : 'bg-[#181512] border-[#2C2520] text-[#A89F91] hover:text-[#F5F0E6] hover:border-[#4A3F36]'
                         }`}
                       >
-                        <div className="text-xs font-semibold truncate">{fam.name.split(' ')[0]}</div>
+                        <div className="text-xs font-semibold truncate">
+                          <span style={{ color: fam.accentHex }}>{fam.traitSymbol}</span> {fam.name.split(' ')[0]}
+                        </div>
                         <div className="text-[11px] text-[#A89F91] truncate">{fam.homeBorough.split('_')[0]}</div>
                       </button>
                     );
@@ -155,11 +157,20 @@ export const TitleScreenOverlay: React.FC<TitleScreenOverlayProps> = ({
             {/* Right Column: Selected Family Dossier & Start Game CTA */}
             <div className="lg:col-span-5 bg-[#181512] border border-[#2C2520] rounded p-4 flex flex-col justify-between">
               <div>
-                <div className="text-sm font-semibold text-[#F5F0E6]">{activeFam.name}</div>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="text-sm font-semibold text-[#F5F0E6]">
+                    <span style={{ color: activeFam.accentHex }}>{activeFam.traitSymbol}</span> {activeFam.name}
+                  </div>
+                </div>
                 <div className="text-xs text-[#A89F91] mt-0.5">{activeFam.historicalBasis}</div>
-                <p className="text-xs italic text-[#D6CFC2] mt-2">“{activeFam.motto}”</p>
-                <div className="mt-2.5 text-xs text-[#F59E0B] font-mono">
+                <p className="text-xs italic text-[#D6CFC2] mt-1.5">“{activeFam.motto}”</p>
+                <div className="mt-2 text-xs text-[#F59E0B] font-mono">
                   {activeFam.passiveBonusLabel}
+                </div>
+                <div className="mt-2 pt-2 border-t border-[#26211D] text-[11px]">
+                  <span className="text-[#A89F91]">Street NPC Trait: </span>
+                  <strong className="text-[#FDE68A]">{activeFam.traitName}</strong>
+                  <div className="text-[10px] text-[#A89F91] mt-0.5">{activeFam.traitVisualIndicator}</div>
                 </div>
               </div>
 
