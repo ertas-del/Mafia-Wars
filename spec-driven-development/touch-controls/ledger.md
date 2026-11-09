@@ -1300,7 +1300,7 @@
     "implemented": "complete",
     "verified": "verified",
     "committed": "complete",
-    "merged": "not-authorized",
+    "merged": "complete",
     "pushed": "complete",
     "deployed": "not-authorized",
     "emulator_tested": "not-required",
@@ -1338,4 +1338,4 @@ Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-
 
 ## Landing State
 
-Implementation is complete, verified by Check run 42549204481 and a fresh whole-change review (PASS), committed and pushed on the feature branch. The workflow parks in EXECUTING until the user merges to main, Pages deploys, and T-007's device test is done. Merge, deployment and release are the user's.
+Implementation is complete, verified by Check run 42549204481 and a fresh whole-change review (PASS), committed and pushed on the feature branch. Merged into main at a012744 on 2026-11-09 by fast-forward, with the user's commit 1d143a6 integrated first (Check run 42702095106 green). The first Pages run (42702330968) failed because Pages is not enabled and the repository is private; the workflow parks in EXECUTING until the user enables Pages, a deploy succeeds, and T-007's device test is done. Merge, deployment and release are the user's.
