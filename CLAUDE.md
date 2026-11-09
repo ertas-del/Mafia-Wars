@@ -86,6 +86,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 1. **Low-Occlusion Perimeter UI**: Keep at least 85% of the playfield unobstructed during active play. Never apply `backdrop-filter` (`backdrop-blur-*`) over the active `<canvas>`.
 2. **Tabular Numerals**: Always use `font-mono tabular-nums` on currency, timers, health/heat percentages, and leaderboard tables.
 3. **Zero Broken Images**: Character portraits in `SyndicateDrawers.tsx` track `onError` in `failedImages` state and fall back to a styled monogram dossier card if an asset fails to load.
+4. **Phone Variants**: `touch:` styles apply once `<html data-input="touch">` is set after the first touch (put `touch:min-h-11` on every control), `short:` applies at viewport height ≤ 500px for the compact phone-landscape layout, and title hints use `pointer-coarse:`.
 
 ---
 
