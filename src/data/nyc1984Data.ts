@@ -1,3 +1,8 @@
+import donCastellanoPortrait from '../assets/images/don_castellano_portrait_1794180050986.jpg';
+import consigliereGalloPortrait from '../assets/images/consigliere_gallo_portrait_1794180052203.jpg';
+import detectiveRossiPortrait from '../assets/images/detective_rossi_portrait_1794180052934.jpg';
+import unionBossOmalleyPortrait from '../assets/images/union_boss_omalley_portrait_1794180053732.jpg';
+
 export type FamilyId = 'corvini' | 'bellini' | 'valenti' | 'moretti' | 'rastelli';
 export type BoroughId = 'manhattan_south' | 'brooklyn_docks' | 'queens_cargo' | 'bronx_terminal' | 'midtown_concrete';
 export type WeaponId = 'knuckles' | 'revolver' | 'shotgun' | 'tommy';
@@ -594,7 +599,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'manhattan_south',
     worldX: 390,
     worldY: 430,
-    portraitUrl: '/src/assets/images/don_castellano_portrait_1794180050986.jpg',
+    portraitUrl: donCastellanoPortrait,
     respect: 25,
     favoriteGiftName: 'Case of 1978 Barolo & Bearer Bonds',
     giftCostCash: 3500,
@@ -619,7 +624,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'queens_cargo',
     worldX: 2510,
     worldY: 1460,
-    portraitUrl: '/src/assets/images/consigliere_gallo_portrait_1794180052203.jpg',
+    portraitUrl: consigliereGalloPortrait,
     respect: 20,
     favoriteGiftName: 'Brioni Silk Suit & Cuban Montecristos',
     giftCostCash: 2800,
@@ -644,7 +649,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'midtown_concrete',
     worldX: 1480,
     worldY: 480,
-    portraitUrl: '/src/assets/images/detective_rossi_portrait_1794180052934.jpg',
+    portraitUrl: detectiveRossiPortrait,
     respect: 15,
     favoriteGiftName: 'Manila Envelope of Untraceable $100s',
     giftCostCash: 3000,
@@ -669,7 +674,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'brooklyn_docks',
     worldX: 1460,
     worldY: 1440,
-    portraitUrl: '/src/assets/images/union_boss_omalley_portrait_1794180053732.jpg',
+    portraitUrl: unionBossOmalleyPortrait,
     respect: 20,
     favoriteGiftName: 'Crate of Aged Irish Whiskey & Dock Dues',
     giftCostCash: 2400,
@@ -694,7 +699,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'manhattan_south',
     worldX: 610,
     worldY: 610,
-    portraitUrl: '/src/assets/images/don_castellano_portrait_1794180050986.jpg',
+    portraitUrl: donCastellanoPortrait,
     respect: 30,
     favoriteGiftName: 'Vintage Patek Philippe & Ledger Key',
     giftCostCash: 4000,
@@ -719,7 +724,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     boroughId: 'bronx_terminal',
     worldX: 2480,
     worldY: 480,
-    portraitUrl: '/src/assets/images/consigliere_gallo_portrait_1794180052203.jpg',
+    portraitUrl: consigliereGalloPortrait,
     respect: 10,
     favoriteGiftName: 'Untraceable Crate of Mil-Spec Typewriters',
     giftCostCash: 3200,
