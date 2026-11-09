@@ -4,7 +4,7 @@ import { RotateCw, Smartphone } from 'lucide-react';
 export function RotateCard() {
   return (
     <div
-      role="alertdialog"
+      role="status"
       aria-live="assertive"
       aria-label="Turn your phone sideways to keep playing"
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center gap-6 bg-[#09090B] px-8 text-center text-zinc-100"

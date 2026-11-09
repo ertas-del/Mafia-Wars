@@ -14,12 +14,6 @@ export function isTouchModeAttr(): boolean {
   return typeof document !== 'undefined' && document.documentElement.dataset.input === 'touch';
 }
 
-/** True when touch mode is on or the device reports a touch screen. */
-export function isTouchDevice(): boolean {
-  if (isTouchModeAttr()) return true;
-  return typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
-}
-
 /**
  * Requests fullscreen on <html>, then a landscape orientation lock.
  * Never rejects; each step's failure is swallowed independently.

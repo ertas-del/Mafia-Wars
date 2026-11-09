@@ -19,7 +19,7 @@ import { PauseOrEndModal, TitleScreenOverlay } from './components/TitleAndEndMod
 import { DrawerTab, SyndicateDrawerModal } from './components/SyndicateDrawers';
 import { PerimeterHud } from './components/PerimeterHud';
 import { soundEngine } from './audio/soundEngine';
-import { enterPhoneFullscreen, isFullscreen, isTouchDevice, isTouchModeAttr } from './input/fullscreen';
+import { enterPhoneFullscreen, isFullscreen, isTouchModeAttr } from './input/fullscreen';
 import { RotateCard } from './components/RotateCard';
 
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER';
@@ -810,7 +810,7 @@ export default function App() {
           setSelectedFamily={setPlayerFamily}
           onStartGame={() => {
             // Not awaited: the game starts even if fullscreen or the landscape lock is refused
-            if (isTouchDevice()) void enterPhoneFullscreen();
+            if (isTouchModeAttr()) void enterPhoneFullscreen();
             setGameState('PLAYING');
           }}
           hasSavedEmpire={hasSavedEmpire}
@@ -925,7 +925,7 @@ export default function App() {
           controlledRacketsCount={controlledRacketsCount}
           alliancesCount={alliancesCount}
           onResume={() => {
-            if (isTouchDevice()) void enterPhoneFullscreen();
+            if (isTouchModeAttr()) void enterPhoneFullscreen();
             setGameState('PLAYING');
           }}
           onRestartOrRecover={() => {
