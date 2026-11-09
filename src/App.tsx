@@ -21,6 +21,7 @@ import { PerimeterHud } from './components/PerimeterHud';
 import { soundEngine } from './audio/soundEngine';
 import { enterPhoneFullscreen, isFullscreen, isTouchModeAttr } from './input/fullscreen';
 import { RotateCard } from './components/RotateCard';
+import { getVibrationEnabled, isVibrationSupported, pulse, setVibrationEnabled } from './input/haptics';
 
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER';
 
@@ -82,6 +83,7 @@ export default function App() {
   } | null>(null);
   const [recentToast, setRecentToast] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [vibrationOn, setVibrationOn] = useState<boolean>(() => getVibrationEnabled());
   const [hasSavedEmpire, setHasSavedEmpire] = useState<boolean>(false);
   const [offlineReport, setOfflineReport] = useState<{
     elapsedSeconds: number;
@@ -499,6 +501,7 @@ export default function App() {
 
   const handlePlayerDamaged = useCallback(
     (dmg: number) => {
+      pulse('damage');
       const armorMult = unlockedSkills.includes('enf_2') ? 0.75 : 1.0;
       const actual = Math.max(2, Math.round(dmg * armorMult));
       setPlayerHp((prev) => {
@@ -553,7 +556,10 @@ export default function App() {
       },
       onSelectWeapon: handleEquipOrBuyWeapon,
       onNearInteractableChange: setNearPrompt,
-      onTurfCapoDefeated: handleTurfCapoDefeated,
+      onTurfCapoDefeated: (racketId: string) => {
+        pulse('capoTakedown');
+        handleTurfCapoDefeated(racketId);
+      },
     }),
     [
       handleEarnResources,
@@ -839,6 +845,8 @@ export default function App() {
           unlockedWeapons={unlockedWeapons}
           currentActIndex={currentActIndex}
           isMuted={isMuted}
+          vibrationSupported={isVibrationSupported()}
+          vibrationOn={vibrationOn}
           hasOfflineReport={Boolean(offlineReport)}
           nearPrompt={nearPrompt}
           recentToast={recentToast}
@@ -865,6 +873,11 @@ export default function App() {
           onToggleMute={() => {
             const muted = soundEngine.toggleMute();
             setIsMuted(muted);
+          }}
+          onToggleVibration={() => {
+            const next = !vibrationOn;
+            setVibrationEnabled(next);
+            setVibrationOn(next);
           }}
           onPause={() => setGameState('PAUSED')}
         />
