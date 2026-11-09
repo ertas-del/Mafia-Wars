@@ -1081,7 +1081,7 @@
     },
     {
       "id": "T-006",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [
         "T-001",
@@ -1114,9 +1114,51 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "dispatch for EV-008 and EV-009 CI steps"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 76,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commit 662dff3: scripts/phone-layout-check.mjs and check.yml steps; merged at e8a8a3b"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 77,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "Check run 42549204481 green: EV-007 run success, EV-008 eight screens 237 controls 0 short 0 overflow 0 page errors, EV-009 four portraits bundled and referenced"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 78,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "fresh opus reviewer PASS; non-blocking note on playwright version resolved by the green run"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 79,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-007, EV-008, EV-009",
+          "review_evidence": "EV-008",
+          "commit": "e8a8a3b",
+          "evidence": "merged; evidence files committed in a later commit"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 80,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "evidence files in evidence/ committed and pushed"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-007",
+        "EV-008",
+        "EV-009"
+      ]
     },
     {
       "id": "T-007",
@@ -1136,53 +1178,74 @@
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-002",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-003",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-004",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-002",
+        "EV-003"
+      ]
     },
     {
       "criterion": "AC-005",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-004"
+      ]
     },
     {
       "criterion": "AC-006",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-008"
+      ]
     },
     {
       "criterion": "AC-007",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-006"
+      ]
     },
     {
       "criterion": "AC-008",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-009"
+      ]
     },
     {
       "criterion": "AC-009",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-007"
+      ]
     },
     {
       "criterion": "AC-010",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-005"
+      ]
     },
     {
       "criterion": "AC-011",
@@ -1230,7 +1293,7 @@
     }
   },
   "landing": {
-    "implemented": "not-yet",
+    "implemented": "complete",
     "verified": "not-yet",
     "committed": "not-yet",
     "merged": "not-authorized",
@@ -1271,4 +1334,4 @@ Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-
 
 ## Landing State
 
-Nothing is implemented. Push of the feature branch is authorized; merge, deployment and release are the user's.
+Implementation is complete on the feature branch, which is pushed; whole-change verification and the user's device test remain. Merge, deployment and release are the user's.
