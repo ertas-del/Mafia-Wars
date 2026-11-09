@@ -75,10 +75,11 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 - **Input Separation**: Continuous `heldKeys` (`WASD`, `Shift`, `Space`) are separated from edge-triggered `justPressedKeys` (`E` to interact, `1–4` weapon hotkeys) and cleared on `window.blur`.
 - **Touch Mode**: `src/input/touchMode.ts` turns touch mode on at any `touchstart` and off at any `keydown` (mouse never changes it) and mirrors it to `<html data-input="touch|keyboard">`; outside touch mode the keyboard and mouse paths are unchanged.
 - **Twin Sticks**: Pure `src/input/touchSticks.ts` (radius 60 px, 15% dead zone, sprint at 85%) runs a floating move stick on the left half and an aim stick on the right half that sets `player.angle` and attacks beyond the dead zone. Canvas touch handlers are `passive:false` and always call `preventDefault`; sticks are drawn in screen space only while held. Tests: `node --test src/input/*.test.ts`.
+- **Haptics**: Pure `src/input/haptics.ts` vibrates 40 ms on player damage (App `handlePlayerDamaged`), 25 ms on a hitstop hit or kill (canvas, skipped on Turf Capo kills) and 80 ms on a Capo takedown (App `onTurfCapoDefeated` callback, not dossier buyouts); at most one pulse starts per 100 ms unless a longer one replaces it; the HUD toggle beside mute stores its setting under `commission_1984_vibration_v1` (default on) and is hidden where vibration is unsupported.
 - **Enemy Windup Telegraphs**:
   - `brawler` NPCs render a translucent crimson melee arc for `0.48s` before lunging.
   - `soldato` and `capo` gunmen render a dashed red laser-sight line for `0.60s` before firing bursts.
-- **Hitstop & Juice**: Heavy melee hits, shotgun blasts, and Capo takedowns trigger a `35ms–75ms` `hitstopTimer` simulation freeze, directional `camera.shake`, white sprite hit-flashes, squash-and-stretch scaling, and pooled shell/blood particles.
+- **Hitstop & Juice**: Heavy melee hits and kills (including Capo takedowns) trigger a `35ms–75ms` `hitstopTimer` simulation freeze, directional `camera.shake`, white sprite hit-flashes, squash-and-stretch scaling, and pooled shell/blood particles.
 
 ---
 
