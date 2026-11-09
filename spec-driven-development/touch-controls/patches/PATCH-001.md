@@ -31,3 +31,7 @@ Architecture Change Map, Hosting row, interface column:
 T-005 Concrete change:
 - Before: `npx vite build --base=/mafia-wars/`
 - After: `npx vite build --base=/${{ github.event.repository.name }}/`
+
+## Applied note
+
+Approved by the user on 2026-11-08 ("I approve"). The workflow expression is written out in words in spec.md and plan.md (the repository name from `github.event.repository.name` between slashes) because the artifact validator rejects double-brace tokens; the meaning is unchanged. Specification revision 2 and plan revision 2 carry the change.

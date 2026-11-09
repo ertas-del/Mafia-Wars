@@ -3,13 +3,13 @@
   "schema_version": 1,
   "artifact_kind": "implementation-plan",
   "plan_id": "touch-controls-plan",
-  "revision": 1,
+  "revision": 2,
   "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/plan.md"},
   "required_sections": ["Goal", "Preflight", "Architecture Change Map", "Binding Fields", "Adaptable Fields", "Risks and Resolved Assumptions", "Requirement Coverage", "Verification Coverage", "Dependency Graph", "Task Contracts", "Execution and Landing", "Plan Readiness Review"],
   "specification": {
     "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/spec.md"},
-    "revision": 1,
-    "digest": "500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51"
+    "revision": 2,
+    "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0"
   },
   "binding_fields": ["task deliverables and coverage", "approved constraints and boundaries", "verification obligations", "external effects and landing boundary", "pinned interfaces"],
   "adaptable_fields": ["exact private symbols or files", "internal tactics", "worker assignment", "evidence-equivalent verification command"],
@@ -132,15 +132,15 @@
 
 # Touch Controls and Phone Play — Implementation Plan
 
-**Path:** `spec-driven-development/touch-controls/plan.md` · **Revision:** 1 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
-**Specification:** `spec-driven-development/touch-controls/spec.md` revision 1, digest `500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51`
+**Path:** `spec-driven-development/touch-controls/plan.md` · **Revision:** 2 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
+**Specification:** `spec-driven-development/touch-controls/spec.md` revision 2, digest `a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0`
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 1
-**Approved normative digest:** `88d6c508b4c063de9f0ad04d85f7196602f918a3daa28802bf7012f6b1ec75fe`
+**Approved revision:** 2
+**Approved normative digest:** `86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-08T17:27:56-07:00
+**Approval timestamp:** 2026-11-08T18:37:28-07:00
 <!-- sdd-approval-end -->
 
 ## Goal
@@ -169,7 +169,7 @@ Deliver FR-001 to FR-017 as six code tasks and one device-test task: four indepe
 | Phone layout | Tailwind classes, `md:` breakpoints only | `@custom-variant touch` keyed on the attribute and a short-viewport variant (`max-height: 500px`) in `index.css`; compact HUD; scrollable drawers and modals; viewport meta adds `viewport-fit=cover` and disables user scaling | CSS only | T-003 |
 | Start, resume, portrait | `onStartGame` and `onResume` set state in `App.tsx` lines 770, 882; canvas `isPaused` prop at 745 | `src/input/fullscreen.ts` request helpers with errors caught; Start and Resume call them in touch mode; `fullscreenchange` exit during PLAYING sets PAUSED; portrait plus touch mode renders `RotateCard` and adds to the `isPaused` expression without changing `GameState` | private | T-004 |
 | Haptics | hitstop at canvas ~600 and ~893, `onPlayerDamaged`, `onTurfCapoDefeated` | pure `src/input/haptics.ts` with pulse queue and toggle storage; canvas calls it on hitstop (skipped on Capo kills); App calls it on damage and Capo defeat; HUD toggle beside mute | `pulse(kind)`, `isVibrationSupported()`, `getVibrationEnabled()`, `setVibrationEnabled(on)` | T-002 |
-| Hosting | string portrait paths `nyc1984Data.ts` 597-722, no workflows | portraits imported as modules; `.github/workflows/check.yml` and `pages.yml` | build base via `vite build --base=/mafia-wars/` | T-005 |
+| Hosting | string portrait paths `nyc1984Data.ts` 597-722, no workflows | portraits imported as modules; `.github/workflows/check.yml` and `pages.yml` | build base via `vite build` with `--base` set to the repository name from `github.event.repository.name` between slashes | T-005 |
 
 ## Binding Fields
 
@@ -274,7 +274,7 @@ T-001, T-003, T-004 and T-005 have no dependencies and form `wave-1`; their file
 **Ownership:** `.github/workflows/`, `src/data/nyc1984Data.ts`.
 **Interfaces consumed:** `package.json` scripts.
 **Interfaces produced:** artifact named `dist` on every check run.
-**Concrete change:** Import the four portrait files and use the imported URLs for `portraitUrl`. `check.yml`: on push and pull_request, Node 22, `npm install`, `npm run lint`, `npm run build`, upload `dist`. `pages.yml`: on push to `main` and `workflow_dispatch`, permissions `pages: write` and `id-token: write`, `npm install`, `npx vite build --base=/mafia-wars/`, `actions/configure-pages`, `actions/upload-pages-artifact`, and a deploy job with `environment: github-pages` running `actions/deploy-pages`.
+**Concrete change:** Import the four portrait files and use the imported URLs for `portraitUrl`. `check.yml`: on push and pull_request, Node 22, `npm install`, `npm run lint`, `npm run build`, upload `dist`. `pages.yml`: on push to `main` and `workflow_dispatch`, permissions `pages: write` and `id-token: write`, `npm install`, `npx vite build` with `--base` set to the repository name from `github.event.repository.name` between slashes, `actions/configure-pages`, `actions/upload-pages-artifact`, and a deploy job with `environment: github-pages` running `actions/deploy-pages`.
 **Verification:** EV-005: fresh reviewer checks triggers, permissions, base path and that every portrait reference is an import. Build proof is EV-007 and EV-009.
 **Documentation, migration, and rollback:** worker reports the CLAUDE.md commands-section text naming both workflows and the Pages URL, written by the controller; revert to roll back.
 **Delegation and integration:** fresh Opus worker, high effort, own worktree; fresh Opus reviewer; controller integrates first.

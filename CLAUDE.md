@@ -24,7 +24,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
   - `npm run build` — Production build (`vite build`)
   - `npm run lint` — TypeScript check (`tsc --noEmit`)
 - **CI**: `.github/workflows/check.yml` ("Check") runs `npm install --legacy-peer-deps`, `npm run lint` and `npm run build` on every push and pull request, and uploads the built `dist/` as an artifact named `dist` (failing if it is missing). The flag works around a pre-existing esbuild peer conflict with Vite 8.
-- **Hosting**: `.github/workflows/pages.yml` ("Deploy to GitHub Pages") builds with `--base=/mafia-wars/` on every push to `main` or a manual run, and deploys to https://ertas-del.github.io/mafia-wars/. Pages must be set to "GitHub Actions" under repo Settings → Pages.
+- **Hosting**: `.github/workflows/pages.yml` ("Deploy to GitHub Pages") builds with `--base` set to the repository name (currently `/Mafia-Wars/`) on every push to `main` or a manual run, and deploys to https://ertas-del.github.io/Mafia-Wars/. Pages must be set to "GitHub Actions" under repo Settings → Pages.
 
 ---
 

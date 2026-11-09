@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "specification",
   "specification_id": "touch-controls",
-  "revision": 1,
+  "revision": 2,
   "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/spec.md"},
   "required_sections": [
     "Context and Evidence",
@@ -24,14 +24,14 @@
 
 # Touch Controls and Phone Play — Specification
 
-**Path:** `spec-driven-development/touch-controls/spec.md` · **Revision:** 1 · **Kind:** specification · **Schema:** 1
+**Path:** `spec-driven-development/touch-controls/spec.md` · **Revision:** 2 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 1
-**Approved normative digest:** `500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51`
+**Approved revision:** 2
+**Approved normative digest:** `a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-08T17:14:13-07:00
+**Approval timestamp:** 2026-11-08T18:37:28-07:00
 <!-- sdd-approval-end -->
 
 ## Context and Evidence
@@ -84,14 +84,14 @@ Open questions: none.
 | Vibration toggle | Default on, stored under its own key `commission_1984_vibration_v1`, hidden when vibration is unsupported | D7; key and default agent judgment | low | Inside the save payload | Yes |
 | Portrait images | Imported as modules so the build bundles them under any base path | agent judgment | medium | Move to `public/` | No |
 | CI check | On every push and pull request: `npm install`, `npm run lint`, `npm run build` on Node 22 | D9 | low | Lint only | No |
-| Pages base path | Build uses base `/mafia-wars/` only in the Pages workflow; local dev unchanged | D8 | low | Base in `vite.config.ts` always | No |
+| Pages base path | Pages workflow builds with base a slash, the repository name from `github.event.repository.name`, and a slash (currently `/Mafia-Wars/`); local dev unchanged | D8; repository renamed during execution | low | Hard-coded name | No |
 | Title controls hint | Shows touch instructions when the device reports touch | agent judgment | low | Keyboard hint only | No |
 
 Rejected alternatives: auto-aim fire button and tap-to-move (D1); both orientations (D2); fixed sticks (D4); a GitHub release as hosting, because a release only holds files and cannot serve the game; GitHub Pro, Netlify and Cloudflare hosting (D8).
 
 ## Goals and Non-Goals
 
-Goals: full play on an Android phone with thumbs; every screen readable and usable in phone landscape; the game hosted at `https://ertas-del.github.io/mafia-wars/` once merged; a CI check proving the code compiles and builds.
+Goals: full play on an Android phone with thumbs; every screen readable and usable in phone landscape; the game hosted at `https://ertas-del.github.io/Mafia-Wars/` once merged; a CI check proving the code compiles and builds.
 
 Non-goals: gamepad support; iPhone-specific workarounds; a native Android app; new gameplay, balance or content; changes to the save format, offline math or the leaderboard; removing unused dependencies; making the repository public or changing its settings (the user's step).
 
@@ -120,8 +120,8 @@ Non-goals: gamepad support; iPhone-specific workarounds; a native Android app; n
 - FR-013 At 915×412 the title screen, all five dossier tabs, the pause, victory and game-over screens show all content through vertical scrolling only, with no horizontal scrolling and buttons at least 44 px tall.
 - FR-014 Where vibration is supported and enabled, the device vibrates 40 ms when the player takes damage, 25 ms on a heavy hit that triggers hitstop, and 80 ms on a Capo takedown (which gives no separate hit pulse). At most one pulse starts per 100 ms, except that a longer pulse replaces a shorter one inside that window.
 - FR-015 A vibration toggle beside the sound mute defaults on, persists under `commission_1984_vibration_v1`, and is hidden where vibration is unsupported.
-- FR-016 Character portraits load from a production build served under the `/mafia-wars/` base path.
-- FR-017 Two GitHub Actions workflows exist: a check that runs `npm install`, `npm run lint` and `npm run build` on every push and pull request; the check also uploads the built `dist/` folder as a run artifact; and a Pages workflow that on push to `main` or a manual run on `main` builds with base `/mafia-wars/` and deploys to GitHub Pages.
+- FR-016 Character portraits load from a production build served under the repository-name base path.
+- FR-017 Two GitHub Actions workflows exist: a check that runs `npm install`, `npm run lint` and `npm run build` on every push and pull request; the check also uploads the built `dist/` folder as a run artifact; and a Pages workflow that on push to `main` or a manual run on `main` builds with base `/` plus the repository name plus `/` and deploys to GitHub Pages.
 
 ## Acceptance Criteria
 

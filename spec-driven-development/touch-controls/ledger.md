@@ -21,16 +21,16 @@
       "scope": "repository",
       "value": "spec-driven-development/touch-controls/spec.md"
     },
-    "revision": 1,
-    "digest": "500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51"
+    "revision": 2,
+    "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0"
   },
   "plan": {
     "path": {
       "scope": "repository",
       "value": "spec-driven-development/touch-controls/plan.md"
     },
-    "revision": 1,
-    "digest": "88d6c508b4c063de9f0ad04d85f7196602f918a3daa28802bf7012f6b1ec75fe"
+    "revision": 2,
+    "digest": "86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e"
   },
   "artifact_events": [
     {
@@ -50,6 +50,40 @@
       "approver": "User in the current session",
       "timestamp": "2026-11-08T17:27:56-07:00",
       "event_sequence": 8
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "88d6c508b4c063de9f0ad04d85f7196602f918a3daa28802bf7012f6b1ec75fe",
+      "reason": "patches/PATCH-001.md: dependent on specification revision 1",
+      "event_sequence": 37
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "specification",
+      "revision": 1,
+      "digest": "500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51",
+      "reason": "patches/PATCH-001.md: Pages base path follows repository name",
+      "event_sequence": 38
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 2,
+      "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T18:37:28-07:00",
+      "event_sequence": 41
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 2,
+      "digest": "86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T18:37:28-07:00",
+      "event_sequence": 44
     }
   ],
   "current_state": "EXECUTING",
@@ -109,6 +143,55 @@
       "from": "READY",
       "to": "EXECUTING",
       "evidence": "Wave 1 (T-001, T-003, T-004, T-005) dispatch begins"
+    },
+    {
+      "sequence": 9,
+      "event_sequence": 36,
+      "from": "EXECUTING",
+      "to": "CHANGE_CONTROL",
+      "evidence": "repository renamed to Mafia-Wars; hard-coded Pages base path; patches/PATCH-001.md"
+    },
+    {
+      "sequence": 10,
+      "event_sequence": 39,
+      "from": "CHANGE_CONTROL",
+      "to": "SPEC_DRAFT",
+      "evidence": "patches/PATCH-001.md applied to spec.md revision 2"
+    },
+    {
+      "sequence": 11,
+      "event_sequence": 40,
+      "from": "SPEC_DRAFT",
+      "to": "AWAITING_SPEC_APPROVAL",
+      "evidence": "patches/PATCH-001.md presented with exact before and after text"
+    },
+    {
+      "sequence": 12,
+      "event_sequence": 42,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "patches/PATCH-001.md applied to plan.md revision 2"
+    },
+    {
+      "sequence": 13,
+      "event_sequence": 43,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "patches/PATCH-001.md covers both artifacts in one question"
+    },
+    {
+      "sequence": 14,
+      "event_sequence": 45,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user replied 'I approve' to the PATCH-001 question"
+    },
+    {
+      "sequence": 15,
+      "event_sequence": 46,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-005 continues with the base-path change; T-003 in review"
     }
   ],
   "effective_tasks": [
