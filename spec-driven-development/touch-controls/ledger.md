@@ -508,46 +508,110 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-001",
+      "branch": "wt/T-001",
+      "baseline": "b72a6f5",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 11,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies; worktree at b72a6f5"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 15,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "wave-1 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-003",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-003",
+      "branch": "wt/T-003",
+      "baseline": "b72a6f5",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 12,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies; worktree at b72a6f5"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 16,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "wave-1 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-004",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-004",
+      "branch": "wt/T-004",
+      "baseline": "b72a6f5",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 13,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies; worktree at b72a6f5"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 17,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "wave-1 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-005",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-005",
+      "branch": "wt/T-005",
+      "baseline": "b72a6f5",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 14,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies; worktree at b72a6f5"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 18,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "wave-1 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
