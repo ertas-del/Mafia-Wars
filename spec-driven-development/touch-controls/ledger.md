@@ -907,7 +907,7 @@
     },
     {
       "id": "T-002",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [
         "T-001",
@@ -936,9 +936,49 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "dispatch after wave 1"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 58,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commit 6a21eeb on wt/T-002; scope limited to five owned files"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 59,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "EV-006: controller ran node --test src/input/*.test.ts, 12 pass 0 fail (haptics 6, sticks 6)"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 60,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "fresh opus reviewer PASS; shotgun has no hitstop so FR-014 met as written"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 61,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-006",
+          "review_evidence": "EV-006",
+          "commit": "9a69960",
+          "evidence": "merged into feature branch"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 62,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "merged at 9a69960; CLAUDE.md haptics line written"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-006"
+      ]
     },
     {
       "id": "T-006",
