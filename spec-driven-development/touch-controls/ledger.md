@@ -659,7 +659,7 @@
     },
     {
       "id": "T-003",
-      "state": "IMPLEMENTED",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-003",
@@ -687,9 +687,42 @@
           "from": "IN_PROGRESS",
           "to": "IMPLEMENTED",
           "evidence": "worker commit e50aedb on wt/T-003; scope limited to five owned files"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 52,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "controller confirmed fix 57b1793 adds the two classes only; rendered proof is EV-008 in T-006"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 53,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "EV-003: fresh opus reviewer found one blocking finding (B1-B5 touch size); fix round 1 applied the prescribed class; all else PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 54,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-003",
+          "commit": "22cdfaf",
+          "evidence": "merged into feature branch"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 55,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "merged at 22cdfaf; CLAUDE.md guardrail written at 85d7e02"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-003"
+      ]
     },
     {
       "id": "T-004",
@@ -874,17 +907,37 @@
     },
     {
       "id": "T-002",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [
         "T-001",
         "T-003",
         "T-004"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-002",
+      "branch": "wt/T-002",
+      "baseline": "85d7e02",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 56,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001",
+            "T-003",
+            "T-004"
+          ],
+          "evidence": "all three dependencies DONE and merged"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 57,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "dispatch after wave 1"
+        }
+      ],
       "evidence": []
     },
     {
