@@ -3,13 +3,13 @@
   "schema_version": 1,
   "artifact_kind": "implementation-plan",
   "plan_id": "touch-controls-plan",
-  "revision": 2,
+  "revision": 3,
   "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/plan.md"},
   "required_sections": ["Goal", "Preflight", "Architecture Change Map", "Binding Fields", "Adaptable Fields", "Risks and Resolved Assumptions", "Requirement Coverage", "Verification Coverage", "Dependency Graph", "Task Contracts", "Execution and Landing", "Plan Readiness Review"],
   "specification": {
     "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/spec.md"},
-    "revision": 2,
-    "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0"
+    "revision": 3,
+    "digest": "f176509737d43af72080f9ccb5e6709be8d64496a563edc59f18568379ca6c73"
   },
   "binding_fields": ["task deliverables and coverage", "approved constraints and boundaries", "verification obligations", "external effects and landing boundary", "pinned interfaces"],
   "adaptable_fields": ["exact private symbols or files", "internal tactics", "worker assignment", "evidence-equivalent verification command"],
@@ -105,9 +105,11 @@
       "depends_on": ["T-001", "T-002", "T-003", "T-004", "T-005"],
       "ownership": [
         {"type": "directory", "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/evidence"}, "mode": "exclusive"},
-        {"type": "git-index", "name": "feature-branch", "mode": "exclusive"}
+        {"type": "git-index", "name": "feature-branch", "mode": "exclusive"},
+        {"type": "file", "path": {"scope": "repository", "value": ".github/workflows/check.yml"}, "mode": "exclusive"},
+        {"type": "file", "path": {"scope": "repository", "value": "scripts/phone-layout-check.mjs"}, "mode": "exclusive"}
       ],
-      "consumes": ["integrated feature branch", "CI run and dist artifact"],
+      "consumes": ["integrated feature branch", "CI run logs"],
       "produces": ["green CI run", "915x412 phone-fit report and screenshots", "portrait bundle check"],
       "verification_ids": ["EV-007", "EV-008", "EV-009"],
       "parallel_group": null,
@@ -132,15 +134,15 @@
 
 # Touch Controls and Phone Play — Implementation Plan
 
-**Path:** `spec-driven-development/touch-controls/plan.md` · **Revision:** 2 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
-**Specification:** `spec-driven-development/touch-controls/spec.md` revision 2, digest `a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0`
+**Path:** `spec-driven-development/touch-controls/plan.md` · **Revision:** 3 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
+**Specification:** `spec-driven-development/touch-controls/spec.md` revision 3, digest `f176509737d43af72080f9ccb5e6709be8d64496a563edc59f18568379ca6c73`
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 2
-**Approved normative digest:** `86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e`
+**Approved revision:** 3
+**Approved normative digest:** `f1b25a0dcc9b8d3993f4e5495973cd8d4fceb1958f89f5170dde06a3b4fe8fe3`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-08T18:37:28-07:00
+**Approval timestamp:** 2026-11-08T19:03:17-07:00
 <!-- sdd-approval-end -->
 
 ## Goal
@@ -301,12 +303,12 @@ T-001, T-003, T-004 and T-005 have no dependencies and form `wave-1`; their file
 **Deliverable:** Proof on real build output that the change compiles, builds, fits a phone screen and ships the portraits.
 **Covers:** AC-006, AC-008, AC-009.
 **Dependencies and readiness:** all code tasks DONE and merged.
-**Ownership:** the feature folder's `evidence/` directory and the feature branch index.
+**Ownership:** the feature folder's `evidence/` directory, the feature branch index, `.github/workflows/check.yml` (taken over from T-005 after it is DONE) and `scripts/phone-layout-check.mjs`.
 **Interfaces consumed:** CI run and its `dist` artifact.
 **Interfaces produced:** retained evidence files.
-**Concrete change:** Push the branch; wait for the check run. EV-007: `gh run list --branch ertas-del/new/touch-controls` shows success for the head commit; a red run is diagnosed, fixed in the owning task's files (that task reopens) and re-pushed. EV-008: `gh run download` the `dist` artifact into scratch, serve it with `http-server`, run a Playwright script with `/usr/bin/google-chrome` at 915×412, `hasTouch`, `isMobile`, landscape; set `data-input="touch"`; visit title, start play, open each of the five dossier tabs, and pause; assert `scrollWidth <= clientWidth` and every visible button at least 44 px tall; save screenshots and a JSON report to `evidence/`. Victory and game-over are covered by the T-003 review. EV-009: list hashed `.jpg` files in `dist/assets` and grep the bundle for their names.
+**Concrete change:** Push the branch; wait for the check run. EV-007: `gh run list --branch ertas-del/new/touch-controls` shows success for the head commit; a red run is diagnosed, fixed in the owning task's files (that task reopens) and re-pushed. EV-008: add `scripts/phone-layout-check.mjs` and a check-workflow step that installs Playwright Chromium without saving it to `package.json`, runs the script against `dist/` (915×412, `hasTouch`, `isMobile`, landscape, `data-input="touch"`; title, play, five dossier tabs, pause; `scrollWidth <= clientWidth`; every visible button at least 44 px tall), prints the JSON report, fails on a violation, and uploads screenshots; the controller copies the report from `gh run view --log` into `evidence/`. Victory and game-over are covered by the T-003 review. EV-009: the same listing of hashed `.jpg` files in `dist/assets` and grep of the bundle for their names run as a check-workflow step; the controller copies its log output into `evidence/`.
 **Documentation, migration, and rollback:** not applicable beyond evidence.
-**Delegation and integration:** fresh Opus worker for EV-008's script and run, with a fresh Opus reviewer of its report; the controller runs EV-007 and EV-009 and owns pushes.
+**Delegation and integration:** a fresh Opus worker writes the script and workflow steps; a fresh Opus reviewer reads them; the controller pushes, reads the logs, and owns EV-007.
 **Commit boundary:** one commit adding evidence, pushed.
 **Done:** all three evidence items pass and are committed and pushed.
 

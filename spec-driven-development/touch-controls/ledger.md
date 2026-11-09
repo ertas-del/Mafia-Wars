@@ -21,16 +21,16 @@
       "scope": "repository",
       "value": "spec-driven-development/touch-controls/spec.md"
     },
-    "revision": 2,
-    "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0"
+    "revision": 3,
+    "digest": "f176509737d43af72080f9ccb5e6709be8d64496a563edc59f18568379ca6c73"
   },
   "plan": {
     "path": {
       "scope": "repository",
       "value": "spec-driven-development/touch-controls/plan.md"
     },
-    "revision": 2,
-    "digest": "86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e"
+    "revision": 3,
+    "digest": "f1b25a0dcc9b8d3993f4e5495973cd8d4fceb1958f89f5170dde06a3b4fe8fe3"
   },
   "artifact_events": [
     {
@@ -84,6 +84,40 @@
       "approver": "User in the current session",
       "timestamp": "2026-11-08T18:37:28-07:00",
       "event_sequence": 44
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "implementation-plan",
+      "revision": 2,
+      "digest": "86bb4e4995c6eb76ed3b21607d110e3b51c0d046b90ded1d6ea71c29c9d9dd0e",
+      "reason": "patches/PATCH-002.md: checks move into CI; dependent on specification revision 2",
+      "event_sequence": 64
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "specification",
+      "revision": 2,
+      "digest": "a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0",
+      "reason": "patches/PATCH-002.md: AC-006, AC-008 and FR-017 change",
+      "event_sequence": 65
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 3,
+      "digest": "f176509737d43af72080f9ccb5e6709be8d64496a563edc59f18568379ca6c73",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T19:03:17-07:00",
+      "event_sequence": 68
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 3,
+      "digest": "f1b25a0dcc9b8d3993f4e5495973cd8d4fceb1958f89f5170dde06a3b4fe8fe3",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T19:03:17-07:00",
+      "event_sequence": 71
     }
   ],
   "current_state": "EXECUTING",
@@ -192,6 +226,55 @@
       "from": "READY",
       "to": "EXECUTING",
       "evidence": "T-005 continues with the base-path change; T-003 in review"
+    },
+    {
+      "sequence": 16,
+      "event_sequence": 63,
+      "from": "EXECUTING",
+      "to": "CHANGE_CONTROL",
+      "evidence": "artifact download refused by network allowlist (run 42547040055); patches/PATCH-002.md"
+    },
+    {
+      "sequence": 17,
+      "event_sequence": 66,
+      "from": "CHANGE_CONTROL",
+      "to": "SPEC_DRAFT",
+      "evidence": "patches/PATCH-002.md applied to spec.md revision 3"
+    },
+    {
+      "sequence": 18,
+      "event_sequence": 67,
+      "from": "SPEC_DRAFT",
+      "to": "AWAITING_SPEC_APPROVAL",
+      "evidence": "patches/PATCH-002.md presented with exact before and after text"
+    },
+    {
+      "sequence": 19,
+      "event_sequence": 69,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "patches/PATCH-002.md applied to plan.md revision 3"
+    },
+    {
+      "sequence": 20,
+      "event_sequence": 70,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "patches/PATCH-002.md covers both artifacts in one question"
+    },
+    {
+      "sequence": 21,
+      "event_sequence": 72,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user replied 'Go for gold' to the PATCH-002 question"
+    },
+    {
+      "sequence": 22,
+      "event_sequence": 73,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-006 dispatch"
     }
   ],
   "effective_tasks": [
@@ -532,11 +615,27 @@
           "type": "git-index",
           "name": "feature-branch",
           "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": ".github/workflows/check.yml"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "scripts/phone-layout-check.mjs"
+          },
+          "mode": "exclusive"
         }
       ],
       "consumes": [
         "integrated feature branch",
-        "CI run and dist artifact"
+        "CI run logs"
       ],
       "produces": [
         "green CI run",
@@ -982,8 +1081,8 @@
     },
     {
       "id": "T-006",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (opus, effort high)",
       "dependencies": [
         "T-001",
         "T-002",
@@ -991,10 +1090,32 @@
         "T-004",
         "T-005"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/T-006",
+      "branch": "wt/T-006",
+      "baseline": "8c0a398",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 74,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001",
+            "T-002",
+            "T-003",
+            "T-004",
+            "T-005"
+          ],
+          "evidence": "all code tasks DONE and merged; branch pushed and Check green at bdaf080"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 75,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "dispatch for EV-008 and EV-009 CI steps"
+        }
+      ],
       "evidence": []
     },
     {

@@ -31,3 +31,7 @@ T-006 Concrete change, EV-009:
 - After: the same listing and grep run as a check-workflow step; the controller copies its log output into `evidence/`.
 
 Execution and Landing: a fresh Opus worker writes the script and workflow step; a fresh Opus reviewer reads them; the controller pushes and reads the logs.
+
+## Applied note
+
+Approved by the user on 2026-11-08 ("Go for gold"). Specification revision 3 and plan revision 3 carry the change.

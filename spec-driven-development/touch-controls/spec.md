@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "specification",
   "specification_id": "touch-controls",
-  "revision": 2,
+  "revision": 3,
   "path": {"scope": "repository", "value": "spec-driven-development/touch-controls/spec.md"},
   "required_sections": [
     "Context and Evidence",
@@ -24,14 +24,14 @@
 
 # Touch Controls and Phone Play — Specification
 
-**Path:** `spec-driven-development/touch-controls/spec.md` · **Revision:** 2 · **Kind:** specification · **Schema:** 1
+**Path:** `spec-driven-development/touch-controls/spec.md` · **Revision:** 3 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 2
-**Approved normative digest:** `a38eba7da0fdfd8ed5c6a35789fbc15b0735c44b4955e09d52f389500a2562b0`
+**Approved revision:** 3
+**Approved normative digest:** `f176509737d43af72080f9ccb5e6709be8d64496a563edc59f18568379ca6c73`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-08T18:37:28-07:00
+**Approval timestamp:** 2026-11-08T19:03:17-07:00
 <!-- sdd-approval-end -->
 
 ## Context and Evidence
@@ -121,7 +121,7 @@ Non-goals: gamepad support; iPhone-specific workarounds; a native Android app; n
 - FR-014 Where vibration is supported and enabled, the device vibrates 40 ms when the player takes damage, 25 ms on a heavy hit that triggers hitstop, and 80 ms on a Capo takedown (which gives no separate hit pulse). At most one pulse starts per 100 ms, except that a longer pulse replaces a shorter one inside that window.
 - FR-015 A vibration toggle beside the sound mute defaults on, persists under `commission_1984_vibration_v1`, and is hidden where vibration is unsupported.
 - FR-016 Character portraits load from a production build served under the repository-name base path.
-- FR-017 Two GitHub Actions workflows exist: a check that runs `npm install`, `npm run lint` and `npm run build` on every push and pull request; the check also uploads the built `dist/` folder as a run artifact; and a Pages workflow that on push to `main` or a manual run on `main` builds with base `/` plus the repository name plus `/` and deploys to GitHub Pages.
+- FR-017 Two GitHub Actions workflows exist: a check that runs `npm install`, `npm run lint` and `npm run build` on every push and pull request, then runs the phone-layout check and the portrait check against the built `dist/`, prints both reports to the run log, fails if either check fails, and uploads `dist/` and the screenshots as run artifacts; and a Pages workflow that on push to `main` or a manual run on `main` builds with base `/` plus the repository name plus `/` and deploys to GitHub Pages.
 
 ## Acceptance Criteria
 
@@ -130,9 +130,9 @@ Non-goals: gamepad support; iPhone-specific workarounds; a native Android app; n
 - AC-003 (FR-001) Code review shows every keyboard and mouse path unchanged outside touch mode, sticks replacing key movement and mouse facing inside it, and touch mode toggled only by touchstart and keydown.
 - AC-004 (FR-006, FR-007, FR-008) Code review shows touch handlers on the canvas with `preventDefault` and `touch-action: none`, no mouse attack from touches, stick drawing only while held, and touch-mode hit areas of at least 44 px.
 - AC-005 (FR-009, FR-010, FR-011) Code review shows fullscreen and orientation requests on Start with failures caught, the portrait card pausing and resuming, and fullscreen exit entering PAUSED with Resume re-requesting.
-- AC-006 (FR-012, FR-013) The CI `dist/` artifact is downloaded here with `gh run download`, served locally, and a script run with the global Playwright and system Chrome emulating a 915×412 touch viewport visits the title, the HUD in play, all five dossier tabs and the pause screen, finds no horizontal overflow and no visible control under 44 px tall, and saves screenshots to `evidence/`. Victory and game-over are checked by code review of the same layout classes.
+- AC-006 (FR-012, FR-013) In the Check workflow, `scripts/phone-layout-check.mjs` serves `dist/` and drives Playwright Chromium emulating a 915×412 touch viewport; it visits the title, the HUD in play, all five dossier tabs and the pause screen, finds no horizontal overflow and no visible control under 44 px tall, prints a JSON report to the run log, and uploads screenshots as a run artifact. The report is copied from the log into `evidence/`. Victory and game-over are checked by code review of the same layout classes.
 - AC-007 (FR-014, FR-015) Unit tests, run as in AC-001, show the pulse lengths, the 100 ms limit with longer-pulse replacement, the toggle default and persistence, and no calls when unsupported or disabled.
-- AC-008 (FR-016) The CI build output contains the four portrait files with hashed names referenced from the bundle.
+- AC-008 (FR-016) A Check workflow step lists the hashed portrait `.jpg` files in `dist/assets` and confirms each name appears in the JavaScript bundle; its log output is copied into `evidence/`.
 - AC-009 (FR-017) The check workflow passes on the pushed feature branch, shown by its GitHub Actions run.
 - AC-010 (FR-017) Code review of the Pages workflow shows the triggers, the base path and the official Pages upload and deploy actions.
 - AC-011 (FR-002 to FR-011, FR-014) The user plays on the S26 after merging and confirms moving, sprinting, aiming, firing, interacting, rotating, leaving fullscreen and vibration work.
