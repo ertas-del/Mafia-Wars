@@ -508,7 +508,7 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "REVIEWED",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-001",
@@ -550,6 +550,23 @@
           "from": "VERIFIED",
           "to": "REVIEWED",
           "evidence": "EV-002: fresh opus reviewer PASS, no blocking findings"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 30,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "15a8385",
+          "evidence": "merged into feature branch"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 31,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "merged at 15a8385; CLAUDE.md lines written at 5617f0d"
         }
       ],
       "evidence": [
@@ -586,7 +603,7 @@
     },
     {
       "id": "T-004",
-      "state": "REVIEWED",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-004",
@@ -628,6 +645,23 @@
           "from": "VERIFIED",
           "to": "REVIEWED",
           "evidence": "EV-004: fresh opus reviewer found one blocking finding (touchscreen laptop fullscreen); fix round 1 applied the prescribed minimal fix; all other paths PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 32,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-004",
+          "review_evidence": "EV-004",
+          "commit": "5cd5023",
+          "evidence": "merged into feature branch"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 33,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "merged at 5cd5023; CLAUDE.md line written at 5617f0d"
         }
       ],
       "evidence": [
@@ -636,7 +670,7 @@
     },
     {
       "id": "T-005",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "worker (opus, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/T-005",
@@ -657,9 +691,49 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "wave-1 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 25,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "worker commit 82d2abb on wt/T-005; scope limited to owned files"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 26,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "evidence": "controller confirmed scope and that all portraitUrl values use imports; build proof deferred to EV-007 and EV-009 in T-006 per plan"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 27,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "evidence": "EV-005: fresh opus reviewer PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 28,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-005",
+          "review_evidence": "EV-005",
+          "commit": "b3c90f2",
+          "evidence": "merged into feature branch"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 29,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "merged at b3c90f2; CLAUDE.md text written at 5617f0d"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-005"
+      ]
     },
     {
       "id": "T-002",
