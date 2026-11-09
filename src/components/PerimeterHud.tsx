@@ -1,4 +1,5 @@
 import React from 'react';
+import { Vibrate, VibrateOff } from 'lucide-react';
 import {
   BoroughId,
   FIVE_FAMILIES,
@@ -30,6 +31,8 @@ interface PerimeterHudProps {
   unlockedWeapons: WeaponId[];
   currentActIndex: number;
   isMuted: boolean;
+  vibrationSupported: boolean;
+  vibrationOn: boolean;
   hasOfflineReport: boolean;
   nearPrompt: { type: 'racket' | 'contact' | 'npc'; label: string; sublabel: string; id: string } | null;
   recentToast: string | null;
@@ -39,6 +42,7 @@ interface PerimeterHudProps {
   onCollectAllEnvelopes: () => void;
   onBribePolice: () => void;
   onToggleMute: () => void;
+  onToggleVibration: () => void;
   onPause: () => void;
 }
 
@@ -61,6 +65,8 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
   unlockedWeapons,
   currentActIndex,
   isMuted,
+  vibrationSupported,
+  vibrationOn,
   hasOfflineReport,
   nearPrompt,
   recentToast,
@@ -70,6 +76,7 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
   onCollectAllEnvelopes,
   onBribePolice,
   onToggleMute,
+  onToggleVibration,
   onPause,
 }) => {
   const family = FIVE_FAMILIES.find((f) => f.id === playerFamily) || FIVE_FAMILIES[0];
@@ -220,6 +227,21 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
               >
                 {isMuted ? 'Sound Off' : 'Sound On'}
               </button>
+              {vibrationSupported && (
+                <button
+                  type="button"
+                  onClick={onToggleVibration}
+                  aria-label={vibrationOn ? 'Vibration on' : 'Vibration off'}
+                  aria-pressed={vibrationOn}
+                  className="inline-flex items-center justify-center px-2.5 py-1.5 bg-[#181512] hover:bg-[#26211D] text-[#D6CFC2] border border-[#2C2520] rounded text-[11px] font-sans whitespace-nowrap shrink-0 cursor-pointer short:px-2 short:py-1 short:text-[10px] touch:min-h-11 touch:min-w-11"
+                >
+                  {vibrationOn ? (
+                    <Vibrate className="w-3.5 h-3.5" aria-hidden="true" />
+                  ) : (
+                    <VibrateOff className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {

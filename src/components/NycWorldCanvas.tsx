@@ -21,6 +21,7 @@ import {
   touchMove,
   touchStart,
 } from '../input/touchSticks';
+import { pulse } from '../input/haptics';
 
 export interface WorldNpc {
   id: string;
@@ -654,6 +655,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             npc.vx += Math.cos(player.angle) * 190;
             npc.vy += Math.sin(player.angle) * 190;
             hitstopTimer = 0.045; // 45ms heavy hitstop
+            pulse('heavyHit');
             spawnParticles(npc.x, npc.y, '#DC2626', 10, 150);
             addFloatingText(npc.x, npc.y, `-${dmg}`, '#F87171');
             if (npc.state === 'patrol') {
@@ -967,6 +969,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           if (npc.hp <= 0) {
             // NPC eliminated!
             hitstopTimer = npc.role === 'capo' ? 0.075 : 0.035;
+            // Turf Capo takedowns get the longer capo pulse from App instead.
+            if (!(npc.role === 'capo' && npc.racketGuardId)) pulse('heavyHit');
             camera.shake = Math.max(camera.shake, npc.role === 'capo' ? 11 : 5);
             soundEngine.playCashCollect();
             spawnParticles(npc.x, npc.y, '#DC2626', 16, 170);
