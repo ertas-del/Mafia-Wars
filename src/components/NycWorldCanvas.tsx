@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   BoroughId,
   BoroughZone,
+  FIVE_FAMILIES,
   FamilyId,
   NYC_BOROUGHS,
   RacketBuilding,
@@ -134,15 +135,74 @@ interface NycWorldCanvasProps {
 const WORLD_WIDTH = 3200;
 const WORLD_HEIGHT = 2120;
 
-const FAMILY_COAT_COLORS: Record<string, { coat: string; hat: string }> = {
-  corvini: { coat: '#7F1D1D', hat: '#991B1B' },
-  bellini: { coat: '#78350F', hat: '#B45309' },
-  valenti: { coat: '#064E3B', hat: '#047857' },
-  moretti: { coat: '#1E3A8A', hat: '#1D4ED8' },
-  rastelli: { coat: '#4C1D95', hat: '#6D28D9' },
-  nypd: { coat: '#172554', hat: '#38BDF8' },
-  civilian: { coat: '#3F3F46', hat: '#71717A' },
-  player: { coat: '#1C1917', hat: '#D97706' },
+const FAMILY_COAT_COLORS: Record<
+  string,
+  { coat: string; hat: string; accent: string; symbol: string; shortFamily: string; traitTag: string }
+> = {
+  corvini: {
+    coat: '#7F1D1D',
+    hat: '#991B1B',
+    accent: '#EF4444',
+    symbol: '♠',
+    shortFamily: 'CORVINI',
+    traitTag: 'RED CARNATION',
+  },
+  bellini: {
+    coat: '#78350F',
+    hat: '#B45309',
+    accent: '#F59E0B',
+    symbol: '◆',
+    shortFamily: 'BELLINI',
+    traitTag: 'BRASS LEDGER',
+  },
+  valenti: {
+    coat: '#064E3B',
+    hat: '#047857',
+    accent: '#10B981',
+    symbol: '✦',
+    shortFamily: 'VALENTI',
+    traitTag: 'AVIATOR SHADES',
+  },
+  moretti: {
+    coat: '#1E3A8A',
+    hat: '#1D4ED8',
+    accent: '#3B82F6',
+    symbol: '⚓',
+    shortFamily: 'MORETTI',
+    traitTag: 'IRON HOOK SASH',
+  },
+  rastelli: {
+    coat: '#4C1D95',
+    hat: '#6D28D9',
+    accent: '#A855F7',
+    symbol: '♛',
+    shortFamily: 'RASTELLI',
+    traitTag: 'CUBAN CIGAR',
+  },
+  nypd: {
+    coat: '#172554',
+    hat: '#38BDF8',
+    accent: '#38BDF8',
+    symbol: '🛡',
+    shortFamily: 'NYPD',
+    traitTag: 'PRECINCT BADGE',
+  },
+  civilian: {
+    coat: '#3F3F46',
+    hat: '#71717A',
+    accent: '#A1A1AA',
+    symbol: '•',
+    shortFamily: 'CITIZEN',
+    traitTag: 'MERCHANT',
+  },
+  player: {
+    coat: '#1C1917',
+    hat: '#D97706',
+    accent: '#10B981',
+    symbol: '★',
+    shortFamily: 'YOUR CREW',
+    traitTag: 'GOLD SIGNET',
+  },
 };
 
 export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
@@ -782,6 +842,15 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               if (player.currentBorough !== b.id) {
                 player.currentBorough = b.id;
                 st.callbacks.onBoroughChanged(b.id);
+                const famVisual = FAMILY_COAT_COLORS[b.controllingFamilyDefault];
+                if (famVisual) {
+                  addFloatingText(
+                    player.x,
+                    player.y - 36,
+                    `${famVisual.symbol} ${famVisual.shortFamily} TURF · NPC TRAIT: ${famVisual.traitTag}`,
+                    famVisual.accent
+                  );
+                }
               }
               break;
             }
@@ -1215,8 +1284,11 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       ctx.fillStyle = '#070B12';
       ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
 
-      // Draw Borough Zones & Street Grid
+      // Draw Borough Zones, Territory Crest Medallions & Street Grid
       for (const b of NYC_BOROUGHS) {
+        const famData = FIVE_FAMILIES.find((f) => f.id === b.controllingFamilyDefault) || FIVE_FAMILIES[0];
+        const famVis = FAMILY_COAT_COLORS[b.controllingFamilyDefault] || FAMILY_COAT_COLORS.corvini;
+
         ctx.fillStyle = b.floorColor;
         ctx.fillRect(b.bounds.x, b.bounds.y, b.bounds.width, b.bounds.height);
 
@@ -1236,22 +1308,59 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           ctx.stroke();
         }
 
-        // Borough territory perimeter border
+        // Borough territory perimeter border + double inner family line
         ctx.strokeStyle = b.borderColor;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
         ctx.strokeRect(b.bounds.x, b.bounds.y, b.bounds.width, b.bounds.height);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(b.bounds.x + 6, b.bounds.y + 6, b.bounds.width - 12, b.bounds.height - 12);
 
-        // Borough Ground Stencil Label
-        ctx.fillStyle = 'rgba(245, 240, 230, 0.14)';
+        // Draw 4 Corner Family Territory Pylons / Checkpoints so players know which turf they are entering
+        const corners = [
+          { cx: b.bounds.x + 18, cy: b.bounds.y + 18 },
+          { cx: b.bounds.x + b.bounds.width - 18, cy: b.bounds.y + 18 },
+          { cx: b.bounds.x + 18, cy: b.bounds.y + b.bounds.height - 18 },
+          { cx: b.bounds.x + b.bounds.width - 18, cy: b.bounds.y + b.bounds.height - 18 },
+        ];
+        for (const corner of corners) {
+          ctx.fillStyle = famVis.coat;
+          ctx.beginPath();
+          ctx.arc(corner.cx, corner.cy, 12, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = famVis.accent;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.fillStyle = '#F5F0E6';
+          ctx.font = '700 11px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(famVis.symbol, corner.cx, corner.cy + 4);
+        }
+
+        // Borough Ground Stencil Label & Family Trait Identification Banner
+        ctx.textAlign = 'left';
+        ctx.fillStyle = 'rgba(245, 240, 230, 0.16)';
         ctx.font = '700 22px "Cinzel", serif';
-        ctx.fillText(b.name.toUpperCase(), b.bounds.x + 24, b.bounds.y + 42);
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.25)';
+        ctx.fillText(b.name.toUpperCase(), b.bounds.x + 36, b.bounds.y + 44);
+
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
         ctx.font = '600 12px "JetBrains Mono", monospace';
         ctx.fillText(
           `${b.riskLabel.toUpperCase()} · ${b.rewardMultiplier.toFixed(2)}X TRIBUTE`,
-          b.bounds.x + 24,
-          b.bounds.y + 62
+          b.bounds.x + 36,
+          b.bounds.y + 64
         );
+
+        // Territory Family Trait Spotter Stencil on the street
+        ctx.fillStyle = famVis.accent;
+        ctx.globalAlpha = 0.45;
+        ctx.font = '700 11px "JetBrains Mono", monospace';
+        ctx.fillText(
+          `${famVis.symbol} ${famData.turfCornerMarker} · NPC TRAIT: ${famData.traitName.toUpperCase()}`,
+          b.bounds.x + 36,
+          b.bounds.y + 84
+        );
+        ctx.globalAlpha = 1;
       }
 
       // Draw NYC Bridges & Grand Avenues connecting the 5 Boroughs
@@ -1303,6 +1412,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       // Draw all 15 Historical Racket Buildings
       for (const r of st.rackets) {
         const isPlayerOwned = r.ownerFamily === 'player';
+        const rFamVis = FAMILY_COAT_COLORS[r.ownerFamily] || FAMILY_COAT_COLORS.corvini;
         // Drop shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
         ctx.fillRect(r.x + 8, r.y + 10, r.width, r.height);
@@ -1312,8 +1422,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.fillRect(r.x, r.y, r.width, r.height);
 
         // Building architectural trim
-        ctx.strokeStyle = isPlayerOwned ? '#10B981' : '#78716C';
-        ctx.lineWidth = isPlayerOwned ? 2.5 : 1.5;
+        ctx.strokeStyle = isPlayerOwned ? '#10B981' : rFamVis.accent;
+        ctx.lineWidth = isPlayerOwned ? 2.5 : 1.8;
         ctx.strokeRect(r.x, r.y, r.width, r.height);
 
         // Inner rooftop skylight / HVAC detail
@@ -1321,7 +1431,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.fillRect(r.x + 12, r.y + 12, r.width - 24, r.height - 32);
 
         // Warm storefront awning at bottom edge
-        ctx.fillStyle = isPlayerOwned ? '#059669' : '#991B1B';
+        ctx.fillStyle = isPlayerOwned ? '#059669' : rFamVis.accent;
         ctx.fillRect(r.x + r.width / 2 - 28, r.y + r.height - 6, 56, 10);
 
         // Neon Sign & Racket Name
@@ -1333,7 +1443,9 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.fillStyle = isPlayerOwned ? '#6EE7B7' : '#FBBF24';
         ctx.font = '600 10px "JetBrains Mono", monospace';
         ctx.fillText(
-          isPlayerOwned ? `YOUR TURF · LV.${r.level} ($${(r.baseIncomePerHour * r.level).toLocaleString()}/HR)` : `${r.ownerFamily.toUpperCase()} TURF · LV.${r.level}`,
+          isPlayerOwned
+            ? `★ YOUR TURF · LV.${r.level} ($${(r.baseIncomePerHour * r.level).toLocaleString()}/HR)`
+            : `${rFamVis.symbol} ${r.ownerFamily.toUpperCase()} TURF · LV.${r.level}`,
           r.x + r.width / 2,
           r.y + 46
         );
@@ -1390,9 +1502,23 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.restore();
       }
 
-      // Draw all Active World NPCs (Soldati, Brawlers, Capos, Couriers, NYPD, Allies)
+      // Draw all Active World NPCs with Unique Five Families 'Family Trait' Visual Indicators
       for (const npc of npcs) {
+        const famVis = FAMILY_COAT_COLORS[npc.familyId] || FAMILY_COAT_COLORS.civilian;
+        const bodyRadius = npc.role === 'capo' ? 16 : 13;
+
         ctx.save();
+
+        // 1. Ground-Level Family Territory Alignment Ring beneath NPC
+        if (npc.familyId !== 'civilian') {
+          ctx.strokeStyle = famVis.accent;
+          ctx.globalAlpha = npc.role === 'capo' ? 0.75 : 0.42;
+          ctx.lineWidth = npc.role === 'capo' ? 2.2 : 1.5;
+          ctx.beginPath();
+          ctx.arc(npc.x, npc.y, bodyRadius + 6, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
 
         // Draw visible Windup Telegraph BEFORE attack!
         if (npc.state === 'windup') {
@@ -1431,15 +1557,109 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         // Shoulders / Coat
         ctx.fillStyle = npc.hitFlashTimer > 0 ? '#FFFFFF' : npc.coatColor;
         ctx.beginPath();
-        ctx.arc(0, 0, npc.role === 'capo' ? 16 : 13, 0, Math.PI * 2);
+        ctx.arc(0, 0, bodyRadius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = npc.role === 'capo' ? '#F59E0B' : 'rgba(255,255,255,0.22)';
-        ctx.lineWidth = npc.role === 'capo' ? 2.5 : 1.2;
+        ctx.strokeStyle = npc.role === 'capo' ? '#F59E0B' : famVis.accent;
+        ctx.lineWidth = npc.role === 'capo' ? 2.5 : 1.5;
         ctx.stroke();
 
-        // Gun barrel / Brass Knuckles indicator
+        // 2. Render Unique Five Families On-Body Sartorial 'Family Trait' Visuals
         ctx.save();
         ctx.rotate(npc.angle);
+
+        if (npc.familyId === 'corvini') {
+          // Corvini Family Trait: Chalk-white pinstripes + Blood-Red Lapel Carnation
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-6, -8);
+          ctx.lineTo(6, -8);
+          ctx.moveTo(-6, 8);
+          ctx.lineTo(6, 8);
+          ctx.stroke();
+          // Green carnation leaf & crimson flower on left lapel
+          ctx.fillStyle = '#22C55E';
+          ctx.beginPath();
+          ctx.arc(5, -7, 3.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#EF4444';
+          ctx.beginPath();
+          ctx.arc(6, -6.5, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (npc.familyId === 'bellini') {
+          // Bellini Syndicate Trait: Gold Collar Chevron + Brass-Latched Concrete Ledger Briefcase
+          ctx.strokeStyle = '#FBBF24';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(2, -9);
+          ctx.lineTo(7, -5);
+          ctx.lineTo(2, -1);
+          ctx.stroke();
+          // Carried leather & brass briefcase in off-hand
+          ctx.fillStyle = '#451A03';
+          ctx.fillRect(-4, -17, 10, 6);
+          ctx.strokeStyle = '#F59E0B';
+          ctx.lineWidth = 1.2;
+          ctx.strokeRect(-4, -17, 10, 6);
+        } else if (npc.familyId === 'valenti') {
+          // Valenti Crew Trait: Twin Emerald Racing Stripes on sleeves + Green Aviator Shades
+          ctx.strokeStyle = '#34D399';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-5, -11);
+          ctx.lineTo(7, -11);
+          ctx.moveTo(-5, 11);
+          ctx.lineTo(7, 11);
+          ctx.stroke();
+          // Emerald aviator lenses at front of head
+          ctx.fillStyle = '#10B981';
+          ctx.fillRect(6, -5.5, 3.5, 4.5);
+          ctx.fillRect(6, 1, 3.5, 4.5);
+          ctx.strokeStyle = '#FDE047';
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(6, -5.5, 3.5, 4.5);
+          ctx.strokeRect(6, 1, 3.5, 4.5);
+        } else if (npc.familyId === 'moretti') {
+          // Moretti Waterfront Trait: Steel-Riveted Stevedore Epaulets + Silver Cargo Hook Sash
+          ctx.fillStyle = '#60A5FA';
+          ctx.fillRect(-4, -13, 8, 4);
+          ctx.fillRect(-4, 9, 8, 4);
+          // Diagonal silver dock chain sash
+          ctx.strokeStyle = '#E2E8F0';
+          ctx.lineWidth = 1.8;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(-7, -8);
+          ctx.lineTo(7, 8);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        } else if (npc.familyId === 'rastelli') {
+          // Rastelli Faction Trait: Purple Velour Shawl Collar + Lit Cuban Cigar with glowing ember
+          ctx.strokeStyle = '#C084FC';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, 9.5, -Math.PI * 0.65, Math.PI * 0.65);
+          ctx.stroke();
+          // Cuban cigar & glowing orange ember
+          ctx.fillStyle = '#78350F';
+          ctx.fillRect(7, 2, 7, 2.5);
+          ctx.fillStyle = Math.floor(now / 160) % 2 === 0 ? '#F97316' : '#EF4444';
+          ctx.fillRect(13, 2, 2.2, 2.5);
+        } else if (npc.familyId === 'nypd') {
+          // Gold NYPD breast shield
+          ctx.fillStyle = '#FACC15';
+          ctx.beginPath();
+          ctx.arc(5, -6, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (npc.familyId === 'player') {
+          // Allied Made Man gold lapel pin
+          ctx.fillStyle = '#F59E0B';
+          ctx.beginPath();
+          ctx.arc(5, -6, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Gun barrel / Brass Knuckles indicator
         ctx.fillStyle = '#A1A1AA';
         ctx.fillRect(10, -2, npc.role === 'brawler' ? 7 : 13, 4);
         ctx.restore();
@@ -1450,15 +1670,34 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
         ctx.fill();
 
+        // Hatband ribbon in family accent color
+        ctx.strokeStyle = famVis.accent;
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
+        ctx.stroke();
+
         ctx.restore();
 
-        // Health bar & label above NPC
+        // 3. Overhead Family Alignment Emblem & Trait Indicator Tag
+        if (npc.familyId !== 'civilian') {
+          ctx.fillStyle = famVis.accent;
+          ctx.font = '700 9px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(
+            `${famVis.symbol} ${famVis.shortFamily} · ${famVis.traitTag}`,
+            npc.x,
+            npc.y - (npc.hp < npc.maxHp || npc.role === 'capo' || npc.state !== 'patrol' ? 41 : 22)
+          );
+        }
+
+        // Health bar & Nameplate when engaged, damaged, or special role
         if (npc.hp < npc.maxHp || npc.role === 'capo' || npc.role === 'courier' || npc.state !== 'patrol') {
-          const barW = 36;
+          const barW = 38;
           const pct = Math.max(0, npc.hp / npc.maxHp);
           ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
           ctx.fillRect(npc.x - barW / 2, npc.y - 25, barW, 5);
-          ctx.fillStyle = npc.role === 'ally' ? '#10B981' : npc.role === 'courier' ? '#F59E0B' : '#EF4444';
+          ctx.fillStyle = npc.role === 'ally' ? '#10B981' : npc.role === 'courier' ? '#F59E0B' : famVis.accent;
           ctx.fillRect(npc.x - barW / 2, npc.y - 25, barW * pct, 5);
 
           ctx.fillStyle = '#E4E4E7';

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   BoroughId,
+  FIVE_FAMILIES,
   LeaderboardEntry,
   NARRATIVE_CHAPTERS,
   NYC_BOROUGHS,
@@ -246,6 +247,8 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                     const boroughRackets = rackets.filter((r) => r.boroughId === b.id);
                     const ownedInBorough = boroughRackets.filter((r) => r.ownerFamily === 'player').length;
                     const isSelected = selectedBoroughFilter === b.id;
+                    const bFam =
+                      FIVE_FAMILIES.find((f) => f.id === b.controllingFamilyDefault) || FIVE_FAMILIES[0];
 
                     return (
                       <div
@@ -258,12 +261,25 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
                         }`}
                       >
                         <div>
-                          <div className="text-[11px] font-mono text-[#F59E0B]">
-                            Tier {b.riskTier} · {b.rewardMultiplier.toFixed(2)}x Yield
+                          <div className="flex items-center justify-between text-[11px] font-mono">
+                            <span className="text-[#F59E0B]">
+                              Tier {b.riskTier} · {b.rewardMultiplier.toFixed(2)}x
+                            </span>
+                            <span style={{ color: bFam.accentHex }} className="font-bold">
+                              {bFam.traitSymbol} {bFam.name.split(' ')[0]}
+                            </span>
                           </div>
                           <div className="text-sm font-bold text-[#F5F0E6] mt-0.5">{b.name}</div>
                           <div className="text-xs text-[#A89F91] mt-1 font-mono tabular-nums">
                             Turf Controlled: {ownedInBorough} / {boroughRackets.length}
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-[#26211D] text-[11px]">
+                            <div className="text-[#FDE68A] font-medium">
+                              Trait: {bFam.traitName}
+                            </div>
+                            <div className="text-[#A89F91] text-[10px] mt-0.5">
+                              {bFam.traitVisualIndicator}
+                            </div>
                           </div>
                         </div>
 

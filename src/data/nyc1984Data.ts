@@ -21,6 +21,10 @@ export interface MafiaFamily {
   combatMultiplier: number;
   heatReduction: number;
   contrabandMultiplier: number;
+  traitName: string;
+  traitSymbol: string;
+  traitVisualIndicator: string;
+  turfCornerMarker: string;
 }
 
 export interface BoroughZone {
@@ -136,6 +140,10 @@ export const FIVE_FAMILIES: MafiaFamily[] = [
     combatMultiplier: 1.05,
     heatReduction: 0.05,
     contrabandMultiplier: 1.0,
+    traitName: 'Mulberry Red Carnation & Pinstripes',
+    traitSymbol: '♠',
+    traitVisualIndicator: 'Blood-red lapel carnation, chalk-stripe suit & crimson crest ring',
+    turfCornerMarker: 'MULBERRY ARCH LANTERNS · CORVINI PROTECTORATE',
   },
   {
     id: 'bellini',
@@ -150,6 +158,10 @@ export const FIVE_FAMILIES: MafiaFamily[] = [
     combatMultiplier: 1.0,
     heatReduction: 0.3,
     contrabandMultiplier: 1.1,
+    traitName: 'Brass Ledger Case & Gold Chevron',
+    traitSymbol: '◆',
+    traitVisualIndicator: 'Carries brass-latched Concrete Club briefcase, gold collar chevron & dark shades',
+    turfCornerMarker: 'LOCAL 282 CONCRETE MONOPOLY · BELLINI TURF',
   },
   {
     id: 'valenti',
@@ -164,6 +176,10 @@ export const FIVE_FAMILIES: MafiaFamily[] = [
     combatMultiplier: 1.1,
     heatReduction: 0.1,
     contrabandMultiplier: 1.35,
+    traitName: 'Emerald Aviators & Silk Racing Stripes',
+    traitSymbol: '✦',
+    traitVisualIndicator: 'Tinted green aviator glasses, twin emerald sleeve stripes & gold chain',
+    turfCornerMarker: 'IDLEWILD FREIGHT CORRIDOR · VALENTI CREW',
   },
   {
     id: 'moretti',
@@ -178,6 +194,10 @@ export const FIVE_FAMILIES: MafiaFamily[] = [
     combatMultiplier: 1.25,
     heatReduction: 0.0,
     contrabandMultiplier: 1.15,
+    traitName: 'Longshoreman Peacoat & Iron Hook Sash',
+    traitSymbol: '⚓',
+    traitVisualIndicator: 'Steel-riveted stevedore shoulder pads, silver cargo chain & dock cap',
+    turfCornerMarker: 'RED HOOK PIER COALITION · MORETTI FAMILY',
   },
   {
     id: 'rastelli',
@@ -192,6 +212,10 @@ export const FIVE_FAMILIES: MafiaFamily[] = [
     combatMultiplier: 1.1,
     heatReduction: 0.1,
     contrabandMultiplier: 1.25,
+    traitName: 'Velour Shawl Collar & Lit Cuban Cigar',
+    traitSymbol: '♛',
+    traitVisualIndicator: 'Royal purple velour collar trim, glowing cigar ember & smoke trail',
+    turfCornerMarker: 'KNICKERBOCKER IMPORTS · RASTELLI FACTION',
   },
 ];
 

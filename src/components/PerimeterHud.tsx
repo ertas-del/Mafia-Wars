@@ -81,6 +81,8 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
 }) => {
   const family = FIVE_FAMILIES.find((f) => f.id === playerFamily) || FIVE_FAMILIES[0];
   const borough = NYC_BOROUGHS.find((b) => b.id === currentBoroughId) || NYC_BOROUGHS[0];
+  const boroughFamily =
+    FIVE_FAMILIES.find((f) => f.id === borough.controllingFamilyDefault) || FIVE_FAMILIES[0];
   const chapter = NARRATIVE_CHAPTERS[Math.min(currentActIndex, NARRATIVE_CHAPTERS.length - 1)];
 
   const hpPct = Math.max(0, Math.min(100, Math.round((hp / maxHp) * 100)));
@@ -96,7 +98,9 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
         <div className="pointer-events-auto bg-[#12100E] border border-[#3A322B] rounded-lg p-3 shadow-lg max-w-md short:p-1.5 short:w-56 short:min-w-0 short:shrink">
           <div className="flex items-center justify-between gap-4 short:hidden">
             <div className="min-w-0">
-              <div className="text-xs font-bold text-[#F5F0E6] truncate">{donName}</div>
+              <div className="text-xs font-bold text-[#F5F0E6] truncate">
+                {family.traitSymbol} {donName}
+              </div>
               <div className="text-[11px] text-[#D97706] truncate">
                 {family.name} · {chapter.year}
               </div>
@@ -176,6 +180,16 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Active Mob Territory & NPC Family Trait Spotter Line */}
+          <div className="mt-2 pt-1.5 border-t border-[#26211D] flex items-center justify-between gap-2 text-[11px] font-mono">
+            <span className="text-[#A89F91] truncate">
+              Turf: <strong style={{ color: boroughFamily.accentHex }}>{boroughFamily.traitSymbol} {boroughFamily.name.split(' ')[0]}</strong>
+            </span>
+            <span className="text-[#D6CFC2] truncate" title={boroughFamily.traitVisualIndicator}>
+              NPC Trait: <strong className="text-[#FDE68A]">{boroughFamily.traitName}</strong>
+            </span>
           </div>
         </div>
 
