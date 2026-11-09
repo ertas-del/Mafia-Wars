@@ -1,0 +1,738 @@
+<!-- sdd-contract-begin -->
+{
+  "schema_version": 1,
+  "artifact_kind": "execution-ledger",
+  "workflow_id": "touch-controls",
+  "path": {
+    "scope": "repository",
+    "value": "spec-driven-development/touch-controls/ledger.md"
+  },
+  "required_sections": [
+    "Bindings",
+    "Authority",
+    "Workflow History",
+    "Task State",
+    "Amendments",
+    "Evidence",
+    "Landing State"
+  ],
+  "specification": {
+    "path": {
+      "scope": "repository",
+      "value": "spec-driven-development/touch-controls/spec.md"
+    },
+    "revision": 1,
+    "digest": "500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51"
+  },
+  "plan": {
+    "path": {
+      "scope": "repository",
+      "value": "spec-driven-development/touch-controls/plan.md"
+    },
+    "revision": 1,
+    "digest": "88d6c508b4c063de9f0ad04d85f7196602f918a3daa28802bf7012f6b1ec75fe"
+  },
+  "artifact_events": [
+    {
+      "event_sequence": 5,
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 1,
+      "digest": "500a2e90cd6c2b34acf061be354f7935293b3e48170004ad04f627c4463f2c51",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T17:14:13-07:00"
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "88d6c508b4c063de9f0ad04d85f7196602f918a3daa28802bf7012f6b1ec75fe",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-08T17:27:56-07:00",
+      "event_sequence": 8
+    }
+  ],
+  "current_state": "EXECUTING",
+  "workflow_transitions": [
+    {
+      "sequence": 1,
+      "event_sequence": 1,
+      "from": null,
+      "to": "PREFLIGHT",
+      "evidence": "Cloned ertas-del/mafia-wars at f7099f9; created branch ertas-del/new/touch-controls; read CLAUDE.md"
+    },
+    {
+      "sequence": 2,
+      "event_sequence": 2,
+      "from": "PREFLIGHT",
+      "to": "CLARIFICATION",
+      "evidence": "User chose phone touch controls; subagents opus at high effort"
+    },
+    {
+      "sequence": 3,
+      "event_sequence": 3,
+      "from": "CLARIFICATION",
+      "to": "SPEC_DRAFT",
+      "evidence": "Three question rounds answered: twin-stick, landscape only, auto on touch, push branch, floating sticks, auto fullscreen, full phone scope, light haptics with own toggle, public repo plus Pages, CI check"
+    },
+    {
+      "sequence": 4,
+      "event_sequence": 4,
+      "from": "SPEC_DRAFT",
+      "to": "AWAITING_SPEC_APPROVAL",
+      "evidence": "spec.md revision 1 validated with --allow-unapproved after critic review"
+    },
+    {
+      "sequence": 5,
+      "event_sequence": 6,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "User approved specification revision 1 via structured question"
+    },
+    {
+      "sequence": 6,
+      "event_sequence": 7,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "plan.md revision 1 validated with --allow-unapproved-plan after critic review"
+    },
+    {
+      "sequence": 7,
+      "event_sequence": 9,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "User replied 'Start coding' to the plan approval question; digest rechecked"
+    },
+    {
+      "sequence": 8,
+      "event_sequence": 10,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "Wave 1 (T-001, T-003, T-004, T-005) dispatch begins"
+    }
+  ],
+  "effective_tasks": [
+    {
+      "id": "T-001",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-003",
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007"
+        ],
+        "acceptance_criteria": [
+          "AC-001",
+          "AC-002",
+          "AC-003",
+          "AC-004"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/touchSticks.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/touchSticks.test.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/touchMode.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "existing canvas input loop"
+      ],
+      "produces": [
+        "touch twin-stick play",
+        "touchMode module and html data-input attribute"
+      ],
+      "verification_ids": [
+        "EV-001",
+        "EV-002"
+      ],
+      "parallel_group": "wave-1",
+      "commit_required": true
+    },
+    {
+      "id": "T-003",
+      "covers": {
+        "requirements": [
+          "FR-008",
+          "FR-012",
+          "FR-013"
+        ],
+        "acceptance_criteria": [
+          "AC-004"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/PerimeterHud.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/SyndicateDrawers.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/TitleAndEndModals.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/index.css"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "index.html"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "pinned data-input attribute"
+      ],
+      "produces": [
+        "phone-fit HUD, title, drawers and modals",
+        "touch Tailwind variant"
+      ],
+      "verification_ids": [
+        "EV-003"
+      ],
+      "parallel_group": "wave-1",
+      "commit_required": true
+    },
+    {
+      "id": "T-004",
+      "covers": {
+        "requirements": [
+          "FR-009",
+          "FR-010",
+          "FR-011"
+        ],
+        "acceptance_criteria": [
+          "AC-005"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/App.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/fullscreen.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/RotateCard.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "pinned data-input attribute"
+      ],
+      "produces": [
+        "fullscreen, orientation lock, portrait card and fullscreen-exit pause"
+      ],
+      "verification_ids": [
+        "EV-004"
+      ],
+      "parallel_group": "wave-1",
+      "commit_required": true
+    },
+    {
+      "id": "T-005",
+      "covers": {
+        "requirements": [
+          "FR-016",
+          "FR-017"
+        ],
+        "acceptance_criteria": [
+          "AC-010"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "directory",
+          "path": {
+            "scope": "repository",
+            "value": ".github/workflows"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/data/nyc1984Data.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "package.json scripts"
+      ],
+      "produces": [
+        "check workflow with dist artifact",
+        "Pages workflow",
+        "bundled portraits"
+      ],
+      "verification_ids": [
+        "EV-005"
+      ],
+      "parallel_group": "wave-1",
+      "commit_required": true
+    },
+    {
+      "id": "T-002",
+      "covers": {
+        "requirements": [
+          "FR-014",
+          "FR-015"
+        ],
+        "acceptance_criteria": [
+          "AC-007"
+        ]
+      },
+      "depends_on": [
+        "T-001",
+        "T-003",
+        "T-004"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/haptics.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/input/haptics.test.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/PerimeterHud.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/App.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "T-001 canvas",
+        "T-003 HUD layout",
+        "T-004 App"
+      ],
+      "produces": [
+        "vibration feedback and toggle"
+      ],
+      "verification_ids": [
+        "EV-006"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-006",
+      "covers": {
+        "requirements": [],
+        "acceptance_criteria": [
+          "AC-006",
+          "AC-008",
+          "AC-009"
+        ]
+      },
+      "depends_on": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005"
+      ],
+      "ownership": [
+        {
+          "type": "directory",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/touch-controls/evidence"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "git-index",
+          "name": "feature-branch",
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "integrated feature branch",
+        "CI run and dist artifact"
+      ],
+      "produces": [
+        "green CI run",
+        "915x412 phone-fit report and screenshots",
+        "portrait bundle check"
+      ],
+      "verification_ids": [
+        "EV-007",
+        "EV-008",
+        "EV-009"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-007",
+      "covers": {
+        "requirements": [],
+        "acceptance_criteria": [
+          "AC-011",
+          "AC-012"
+        ]
+      },
+      "depends_on": [
+        "T-006"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/touch-controls/evidence/device-test.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "user merge to main",
+        "Pages deployment",
+        "user's S26"
+      ],
+      "produces": [
+        "user's device confirmation"
+      ],
+      "verification_ids": [
+        "EV-010"
+      ],
+      "parallel_group": null,
+      "commit_required": false
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-003",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-004",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-005",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-002",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001",
+        "T-003",
+        "T-004"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-006",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-007",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-006"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    }
+  ],
+  "amendments": [],
+  "acceptance_evidence": [
+    {
+      "criterion": "AC-001",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-002",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-003",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-004",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-005",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-006",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-007",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-008",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-009",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-010",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-011",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-012",
+      "status": "pending",
+      "evidence": []
+    }
+  ],
+  "completion_evidence": {
+    "final_verification": [],
+    "blocking_findings": [],
+    "documentation": "pending"
+  },
+  "authority": {
+    "sources": [
+      "user answers in the current session",
+      "repository instructions: CLAUDE.md",
+      "track: critical — adds CI and a GitHub Pages deployment workflow (release behavior) and carries more than twelve requirements",
+      "subagents: opus, effort high — user answer at preflight"
+    ],
+    "permitted_external_effects": [
+      "local repository edits and commits on branch ertas-del/new/touch-controls",
+      "push of branch ertas-del/new/touch-controls to origin"
+    ],
+    "prohibited_external_effects": [
+      "merge into main",
+      "push to main",
+      "changing repository visibility or settings",
+      "running a deployment",
+      "publishing a GitHub release"
+    ]
+  },
+  "lifecycle": {
+    "workspace_resolved_before_artifacts": true,
+    "ledger_external": false,
+    "approved_artifacts_retained": true,
+    "cutoff_snapshot": {
+      "required": false,
+      "path": null,
+      "event": null
+    }
+  },
+  "landing": {
+    "implemented": "not-yet",
+    "verified": "not-yet",
+    "committed": "not-yet",
+    "merged": "not-authorized",
+    "pushed": "not-yet",
+    "deployed": "not-authorized",
+    "emulator_tested": "not-required",
+    "device_tested": "not-yet",
+    "released": "not-authorized"
+  }
+}
+<!-- sdd-contract-end -->
+
+# Touch Controls Execution Ledger
+
+## Bindings
+
+The specification and plan bindings are recorded in the contract.
+
+## Authority
+
+The user authorized commits on the feature branch and a push of that branch. Merging into main, which deploys the game, is the user's own step, as are making the repository public and choosing GitHub Actions as the Pages source.
+
+## Workflow History
+
+Both artifacts are approved; execution has begun with wave 1.
+
+## Task State
+
+T-001, T-002, T-003, T-004, T-005, T-006 and T-007 are PENDING until plan approval.
+
+## Amendments
+
+None.
+
+## Evidence
+
+Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017 are not yet implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012 are pending; planned evidence is EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 and EV-010.
+
+## Landing State
+
+Nothing is implemented. Push of the feature branch is authorized; merge, deployment and release are the user's.
