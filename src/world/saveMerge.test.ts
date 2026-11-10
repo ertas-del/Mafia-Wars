@@ -39,3 +39,11 @@ test('AC-006 missing or malformed saves give the defaults, unknown saved ids are
   assert.equal(defaults[2].level, 1);
   assert.notEqual(out[0], defaults[0]);
 });
+
+test('AC-006 non-array saves and null fields fall back to the defaults', () => {
+  assert.deepEqual(mergeSavedById(defaults, {} as never, KEEP), defaults);
+  assert.deepEqual(mergeSavedById(defaults, null as never, KEEP), defaults);
+  const out = mergeSavedById(defaults, [{ id: 'a', level: null as never, ownerFamily: 'x' as never }], KEEP);
+  assert.equal(out[0].level, defaults[0].level);
+  assert.equal(out[0].ownerFamily, 'x');
+});

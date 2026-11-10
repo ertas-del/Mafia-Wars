@@ -9,7 +9,7 @@ export function mergeSavedById<T extends { id: string }>(defaults: T[], saved: P
   return defaults.map((d) => {
     const s = saved.find((e) => e != null && (e as { id?: unknown }).id === d.id);
     const out: T = { ...d };
-    if (s) for (const k of keep) if (s[k] !== undefined) out[k] = s[k] as T[keyof T];
+    if (s) for (const k of keep) if (s[k] != null) out[k] = s[k] as T[keyof T];
     return out;
   });
 }
