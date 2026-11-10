@@ -170,7 +170,7 @@ async function shoot(page, name) {
     fullPage: false,
   });
   const px = await page.evaluate(sampleCanvasInPage);
-  const blank = !!px.error || px.distinct <= 1;
+  const blank = !!px.error || px.distinct < 8;
   if (blank) {
     report.blankShots.push(name);
     report.failed = true;
