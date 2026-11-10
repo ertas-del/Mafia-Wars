@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { CHUNK, CHUNKS_X, CHUNKS_Y, MAX_CHUNKS, chunksForView, createChunkCache, drawCityChunk, drawCityOverlay } from './cityRender.ts';
 import { generateCity } from './cityGen.ts';
+import { BRIDGES } from './cityData.ts';
 
 test('EV-003 constants', () => {
   assert.equal(CHUNK, 512);
@@ -89,4 +90,23 @@ test('overlay draws for several views and time values without throwing', () => {
     drawCityOverlay(ctx, city, { x: 6000, y: 4000, w: 915, h: 412 }, t);
   }
   assert.ok(calls.n > 0);
+});
+
+test('every BRIDGES entry draws into at least one piece without throwing', () => {
+  const city = generateCity(1984);
+  for (const br of BRIDGES) {
+    let drawn = 0;
+    for (let cy = 0; cy < CHUNKS_Y; cy++) {
+      for (let cx = 0; cx < CHUNKS_X; cx++) {
+        const x0 = cx * CHUNK, y0 = cy * CHUNK;
+        const touches = br.points.some((p) => p.x >= x0 && p.x < x0 + CHUNK && p.y >= y0 && p.y < y0 + CHUNK);
+        if (!touches) continue;
+        const { ctx, calls } = fakeCtx();
+        drawCityChunk(ctx, city, cx, cy);
+        assert.ok(calls.n > 0);
+        drawn++;
+      }
+    }
+    assert.ok(drawn >= 1, `${br.id} drew into no piece`);
+  }
 });
