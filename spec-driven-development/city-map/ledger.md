@@ -802,7 +802,7 @@
     },
     {
       "id": "T-006",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
@@ -827,9 +827,54 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-006 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 31,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits 660aef1 plus blank-threshold fix"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 32,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-009",
+          "evidence": "node --check passes; local find|node --test run passes; the CI run itself is EV-012/EV-013 under T-007"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 33,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-009",
+          "evidence": "evidence/EV-009-T-006-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 34,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-009",
+          "review_evidence": "EV-009",
+          "commit": "1495d66",
+          "evidence": "merged wt/C-006"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 35,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-009",
+          "review_evidence": "EV-009",
+          "commit": "1495d66",
+          "evidence": "EV-009 passes; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-009"
+      ]
     },
     {
       "id": "T-005",
