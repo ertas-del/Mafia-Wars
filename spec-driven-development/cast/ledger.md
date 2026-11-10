@@ -103,7 +103,43 @@
   ],
   "artifact_events": [],
   "tasks": [],
-  "acceptance_evidence": []
+  "acceptance_evidence": [
+    {
+      "criterion": "AC-001",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-002",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-003",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-004",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-005",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-006",
+      "status": "pending",
+      "evidence": []
+    },
+    {
+      "criterion": "AC-007",
+      "status": "pending",
+      "evidence": []
+    }
+  ]
 }
 <!-- sdd-contract-end -->
 
