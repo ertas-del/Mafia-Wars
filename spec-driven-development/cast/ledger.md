@@ -405,7 +405,7 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high",
       "dependencies": [],
       "worktree": "/home/claude/wt/cast",
@@ -426,21 +426,84 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-001 dispatched to a fresh Opus worker"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 18,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commit 98988d5: cast.ts, characterSprite.ts, tagLayout.ts, cast.test.ts"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 19,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-001",
+          "evidence": "controller run: evidence/EV-001-cast-tests.txt passes; all 63 unit tests pass; contact sheet viewed (evidence/cast-contact-sheet.png)"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 20,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "controller scope check (standard track; whole-change review under T-003)",
+          "evidence": "only the four owned files changed; deviations accepted: renamed ids, assignCast fallback beside the pinned take, extra exports"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 21,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-001",
+          "review_evidence": "controller scope check",
+          "commit": "98988d5",
+          "evidence": "committed on ertas-del/new/cast"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 22,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-001",
+          "review_evidence": "controller scope check",
+          "commit": "98988d5",
+          "evidence": "EV-001 passes; scope checked"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "id": "T-002",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/cast",
+      "branch": "ertas-del/new/cast",
+      "baseline": "98988d5",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 23,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 done at 98988d5"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 24,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-002 dispatched to a fresh Opus worker"
+        }
+      ],
       "evidence": []
     },
     {
@@ -526,7 +589,7 @@ Preflight and clarification are done; both artifacts are approved and execution 
 
 ## Task State
 
-T-001 is IN_PROGRESS; T-002, T-003 and T-004 are PENDING.
+T-001 is DONE; T-002 is IN_PROGRESS; T-003 and T-004 are PENDING.
 
 ## Amendments
 
