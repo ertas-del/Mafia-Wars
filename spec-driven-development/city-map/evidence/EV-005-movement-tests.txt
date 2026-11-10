@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: AC-007 path search leads around a building to a target behind it (hand-made wall)
+ok 1 - AC-007 path search leads around a building to a target behind it (hand-made wall)
+  ---
+  duration_ms: 7.286311
+  type: 'test'
+  ...
+# Subtest: AC-007 flow field details: radius limit, unreachable cells, target cell
+ok 2 - AC-007 flow field details: radius limit, unreachable cells, target cell
+  ---
+  duration_ms: 1.022421
+  type: 'test'
+  ...
+# Subtest: AC-007 path search leads around a building to a target behind it (real city)
+ok 3 - AC-007 path search leads around a building to a target behind it (real city)
+  ---
+  duration_ms: 22.188191
+  type: 'test'
+  ...
+# Subtest: AC-007 the stuck rule fires after 2 s without progress and picks a new walkable target
+ok 4 - AC-007 the stuck rule fires after 2 s without progress and picks a new walkable target
+  ---
+  duration_ms: 4.005734
+  type: 'test'
+  ...
+# Subtest: AC-007 an NPC pressed into a wall is freed by the stuck rule
+ok 5 - AC-007 an NPC pressed into a wall is freed by the stuck rule
+  ---
+  duration_ms: 0.51305
+  type: 'test'
+  ...
+# Subtest: flow field is cheap enough to rebuild a few times a second for several NPCs
+ok 6 - flow field is cheap enough to rebuild a few times a second for several NPCs
+  ---
+  duration_ms: 25.082426
+  type: 'test'
+  ...
+# Subtest: AC-008 2,000 fixed 1/60 s steps: every car stays on road or bridge cells and one crosses a bridge
+ok 7 - AC-008 2,000 fixed 1/60 s steps: every car stays on road or bridge cells and one crosses a bridge
+  ---
+  duration_ms: 98.207666
+  type: 'test'
+  ...
+# Subtest: AC-008 holds for several other seeds too
+ok 8 - AC-008 holds for several other seeds too
+  ---
+  duration_ms: 138.8741
+  type: 'test'
+  ...
+# Subtest: traffic: same seed gives the same cars, one in ten is police, cars never wrap or leave the world
+ok 9 - traffic: same seed gives the same cars, one in ten is police, cars never wrap or leave the world
+  ---
+  duration_ms: 53.30598
+  type: 'test'
+  ...
+# Subtest: traffic: cars keep to the right-hand lane on plain roads and turn at junctions
+ok 10 - traffic: cars keep to the right-hand lane on plain roads and turn at junctions
+  ---
+  duration_ms: 49.722885
+  type: 'test'
+  ...
+# Subtest: traffic: a spawn in a city with no roads returns no cars and stepping is harmless
+ok 11 - traffic: a spawn in a city with no roads returns no cars and stepping is harmless
+  ---
+  duration_ms: 0.359814
+  type: 'test'
+  ...
+# Subtest: traffic: a big time step does not skip past the road edge
+ok 12 - traffic: a big time step does not skip past the road edge
+  ---
+  duration_ms: 14.54255
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 655.597323
