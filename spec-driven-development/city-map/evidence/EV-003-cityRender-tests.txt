@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: EV-003 constants
+ok 1 - EV-003 constants
+  ---
+  duration_ms: 0.842985
+  type: 'test'
+  ...
+# Subtest: EV-003 cache never exceeds its limit and evicts least recently used
+ok 2 - EV-003 cache never exceeds its limit and evicts least recently used
+  ---
+  duration_ms: 1.047581
+  type: 'test'
+  ...
+# Subtest: EV-003 a cache hit does not rebuild
+ok 3 - EV-003 a cache hit does not rebuild
+  ---
+  duration_ms: 0.123402
+  type: 'test'
+  ...
+# Subtest: EV-003 view plus ring never needs more than 24 pieces, and visible pieces always fit
+ok 4 - EV-003 view plus ring never needs more than 24 pieces, and visible pieces always fit
+  ---
+  duration_ms: 52.018774
+  type: 'test'
+  ...
+# Subtest: EV-003 every piece of the generated city draws without throwing
+ok 5 - EV-003 every piece of the generated city draws without throwing
+  ---
+  duration_ms: 295.187872
+  type: 'test'
+  ...
+# Subtest: overlay draws for several views and time values without throwing
+ok 6 - overlay draws for several views and time values without throwing
+  ---
+  duration_ms: 47.171067
+  type: 'test'
+  ...
+# Subtest: every BRIDGES entry draws into at least one piece without throwing
+ok 7 - every BRIDGES entry draws into at least one piece without throwing
+  ---
+  duration_ms: 140.570563
+  type: 'test'
+  ...
+# Subtest: every corner of every BRIDGE cell lies inside a drawn bridge deck
+ok 8 - every corner of every BRIDGE cell lies inside a drawn bridge deck
+  ---
+  duration_ms: 48.369287
+  type: 'test'
+  ...
+# Subtest: no bridge deck covers a building cell
+ok 9 - no bridge deck covers a building cell
+  ---
+  duration_ms: 779.363365
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1547.551789
