@@ -1294,8 +1294,8 @@
           "event_sequence": 77,
           "from": "VERIFIED",
           "to": "REVIEWED",
-          "review_evidence": "EV-018",
-          "evidence": "evidence/EV-018-whole-change-review.md: PASS"
+          "review_evidence": "evidence/whole-change-review.md",
+          "evidence": "evidence/whole-change-review.md: PASS"
         }
       ],
       "evidence": []
@@ -1498,4 +1498,4 @@ Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-
 
 ## Landing State
 
-Check run 42782826779 is green on the branch, and the whole-change review (EV-018) passed. The merge into main is authorized.
+Check run 42782826779 is green on the branch, and the whole-change review (evidence/whole-change-review.md) passed. The merge into main is authorized.

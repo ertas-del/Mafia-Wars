@@ -1,4 +1,4 @@
-# EV-018: Whole-change review before the merge into main (Sonnet, effort high)
+# Whole-change review before the merge into main (Sonnet, effort high)
 
 **Verdict:** PASS. There are no correctness, security, privacy, data-integrity or acceptance failures. Unit tests pass 47/47, and the type check of the world and input modules is clean.
 
