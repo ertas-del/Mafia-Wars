@@ -1486,7 +1486,7 @@ Both artifacts are approved. At plan approval the user switched every worker and
 
 ## Task State
 
-T-001 to T-006 and T-009 are DONE. T-001 was reopened once and fixed forward for CI lint. T-007 lands the change on main. T-008, the user's phone test, follows the deploy.
+T-001, T-002, T-003, T-004, T-005, T-006 and T-009 are DONE. T-001 was reopened once and fixed forward for CI lint. T-007 lands the change on main. T-008, the user's phone test, follows the deploy.
 
 ## Amendments
 
