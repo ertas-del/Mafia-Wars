@@ -127,3 +127,20 @@ test('every corner of every BRIDGE cell lies inside a drawn bridge deck', () => 
   }
   assert.ok(cells > 100);
 });
+
+test('no bridge deck covers a building cell', () => {
+  const city = generateCity(1984);
+  const polys = BRIDGES.map((b) => bridgeDeckPolygon(city, b));
+  for (let i = 0; i < city.kinds.length; i++) {
+    if (city.kinds[i] !== CellKind.BUILDING) continue;
+    const cx = i % city.cols, cy = (i - cx) / city.cols;
+    const x0 = cx * 32, y0 = cy * 32;
+    const pts = [[16, 16], [4, 4], [28, 4], [4, 28], [28, 28]];
+    for (const [ox, oy] of pts) {
+      for (const p of polys) {
+        if (x0 + ox < Math.min(...p.map((q) => q.x)) || x0 + ox > Math.max(...p.map((q) => q.x))) continue;
+        assert.ok(!pointInPoly(x0 + ox, y0 + oy, p), `deck covers building cell ${cx},${cy}`);
+      }
+    }
+  }
+});

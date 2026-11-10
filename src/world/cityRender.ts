@@ -5,7 +5,7 @@
 // already have translated the context by -camera before calling it.
 import { BRIDGES, CELL, NEIGHBOURHOOD_LABELS, WORLD_H, WORLD_W } from './cityData.ts';
 import type { Pt } from './cityData.ts';
-import { CellKind as K, mulberry32 } from './cityGen.ts';
+import { CellKind as K, kindAt, mulberry32 } from './cityGen.ts';
 import type { Building, City } from './cityGen.ts';
 import { CHUNK, MAX_CHUNKS } from './chunkCache.ts';
 
@@ -585,7 +585,23 @@ function decksOf(city: City): Map<string, BridgeDeck> {
       const d = a.map((_, i) => { let v = a[i]; for (let j = -7; j <= 7; j++) v = Math.max(v, a[clamp(i + j, 0, n - 1)]); return v; });
       return d.map((_, i) => { let t = 0; for (let j = -6; j <= 6; j++) t += d[clamp(i + j, 0, n - 1)]; return t / 13 + 3; });
     };
-    m!.set(br.id, { s0, left: smooth(L), right: smooth(Rr) });
+    const left = smooth(L), right = smooth(Rr);
+    // never paint over a building: pull each edge back to just short of the first building cell it meets
+    const cap = (a: number[], side: 1 | -1): void => {
+      for (let i = 0; i < n; i++) {
+        let lim = a[i];
+        for (const ds of [-6, -3, 0, 3, 6]) {
+          const p = at(g, s0 + i * STEP + ds);
+          for (let o = 6; o <= lim; o += 2) {
+            if (kindAt(city, p.x + p.nx * o * side, p.y + p.ny * o * side) === K.BUILDING) { lim = o - 5; break; }
+          }
+        }
+        a[i] = Math.max(0, lim);
+      }
+    };
+    cap(left, 1);
+    cap(right, -1);
+    m!.set(br.id, { s0, left, right });
   });
   deckCache.set(city, m);
   return m;
