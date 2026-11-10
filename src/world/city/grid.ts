@@ -61,15 +61,15 @@ function rasterLand(): Uint8Array {
 /** A run of rows laid out with its own seed: bands never cross a sector edge, so each Manhattan district can be tuned alone. */
 interface Sector { from: number; to: number; seed: number; depths: number[]; plan?: SectorPlan }
 /** An explicit street plan for a short district: [cross street width, building rows] per band, and where the one inner avenue goes (0..1 across the strip, null for none). */
-export interface SectorPlan { bands: [number, number][]; avenue?: number | null }
+export interface SectorPlan { bands: [number, number][]; avenue?: number | null; avSeed?: number }
 /** Hand-fitted plans, by seed slot (Uptown 0, Midtown 1, Lower Manhattan 2, Bronx 3, Queens and Brooklyn 4, Staten Island 5); a slot with no plan is laid out from its seed. */
 export const SECTOR_PLANS: (SectorPlan | undefined)[] = [
-  { bands: [[4, 5], [2, 5], [2, 3], [2, 4], [2, 4], [2, 5]], avenue: null },
-  { bands: [[2, 3], [2, 3], [2, 3]], avenue: null },
-  { bands: [[3, 4], [2, 6], [2, 6], [2, 3]], avenue: null },
-  { bands: [[2, 7], [3, 7], [2, 5], [2, 5], [2, 7]], avenue: null },
-  { bands: [[4, 4], [2, 6], [2, 4], [2, 5], [2, 4], [3, 7], [2, 5], [2, 5], [2, 5]], avenue: null },
-  { bands: [[4, 8], [2, 7]], avenue: null },
+  { bands: [[4, 8], [2, 8], [2, 8], [2, 8]], avenue: 0.9 },
+  { bands: [[2, 10], [2, 3]], avenue: 0.7 },
+  { bands: [[2, 7], [2, 8], [2, 8]], avenue: 0.8 },
+  { bands: [[3, 8], [2, 8], [2, 6], [2, 3], [2, 8]], avSeed: 95 },
+  { bands: [[2, 4], [3, 7], [2, 6], [2, 5], [2, 8], [2, 6], [2, 8], [2, 6]], avSeed: 105 },
+  { bands: [[4, 8], [2, 8]], avSeed: 334 },
 ];
 interface Band { ay: number; by0: number; by1: number; sy: number; lo: number; hi: number; roads: { x: number; rw: number }[] }
 
@@ -81,11 +81,12 @@ interface Band { ay: number; by0: number; by1: number; sy: number; lo: number; h
 function layoutBands(sectors: Sector[], strip: boolean, avenueSeed: number, landId: Uint8Array, ids: number[], c0: number, c1: number): { bands: Band[]; roadRow: Uint8Array } {
   const roadRow = new Uint8Array(ROWS);
   const bands: Band[] = [];
-  const arng = mulberry32(avenueSeed);
+  const arng = mulberry32(sectors[0].plan?.avSeed ?? avenueSeed);
   const avenues: { x: number; rw: number }[] = [];
   if (!strip) {
-    let x = c0 + 8 + Math.floor(arng() * 8), k = 0;
-    while (x < c1 - 6) { avenues.push({ x, rw: k % 2 === 0 ? 3 : 2 }); k++; x += 22 + Math.floor(arng() * 9); }
+    // An avenue (3 cells) or a side street (2 cells) every 14 to 22 columns, straight through every band.
+    let x = c0 + 6 + Math.floor(arng() * 8), k = 0;
+    while (x < c1 - 6) { avenues.push({ x, rw: k % 2 === 0 ? 3 : 2 }); k++; x += 14 + Math.floor(arng() * 9); }
   }
   for (const sec of sectors) {
     const rng = mulberry32(sec.seed);
@@ -100,8 +101,8 @@ function layoutBands(sectors: Sector[], strip: boolean, avenueSeed: number, land
         }
         if (band.hi >= 0) {
           const span = band.hi - band.lo + 1;
-          if (typeof sec.plan.avenue === 'number') band.roads.push({ x: band.lo + Math.round(span * sec.plan.avenue) - 1, rw: 3 });
-          else if (sec.plan.avenue === undefined && !strip) for (const v of avenues) if (v.x - band.lo >= 8 && band.hi - (v.x + v.rw) >= 8) band.roads.push(v);
+          if (typeof sec.plan.avenue === 'number') band.roads.push({ x: band.lo + Math.round(span * sec.plan.avenue) - 1, rw: span >= 17 ? 3 : 2 });
+          else if (sec.plan.avenue === undefined && !strip) for (const v of avenues) if (v.x - band.lo >= 6 && band.hi - (v.x + v.rw) >= 6) band.roads.push(v);
           bands.push(band);
         }
         y += hb + 2;
@@ -130,7 +131,7 @@ function layoutBands(sectors: Sector[], strip: boolean, avenueSeed: number, land
           const inner = span <= 21 ? 0 : span <= 30 ? 1 : 2;
           for (let i = 1; i <= inner; i++) band.roads.push({ x: band.lo + Math.round((span * i) / (inner + 1)) - 1, rw: i === 1 ? 3 : 2 });
         } else {
-          for (const v of avenues) if (v.x - band.lo >= 8 && band.hi - (v.x + v.rw) >= 8) band.roads.push(v);
+          for (const v of avenues) if (v.x - band.lo >= 6 && band.hi - (v.x + v.rw) >= 6) band.roads.push(v);
         }
         bands.push(band);
       }

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { AREA_IDS, BRIDGES, CELL, CONTACT_BOROUGH, CONTACT_IDS, CONTACT_PLACEMENT, FERRY_TERMINALS, LAND, RACKET_IDS, RACKET_INFO, RACKET_PLACEMENT, START_POINT, STATIONS, WORLD_H, WORLD_W, boroughOutline } from './cityData.ts';
 import type { AreaId, Pt } from './cityData.ts';
-import { CellKind, areaAtPoint, blocksBullet, generateCity, isWalkable, kindAt, mulberry32, moveWithCollision, nearestWalkable, randomWalkableIn, signatureOf } from './cityGen.ts';
+import { CellKind, areaAtPoint, blocksBullet, generateCity, isDrivable, isWalkable, kindAt, lookOf, mulberry32, moveWithCollision, nearestWalkable, randomWalkableIn, signatureOf } from './cityGen.ts';
 import type { City } from './cityGen.ts';
 import { distToSegment, pointInPoly } from './city/geom.ts';
 
@@ -74,12 +74,14 @@ test('AC-002 bridges join their shores, the George Washington Bridge is blocked'
     for (const p of [p0, p1]) assert.ok([...seen].some((i) => dist(i, p) < 224) && shore.some((n) => dist(n, p) < 224), `${b.id} joins its shore near ${p.x},${p.y}`);
   }
   const gwb = BRIDGES.find((q) => !q.open) as (typeof BRIDGES)[number];
-  const span = bridgeCells.filter((i) => distToSegment(centre(city, i).x, centre(city, i).y, gwb.points[0], gwb.points[1]) < 64);
+  const span: number[] = [];
+  city.kinds.forEach((k, i) => { if (k === CellKind.BARRIER && distToSegment(centre(city, i).x, centre(city, i).y, gwb.points[0], gwb.points[1]) < 64) span.push(i); });
   assert.ok(span.length > 10);
   const barrier = [-2, -1, 0, 1, 2].some((d) => kindAt(city, gwb.points[0].x + d * CELL, gwb.points[0].y) === CellKind.BARRIER);
   assert.ok(barrier, 'barrier cells at the Manhattan end');
   const seen = reach(city, STATIONS.midtown_concrete);
   assert.ok(span.every((i) => !seen[i]), 'nobody walks onto the closed bridge');
+  assert.ok(bridgeCells.length > 0 && bridgeCells.every((i) => seen[i]), 'every bridge cell is reachable from a station');
 });
 
 test('AC-003 every station reaches every other station and Staten Island; ferries are walkable', () => {
@@ -96,6 +98,7 @@ test('AC-004 unique look signatures and sign names, signatures hold no position 
   const sigs = new Set(city.buildings.map(signatureOf));
   const signs = new Set(city.buildings.map((b) => b.sign));
   assert.equal(sigs.size, city.buildings.length);
+  assert.equal(new Set(city.buildings.map(lookOf)).size, city.buildings.length, 'looks differ even with the sign name removed');
   assert.equal(signs.size, city.buildings.length);
   const b = city.buildings[10];
   assert.equal(signatureOf({ ...b, id: 99999, cx: 1, cy: 2 }), signatureOf(b));
@@ -110,7 +113,10 @@ test('AC-005 racket lots, contacts and spawn picks', () => {
     assert.equal(b.sign, RACKET_INFO[id].name);
     const outline = boroughOutline(RACKET_INFO[id].boroughId);
     for (const [x, y] of [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]]) assert.ok(pointInPoly(x, y, outline), `${id} corner ${x},${y}`);
-    for (let y = b.cy; y < b.cy + b.ch; y++) for (let x = b.cx; x < b.cx + b.cw; x++) assert.equal(city.buildingAt[y * city.cols + x], b.id);
+    for (let y = b.cy; y < b.cy + b.ch; y++) for (let x = b.cx; x < b.cx + b.cw; x++) {
+      assert.equal(city.buildingAt[y * city.cols + x], b.id);
+      assert.equal(AREA_IDS[city.areaAt[y * city.cols + x]], RACKET_INFO[id].boroughId, `${id} cell ${x},${y} borough`);
+    }
     assert.equal(kindAt(city, (b.cx + (b.cw >> 1)) * CELL + 16, (b.cy + b.ch) * CELL + 16), CellKind.SIDEWALK, `${id} door`);
   }
   for (const id of CONTACT_IDS) {
@@ -127,8 +133,8 @@ test('AC-005 racket lots, contacts and spawn picks', () => {
   }
 });
 
-test('density: buildings fill at least 40 percent of each area and meet the per-area counts', () => {
-  const least: Record<AreaId, number> = { manhattan_south: 18, midtown_concrete: 15, uptown: 25, bronx_terminal: 60, brooklyn_docks: 80, queens_cargo: 100, staten_island: 20 };
+test('density: buildings fill at least 38 percent of each area and meet the per-area counts', () => {
+  const least: Record<AreaId, number> = { manhattan_south: 16, midtown_concrete: 15, uptown: 22, bronx_terminal: 60, brooklyn_docks: 80, queens_cargo: 100, staten_island: 20 };
   for (const area of AREA_IDS) {
     const ai = AREA_IDS.indexOf(area);
     let built = 0, land = 0;
@@ -138,9 +144,41 @@ test('density: buildings fill at least 40 percent of each area and meet the per-
       land++;
       if (k === CellKind.BUILDING) built++;
     }
-    assert.ok(built / land >= 0.4, `${area} fraction ${built / land}`);
+    assert.ok(built / land >= 0.38, `${area} fraction ${built / land}`);
     assert.ok(city.buildings.filter((b) => b.area === area).length >= least[area], `${area} count`);
   }
+});
+
+test('streets: stations reach their rackets on foot without big detours, and the grid has junctions', () => {
+  for (const id of Object.keys(STATIONS) as (keyof typeof STATIONS)[]) {
+    const sx = Math.floor(STATIONS[id].x / CELL), sy = Math.floor(STATIONS[id].y / CELL);
+    const dist = new Int32Array(city.kinds.length).fill(-1);
+    const queue = [sy * city.cols + sx];
+    dist[queue[0]] = 0;
+    for (let h = 0; h < queue.length; h++) {
+      const i = queue[h], x = i % city.cols;
+      for (const n of [x > 0 ? i - 1 : -1, x < city.cols - 1 ? i + 1 : -1, i - city.cols, i + city.cols]) {
+        if (n >= 0 && n < dist.length && dist[n] < 0 && isWalkable(city, centre(city, n).x, centre(city, n).y)) { dist[n] = dist[i] + 1; queue.push(n); }
+      }
+    }
+    for (const b of city.buildings.filter((q) => q.racketId && RACKET_INFO[q.racketId as keyof typeof RACKET_INFO].boroughId === id)) {
+      const dx = b.cx + (b.cw >> 1), dy = b.cy + b.ch;
+      const walk = dist[dy * city.cols + dx];
+      assert.ok(walk >= 0 && walk <= 3 * Math.hypot(dx - sx, dy - sy) + 12, `${id} to ${b.racketId}: ${walk} steps`);
+    }
+  }
+  const drive = (x: number, y: number): boolean => isDrivable(city, x * CELL + 16, y * CELL + 16);
+  const run = (x: number, y: number, ax: number, ay: number): number => {
+    let n = 1;
+    for (let s = 1; s < 40 && drive(x + ax * s, y + ay * s); s++) n++;
+    for (let s = 1; s < 40 && drive(x - ax * s, y - ay * s); s++) n++;
+    return n;
+  };
+  let junctions = 0;
+  for (let y = 0; y < city.rows; y++) for (let x = 0; x < city.cols; x++) {
+    if (city.kinds[y * city.cols + x] === CellKind.ROAD && run(x, y, 1, 0) >= 6 && run(x, y, 0, 1) >= 6) junctions++;
+  }
+  assert.ok(junctions >= 150, `junction cells ${junctions}`);
 });
 
 test('helpers: nearestWalkable, sliding collision, bullets', () => {

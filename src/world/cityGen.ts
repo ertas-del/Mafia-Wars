@@ -19,8 +19,11 @@ const WALKABLE = new Uint8Array(16);
 for (const k of [K.ROAD, K.SIDEWALK, K.ALLEY, K.PARK, K.PIER, K.PLAZA, K.BRIDGE]) WALKABLE[k] = 1;
 
 /** What makes two buildings look the same: every discrete choice, never position or id. */
+export function lookOf(b: Building): string {
+  return `${b.style}|${b.cw}x${b.ch}|${b.palette}|${b.windows}|${b.storefront}|${b.roof}`;
+}
 export function signatureOf(b: Building): string {
-  return `${b.style}|${b.cw}x${b.ch}|${b.palette}|${b.windows}|${b.storefront}|${b.roof}|${b.sign}`;
+  return `${lookOf(b)}|${b.sign}`;
 }
 
 /** Fixed looks for the 15 landmark rackets (style must belong to the racket's borough style set). */
@@ -75,7 +78,7 @@ export function generateCity(seed = 1984): City {
   const rand = mulberry32(seed);
   const buildingAt = new Int32Array(COLS * ROWS).fill(-1);
   const buildings: Building[] = [];
-  const usedSigs = new Set<string>();
+  const usedLooks = new Set<string>();
   const usedSigns = new Set<string>(RACKET_IDS.map((id) => RACKET_INFO[id].name));
 
   const createBuilding = (cx: number, cy: number, cw: number, ch: number, racketId?: string): void => {
@@ -93,9 +96,9 @@ export function generateCity(seed = 1984): City {
         palette: Math.floor(rand() * 8), windows: Math.floor(rand() * 6), storefront, roof: Math.floor(rand() * 8), sign,
       };
       if (racketId) b.racketId = racketId;
-      const sig = signatureOf(b);
-      if (usedSigs.has(sig) || (!racketId && usedSigns.has(sign))) continue;
-      usedSigs.add(sig);
+      const seen = lookOf(b);
+      if (usedLooks.has(seen) || (!racketId && usedSigns.has(sign))) continue;
+      usedLooks.add(seen);
       usedSigns.add(sign);
       buildings.push(b);
       for (let y = cy; y < cy + ch; y++) for (let x = cx; x < cx + cw; x++) buildingAt[idx(x, y)] = b.id;
@@ -129,7 +132,7 @@ export function generateCity(seed = 1984): City {
     // Per column: bottom row of the free building cells and their depth. Buildings stand on a sidewalk, so a
     // coast ring or a ramp can shorten a column from the top or move its bottom row.
     const bottom = (x: number): number => {
-      for (let y = blk.by1 - 1; y >= blk.by0; y--) if (kinds[idx(x, y)] === K.BUILDING) return kinds[idx(x, y + 1)] === K.SIDEWALK ? y : -1;
+      for (let y = blk.by1 - 1; y >= blk.by0; y--) if (kinds[idx(x, y)] === K.BUILDING) return kinds[idx(x, y + 1)] === K.SIDEWALK || kinds[idx(x, y + 1)] === K.PLAZA ? y : -1;
       return -1;
     };
     const depth = (x: number, yb: number): number => {
@@ -137,8 +140,8 @@ export function generateCity(seed = 1984): City {
       for (let y = yb; y >= blk.by0 && kinds[idx(x, y)] === K.BUILDING; y--) h++;
       return h;
     };
-    const cutSegment = (start: number, len: number, yb: number): void => {
-      const ai = areaIdx[idx(start, yb)];
+    const cutSegment = (start: number, len: number, yb0: number, fixed = false): void => {
+      const ai = areaIdx[idx(start, yb0)];
       const area = ai === 255 ? undefined : AREA_IDS[ai];
       const maxw = (area && MAXW[area]) || 3;
       const narrow = area !== 'queens_cargo';
@@ -150,9 +153,17 @@ export function generateCity(seed = 1984): City {
           for (let c = MINW; c <= maxw; c++) if (rem - c >= MINW) opts.push(c);
           w = opts[Math.floor(rand() ** (narrow ? 3 : 2) * opts.length)];
         }
+        let yb = yb0;
+        if (!fixed) for (let x = pos; x < pos + w; x++) yb = Math.min(yb, bottom(x));
         let h = ch;
         for (let x = pos; x < pos + w; x++) h = Math.min(h, depth(x, yb));
-        createBuilding(pos, yb - h + 1, w, h);
+        if (h < 3) { pos += w; rem -= w; continue; }
+        if (h >= 6) {
+          // Deep lots carry a second, rear building that faces the alley.
+          const front = Math.ceil(h / 2);
+          createBuilding(pos, yb - front + 1, w, front);
+          createBuilding(pos, yb - h + 1, w, h - front);
+        } else createBuilding(pos, yb - h + 1, w, h);
         pos += w; rem -= w;
       }
     };
@@ -161,11 +172,17 @@ export function generateCity(seed = 1984): City {
     const flush = (end: number): void => { if (segStart >= 0) { cutSegment(segStart, end - segStart, segYb); segStart = -1; } };
     while (x < blk.x1) {
       const r = rk.find((q) => q.col === x);
-      if (r) { flush(x); createBuilding(r.col, r.row, r.w, r.h, r.id); x += r.w; continue; }
+      if (r) {
+        flush(x);
+        createBuilding(r.col, r.row, r.w, r.h, r.id);
+        if (r.row - blk.by0 >= 3) cutSegment(r.col, r.w, r.row - 1, true); // rear buildings behind the racket lot
+        x += r.w;
+        continue;
+      }
       const yb = bottom(x);
       if (yb >= 0 && depth(x, yb) >= 3) {
-        if (segStart >= 0 && segYb !== yb) flush(x);
-        if (segStart < 0) { segStart = x; segYb = yb; }
+        if (segStart >= 0 && Math.abs(segYb - yb) > 3) flush(x);
+        if (segStart < 0) { segStart = x; segYb = yb; } else segYb = Math.min(segYb, yb);
       } else flush(x);
       x++;
     }
@@ -181,9 +198,10 @@ export function generateCity(seed = 1984): City {
       const cx = cx0 + dx, cy = cy0 + dy;
       if (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS) continue;
       const i = idx(cx, cy);
-      if (kinds[i] !== K.WATER && kinds[i] !== K.BRIDGE && kinds[i] !== K.BUILDING) kinds[i] = K.BARRIER;
+      if (kinds[i] !== K.WATER && kinds[i] !== K.BUILDING) kinds[i] = K.BARRIER;
     }
   }
+  for (const c of ground.gwbCells) kinds[c] = K.BARRIER;
   const gwb = new Set(ground.gwbCells);
 
   // Drop walkable pockets that cannot be reached from the main street network.

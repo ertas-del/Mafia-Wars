@@ -30,15 +30,15 @@ export const STOREFRONTS: Record<string, readonly string[]> = {
 };
 
 export const SURNAMES: readonly string[] = [
-  'Abruzzo', 'Acerra', 'Adamo', 'Albano', 'Alessi', 'Amato', 'Angelini', 'Arcuri', 'Bacci', 'Baldoni', 'Barone', 'Benedetti', 'Bertuzzi', 'Bianco', 'Bonelli',
-  'Brancato', 'Bruno', 'Cacciola', 'Calabro', 'Caputo', 'Carbone', 'Cardillo', 'Carosi', 'Cavallo', 'Cerrone', 'Colombo', 'Corradi', 'Costa', 'Crisafulli', 'D\'Amico',
+  'Abruzzo', 'Acerra', 'Adamo', 'Albano', 'Alessi', 'Angelini', 'Arcuri', 'Bacci', 'Baldoni', 'Barone', 'Benedetti', 'Bertuzzi', 'Bianco', 'Bonelli',
+  'Brancato', 'Cacciola', 'Calabro', 'Caputo', 'Cardillo', 'Carosi', 'Cavallo', 'Cerrone', 'Corradi', 'Costa', 'Crisafulli', 'D\'Amico',
   'De Luca', 'Del Greco', 'Delgado', 'Dimarco', 'Donato', 'Esposito', 'Fabbri', 'Falco', 'Farina', 'Ferrante', 'Fiore', 'Fontana', 'Fratelli', 'Gaeta', 'Galasso',
-  'Garofalo', 'Giordano', 'Greco', 'Guarino', 'Lombardi', 'Longo', 'Lucente', 'Maffei', 'Mancuso', 'Marchetti', 'Mazzola', 'Messina', 'Molinari', 'Monaco', 'Morelli',
-  'Nardone', 'Orsini', 'Pagano', 'Palumbo', 'Pellegrino', 'Piazza', 'Ricci', 'Rinaldi', 'Romano', 'Ruggiero', 'Salerno', 'Sanna', 'Scarpa', 'Serrano', 'Tedesco',
-  'Tomasi', 'Vitale', 'Zito', 'Abbott', 'Archer', 'Ashby', 'Bannon', 'Barlow', 'Brennan', 'Burke', 'Cadogan', 'Carrigan', 'Colgan', 'Conlon', 'Crowley',
+  'Garofalo', 'Giordano', 'Guarino', 'Lombardi', 'Longo', 'Maffei', 'Mancuso', 'Marchetti', 'Mazzola', 'Molinari', 'Monaco', 'Morelli',
+  'Nardone', 'Orsini', 'Pagano', 'Palumbo', 'Pellegrino', 'Piazza', 'Ricci', 'Rinaldi', 'Romano', 'Sanna', 'Serrano', 'Tedesco',
+  'Tomasi', 'Vitale', 'Zito', 'Abbott', 'Archer', 'Ashby', 'Bannon', 'Barlow', 'Brennan', 'Cadogan', 'Carrigan', 'Colgan', 'Conlon',
   'Dolan', 'Doyle', 'Duffy', 'Fallon', 'Finnegan', 'Flaherty', 'Gilroy', 'Hanrahan', 'Keegan', 'Kinsella', 'Lacey', 'Madigan', 'McBride', 'Mulcahy', 'Nolan',
-  'O\'Hara', 'Quinlan', 'Rafferty', 'Sheehan', 'Tierney', 'Whelan', 'Adler', 'Berman', 'Cohen', 'Eisner', 'Feldman', 'Gold', 'Hirsch', 'Kessler', 'Lerner',
-  'Mandel', 'Neumann', 'Rosen', 'Sachs', 'Silver', 'Stern', 'Weiss', 'Zuckerman', 'Alvarez', 'Bonilla', 'Cordero', 'Duarte', 'Escobar', 'Figueroa', 'Guzman',
+  'O\'Hara', 'Quinlan', 'Rafferty', 'Sheehan', 'Tierney', 'Whelan', 'Adler', 'Berman', 'Eisner', 'Feldman', 'Gold', 'Hirsch', 'Kessler', 'Lerner',
+  'Mandel', 'Neumann', 'Rosen', 'Silver', 'Stern', 'Zuckerman', 'Alvarez', 'Bonilla', 'Cordero', 'Duarte', 'Escobar', 'Figueroa', 'Guzman',
   'Herrera', 'Ibarra', 'Lozano', 'Marrero', 'Ortega', 'Quintero', 'Rivas', 'Soto', 'Vargas', 'Zamora', 'Chan', 'Fong', 'Huang', 'Leung', 'Mak',
   'Ng', 'Tam', 'Wong', 'Yee', 'Kowalski', 'Nowak', 'Wisniewski', 'Zielinski', 'Petrakis', 'Stavros', 'Kostas', 'Makris', 'Haddad', 'Khoury', 'Mansour',
   'Sarkis', 'Baptiste', 'Joseph', 'Laurent', 'Pierre', 'Sinclair', 'Whitfield', 'Holloway', 'Marlowe', 'Pemberton', 'Thackeray', 'Wexler', 'Ainsley', 'Beckett', 'Calloway',
