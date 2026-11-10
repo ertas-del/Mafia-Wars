@@ -706,6 +706,58 @@
           "verification_evidence": "EV-001",
           "review_evidence": "EV-002",
           "commit": "4584558"
+        },
+        {
+          "sequence": 8,
+          "event_sequence": 69,
+          "from": "DONE",
+          "to": "IN_PROGRESS",
+          "event": "REOPENED",
+          "reason": "CI lint (tsc) failed on the generator test",
+          "invalid_evidence": "EV-001: Check run 42782393150, TS7022 at cityGen.test.ts:116"
+        },
+        {
+          "sequence": 9,
+          "event_sequence": 70,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "fix-forward commit e9880d5 types the corner tuples"
+        },
+        {
+          "sequence": 10,
+          "event_sequence": 71,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-001",
+          "evidence": "all unit tests pass locally; CI lint rerun under T-007"
+        },
+        {
+          "sequence": 11,
+          "event_sequence": 72,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-002",
+          "evidence": "type-annotation-only change to a test file; controller review"
+        },
+        {
+          "sequence": 12,
+          "event_sequence": 73,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "e9880d5",
+          "evidence": "committed on ertas-del/new/city-map"
+        },
+        {
+          "sequence": 13,
+          "event_sequence": 74,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "e9880d5",
+          "evidence": "fix-forward landed"
         }
       ],
       "evidence": [
