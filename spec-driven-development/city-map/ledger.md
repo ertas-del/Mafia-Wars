@@ -725,7 +725,7 @@
     },
     {
       "id": "T-004",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
@@ -750,9 +750,55 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-004 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 26,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits f1eb2d4, 3e835bf"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 27,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-007",
+          "evidence": "evidence/EV-007-saveMerge-tests.txt passes"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 28,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-008",
+          "evidence": "evidence/EV-008-T-004-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 29,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-007",
+          "review_evidence": "EV-008",
+          "commit": "65bbe15",
+          "evidence": "merged wt/C-004"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 30,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-007",
+          "review_evidence": "EV-008",
+          "commit": "65bbe15",
+          "evidence": "EV-007 and EV-008 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-007",
+        "EV-008"
+      ]
     },
     {
       "id": "T-006",
