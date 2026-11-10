@@ -663,54 +663,126 @@
     },
     {
       "id": "T-002",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-002",
+      "branch": "wt/C-002",
+      "baseline": "8e98a70",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 18,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 merged at 4584558"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 19,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-002 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-003",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-003",
+      "branch": "wt/C-003",
+      "baseline": "8e98a70",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 20,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 merged at 4584558"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 21,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-003 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-004",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-004",
+      "branch": "wt/C-004",
+      "baseline": "8e98a70",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 22,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 merged at 4584558"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 23,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-004 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
       "id": "T-006",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-006",
+      "branch": "wt/C-006",
+      "baseline": "8e98a70",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 24,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 merged at 4584558"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 25,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-006 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
