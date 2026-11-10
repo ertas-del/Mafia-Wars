@@ -127,6 +127,22 @@ test('AC-005 racket lots, contacts and spawn picks', () => {
   }
 });
 
+test('density: buildings fill at least 40 percent of each area and meet the per-area counts', () => {
+  const least: Record<AreaId, number> = { manhattan_south: 18, midtown_concrete: 15, uptown: 25, bronx_terminal: 60, brooklyn_docks: 80, queens_cargo: 100, staten_island: 20 };
+  for (const area of AREA_IDS) {
+    const ai = AREA_IDS.indexOf(area);
+    let built = 0, land = 0;
+    for (let i = 0; i < city.kinds.length; i++) {
+      const k = city.kinds[i];
+      if (city.areaAt[i] !== ai || k === CellKind.PARK || k === CellKind.PLAZA || k === CellKind.PIER) continue;
+      land++;
+      if (k === CellKind.BUILDING) built++;
+    }
+    assert.ok(built / land >= 0.4, `${area} fraction ${built / land}`);
+    assert.ok(city.buildings.filter((b) => b.area === area).length >= least[area], `${area} count`);
+  }
+});
+
 test('helpers: nearestWalkable, sliding collision, bullets', () => {
   const b = city.buildings[0];
   const inside = { x: (b.cx + 1) * CELL, y: (b.cy + 1) * CELL };

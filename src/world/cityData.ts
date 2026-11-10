@@ -92,21 +92,33 @@ export const PIER_SPECS: { id: string; landmass: 'manhattan' | 'brooklyn'; side:
 export const RAIL_YARDS: { name: string; rect: Rect }[] = [
   { name: 'Mott Haven Rail Yard', rect: { x: 3200, y: 1100, w: 256, h: 96 } },
   { name: 'Hunts Point Rail Spur', rect: { x: 3560, y: 1300, w: 224, h: 64 } },
-  { name: 'Hudson Rail Yard', rect: { x: 2048, y: 2080, w: 160, h: 96 } },
   { name: 'Sunnyside Rail Yard', rect: { x: 3120, y: 2360, w: 320, h: 96 } },
   { name: 'Sunset Park Rail Yard', rect: { x: 2528, y: 3872, w: 256, h: 128 } },
+];
+/** Waterfront promenades: the coast sidewalk ring is paved as PLAZA over these stretches (walkable, drawn as an esplanade). */
+export const PROMENADES: { name: string; landmass: 'manhattan' | 'bronx' | 'queens' | 'brooklyn' | 'staten_island'; yFrom: number; yTo: number }[] = [
+  { name: 'Hudson and East River Esplanade', landmass: 'manhattan', yFrom: 0, yTo: 4240 },
+  { name: 'Harlem River and Hunts Point Waterfront', landmass: 'bronx', yFrom: 0, yTo: 4240 },
+  { name: 'Brooklyn Heights Promenade', landmass: 'brooklyn', yFrom: 0, yTo: 4240 },
+  { name: 'Staten Island Waterfront', landmass: 'staten_island', yFrom: 0, yTo: 4240 },
+];
+
+/** Pedestrian squares: they pave the sidewalk and alley cells they cover and leave the roads alone. */
+export const SQUARES: { name: string; rect: Rect }[] = [
+  { name: 'Times Square', rect: { x: 2060, y: 2304, w: 560, h: 30 } },
+  { name: 'Herald Square', rect: { x: 2060, y: 2080, w: 560, h: 30 } },
 ];
 export const HUNTS_POINT_MARKET: Rect = { x: 3904, y: 1424, w: 256, h: 72 };
 export const JFK_CARGO: Rect = { x: 5552, y: 3408, w: 512, h: 320 };
 export const JFK_APRON: Rect[] = [{ x: 5888, y: 3408, w: 176, h: 320 }];
 
-export const START_POINT: Pt = { x: 2000, y: 3344 };
+export const START_POINT: Pt = { x: 2000, y: 3376 };
 export const STATIONS: Record<GameBoroughId, Pt> = {
   manhattan_south: { x: 1968, y: 3056 },
-  midtown_concrete: { x: 2224, y: 2096 },
-  bronx_terminal: { x: 3600, y: 1040 },
-  brooklyn_docks: { x: 3344, y: 3440 },
-  queens_cargo: { x: 4752, y: 3152 },
+  midtown_concrete: { x: 2224, y: 2000 },
+  bronx_terminal: { x: 3600, y: 1008 },
+  brooklyn_docks: { x: 3344, y: 3568 },
+  queens_cargo: { x: 4752, y: 3280 },
 };
 
 export const RACKET_IDS = ['racket_ravenite', 'racket_fulton_fish', 'racket_garment_trucking', 'racket_redhook_pier14', 'racket_bensonhurst_numbers', 'racket_gowanus_chop', 'racket_jfk_hangar7', 'racket_ozone_lounge', 'racket_aqueduct_wire', 'racket_huntspoint_carting', 'racket_arthur_ave_imports', 'racket_bronx_meat_market', 'racket_concrete_club_hq', 'racket_hellskitchen_local282', 'racket_times_square_velvet'] as const;
@@ -143,21 +155,21 @@ export const CONTACT_BOROUGH: Record<ContactId, GameBoroughId> = {
 
 /** Racket lots in world pixels, aligned to the street grid laid out by GROUP_SEEDS in city/grid.ts (the generator carves exactly these lots, whatever the city seed). */
 export const RACKET_PLACEMENT: Record<RacketId, { x: number; y: number; width: number; height: number }> = {
-  racket_ravenite: { x: 1792, y: 3200, width: 192, height: 128 },
-  racket_fulton_fish: { x: 1760, y: 3456, width: 192, height: 128 },
-  racket_garment_trucking: { x: 2208, y: 2496, width: 192, height: 160 },
-  racket_redhook_pier14: { x: 2560, y: 3552, width: 192, height: 128 },
-  racket_bensonhurst_numbers: { x: 2976, y: 3840, width: 192, height: 192 },
-  racket_gowanus_chop: { x: 2912, y: 3296, width: 192, height: 128 },
-  racket_jfk_hangar7: { x: 5632, y: 3552, width: 192, height: 128 },
-  racket_ozone_lounge: { x: 4576, y: 3296, width: 192, height: 128 },
-  racket_aqueduct_wire: { x: 4896, y: 3552, width: 192, height: 128 },
-  racket_huntspoint_carting: { x: 3904, y: 1152, width: 192, height: 160 },
-  racket_arthur_ave_imports: { x: 3520, y: 576, width: 192, height: 128 },
-  racket_bronx_meat_market: { x: 2976, y: 864, width: 192, height: 160 },
-  racket_concrete_club_hq: { x: 2240, y: 1920, width: 192, height: 160 },
-  racket_hellskitchen_local282: { x: 2112, y: 2208, width: 192, height: 160 },
-  racket_times_square_velvet: { x: 2304, y: 2208, width: 128, height: 160 },
+  racket_ravenite: { x: 1984, y: 3200, width: 160, height: 160 },
+  racket_fulton_fish: { x: 1792, y: 3488, width: 160, height: 96 },
+  racket_garment_trucking: { x: 2208, y: 2592, width: 160, height: 128 },
+  racket_redhook_pier14: { x: 2592, y: 3456, width: 160, height: 96 },
+  racket_bensonhurst_numbers: { x: 2944, y: 3744, width: 160, height: 96 },
+  racket_gowanus_chop: { x: 2784, y: 3424, width: 160, height: 128 },
+  racket_jfk_hangar7: { x: 5632, y: 3456, width: 160, height: 96 },
+  racket_ozone_lounge: { x: 4672, y: 3392, width: 160, height: 160 },
+  racket_aqueduct_wire: { x: 4832, y: 3456, width: 160, height: 96 },
+  racket_huntspoint_carting: { x: 3904, y: 1184, width: 160, height: 96 },
+  racket_arthur_ave_imports: { x: 3584, y: 608, width: 160, height: 96 },
+  racket_bronx_meat_market: { x: 2976, y: 896, width: 160, height: 96 },
+  racket_concrete_club_hq: { x: 2432, y: 2112, width: 160, height: 96 },
+  racket_hellskitchen_local282: { x: 2112, y: 2112, width: 160, height: 96 },
+  racket_times_square_velvet: { x: 2368, y: 2336, width: 160, height: 96 },
 };
 
 /** Where the designer wanted each racket (turf-map pins times 4); the placement search starts from these. */
@@ -181,10 +193,10 @@ export const RACKET_TARGETS: Record<RacketId, Pt> = {
 
 export const CONTACT_PLACEMENT: Record<ContactId, Pt> = {
   contact_castellano: { x: 2128, y: 3056 },
-  contact_gallo: { x: 4560, y: 3440 },
-  contact_rossi: { x: 2576, y: 2096 },
-  contact_omalley: { x: 2928, y: 3696 },
-  contact_bellini_consigliere: { x: 2000, y: 3568 },
+  contact_gallo: { x: 4560, y: 3568 },
+  contact_rossi: { x: 2576, y: 2000 },
+  contact_omalley: { x: 2928, y: 3568 },
+  contact_bellini_consigliere: { x: 1904, y: 3600 },
   contact_persico: { x: 3504, y: 720 },
 };
 

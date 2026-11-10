@@ -111,7 +111,7 @@ export function generateCity(seed = 1984): City {
   }).filter((r) => r.w > 0);
   const racketBlock = new Map<Block, typeof rackets>();
   for (const r of rackets) {
-    const blk = blocks.find((b) => b.by0 === r.row && b.by1 === r.row + r.h && b.x0 <= r.col && r.col + r.w <= b.x1);
+    const blk = blocks.find((b) => b.by0 <= r.row && b.by1 === r.row + r.h && b.x0 <= r.col && r.col + r.w <= b.x1);
     if (!blk) throw new Error(`racket ${r.id} does not sit on a block lot row`);
     for (let y = r.row; y < r.row + r.h; y++) for (let x = r.col; x < r.col + r.w; x++) {
       if (kinds[idx(x, y)] !== K.BUILDING) throw new Error(`racket ${r.id} lot is not free ground`);
@@ -120,35 +120,53 @@ export function generateCity(seed = 1984): City {
     racketBlock.get(blk)!.push(r);
   }
 
-  const MINW = 2, MAXW = 4;
+  // Lot widths by area: narrow frontages with a bias toward the narrowest, a little wider ones in Queens.
+  const MAXW: Record<string, number> = { queens_cargo: 4 };
+  const MINW = 2;
   for (const blk of blocks) {
     const ch = blk.by1 - blk.by0;
     const rk = (racketBlock.get(blk) || []).sort((a, b) => a.col - b.col);
-    const colFree = (x: number): boolean => {
-      for (let y = blk.by0; y < blk.by1; y++) if (kinds[idx(x, y)] !== K.BUILDING) return false;
-      return true;
+    // Per column: bottom row of the free building cells and their depth. Buildings stand on a sidewalk, so a
+    // coast ring or a ramp can shorten a column from the top or move its bottom row.
+    const bottom = (x: number): number => {
+      for (let y = blk.by1 - 1; y >= blk.by0; y--) if (kinds[idx(x, y)] === K.BUILDING) return kinds[idx(x, y + 1)] === K.SIDEWALK ? y : -1;
+      return -1;
     };
-    const cutSegment = (start: number, len: number): void => {
+    const depth = (x: number, yb: number): number => {
+      let h = 0;
+      for (let y = yb; y >= blk.by0 && kinds[idx(x, y)] === K.BUILDING; y--) h++;
+      return h;
+    };
+    const cutSegment = (start: number, len: number, yb: number): void => {
+      const ai = areaIdx[idx(start, yb)];
+      const area = ai === 255 ? undefined : AREA_IDS[ai];
+      const maxw = (area && MAXW[area]) || 3;
+      const narrow = area !== 'queens_cargo';
       let pos = start, rem = len;
       while (rem >= MINW) {
         let w = rem;
-        if (rem > MAXW) {
+        if (rem > maxw) {
           const opts: number[] = [];
-          for (let c = MINW; c <= MAXW; c++) if (rem - c >= MINW) opts.push(c);
-          w = opts[Math.floor(rand() * opts.length)];
+          for (let c = MINW; c <= maxw; c++) if (rem - c >= MINW) opts.push(c);
+          w = opts[Math.floor(rand() ** (narrow ? 3 : 2) * opts.length)];
         }
-        createBuilding(pos, blk.by0, w, ch);
+        let h = ch;
+        for (let x = pos; x < pos + w; x++) h = Math.min(h, depth(x, yb));
+        createBuilding(pos, yb - h + 1, w, h);
         pos += w; rem -= w;
-        if (rem > MINW + 1 && rand() < 0.1) { kinds[idx(pos, blk.by0)] = K.BUILDING; for (let y = blk.by0; y < blk.by1; y++) kinds[idx(pos, y)] = K.ALLEY; pos++; rem--; }
       }
     };
     let x = blk.x0;
-    let segStart = -1;
-    const flush = (end: number): void => { if (segStart >= 0) { cutSegment(segStart, end - segStart); segStart = -1; } };
+    let segStart = -1, segYb = -1;
+    const flush = (end: number): void => { if (segStart >= 0) { cutSegment(segStart, end - segStart, segYb); segStart = -1; } };
     while (x < blk.x1) {
       const r = rk.find((q) => q.col === x);
       if (r) { flush(x); createBuilding(r.col, r.row, r.w, r.h, r.id); x += r.w; continue; }
-      if (colFree(x)) { if (segStart < 0) segStart = x; } else flush(x);
+      const yb = bottom(x);
+      if (yb >= 0 && depth(x, yb) >= 3) {
+        if (segStart >= 0 && segYb !== yb) flush(x);
+        if (segStart < 0) { segStart = x; segYb = yb; }
+      } else flush(x);
       x++;
     }
     flush(x);
@@ -163,7 +181,7 @@ export function generateCity(seed = 1984): City {
       const cx = cx0 + dx, cy = cy0 + dy;
       if (cx < 0 || cy < 0 || cx >= COLS || cy >= ROWS) continue;
       const i = idx(cx, cy);
-      if (kinds[i] !== K.WATER && kinds[i] !== K.BRIDGE) kinds[i] = K.BARRIER;
+      if (kinds[i] !== K.WATER && kinds[i] !== K.BRIDGE && kinds[i] !== K.BUILDING) kinds[i] = K.BARRIER;
     }
   }
   const gwb = new Set(ground.gwbCells);
