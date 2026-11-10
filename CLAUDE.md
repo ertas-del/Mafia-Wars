@@ -23,7 +23,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
   - `npm run dev` — Starts Vite dev server on port `3000`
   - `npm run build` — Production build (`vite build`)
   - `npm run lint` — TypeScript check (`tsc --noEmit`)
-- **CI**: `.github/workflows/check.yml` ("Check") runs `npm install --legacy-peer-deps`, `npm run lint` and `npm run build` on every push and pull request, uploads `dist/` as an artifact named `dist`, then runs a portrait check (exactly four hashed portrait `.jpg` files in `dist/assets`, each referenced from the bundle) and `scripts/phone-layout-check.mjs` (Playwright Chromium at 915×412 touch: title, play, five dossier tabs, pause; fails on horizontal overflow or any control under 44 px; screenshots uploaded as `phone-layout-shots`). The install flag works around a pre-existing esbuild peer conflict with Vite 8. Unit tests: `node --test src/input/*.test.ts`.
+- **CI**: `.github/workflows/check.yml` ("Check") runs `npm install --legacy-peer-deps`, `npm run lint` and `npm run build` on every push and pull request, uploads `dist/` as an artifact named `dist`, then runs a portrait check (exactly four hashed portrait `.jpg` files in `dist/assets`, each referenced from the bundle) and `scripts/phone-layout-check.mjs` (Playwright Chromium at 915×412 touch: title, play, five dossier tabs, pause; fails on horizontal overflow or any control under 44 px; screenshots uploaded as `phone-layout-shots`). The install flag works around a pre-existing esbuild peer conflict with Vite 8. Check also runs every `src/**/*.test.ts` (found with `find`) right after install, and after the phone-layout check runs `scripts/city-tour.mjs`: opens the build with `?tour`, travels to each borough and takes the Staten Island ferry, fails on page errors or a canvas with fewer than 8 colours, prints `CITY_TOUR_REPORT {json}` and six `CITY_SHOT <n> <index> <chunk>` base64 JPEG lines, and uploads `city-tour-shots`. Unit tests locally: `find src -name '*.test.ts' | xargs node --test`.
 - **Hosting**: `.github/workflows/pages.yml` ("Deploy to GitHub Pages") builds with `--base` set to the repository name (currently `/Mafia-Wars/`) on every push to `main` or a manual run, and deploys to https://ertas-del.github.io/Mafia-Wars/. Pages must be set to "GitHub Actions" under repo Settings → Pages.
 
 ---
@@ -42,14 +42,16 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 │   ├── data/
 │   │   └── nyc1984Data.ts            # Static definitions: 5 Families, 5 Boroughs, 15 Rackets, 6 Contacts, 15 Skills, 4 Weapons, 5 Narrative Acts
 │   ├── input/                        # Phone input: touchMode, touchSticks, haptics, fullscreen (+ *.test.ts)
+│   ├── world/                        # Pure city modules (+ *.test.ts): cityData (6400×4240 geography, bridges, ferry, stations, racket/contact placement), cityGen (seeded 32 px grid, unique buildings), city/ (grid, ground, names), cityRender + chunkCache (512 px pieces, max 24), pathfind (flow field + stuck rule), traffic (lane cars), saveMerge, bridgeTypes
 │   ├── components/
-│   │   ├── NycWorldCanvas.tsx        # Isolated 60fps 2D Canvas engine (3200x2120 NYC map, AI, bullets, rain, traffic)
+│   │   ├── NycWorldCanvas.tsx        # Isolated 60fps 2D Canvas engine (6400×4240 generated city, AI, bullets, rain, traffic)
 │   │   ├── PerimeterHud.tsx          # Low-occlusion (<15% screen) HUD, borough fast-travel, weapon bar, context prompts
 │   │   ├── SyndicateDrawers.tsx      # 5-tab modal dossier (Turf, Inner Circle, Skill Tree, Offline Vault, Leaderboard)
 │   │   ├── RotateCard.tsx            # "Turn your phone sideways" overlay shown in portrait during play
 │   │   └── TitleAndEndModals.tsx     # Title screen (inline SVG lockup + family selector) & Pause/Victory/Recovery modals
 │   └── assets/images/                # Generated painterly 1984 character portraits (imported as modules in nyc1984Data.ts)
 ├── scripts/phone-layout-check.mjs    # CI phone-layout check
+├── scripts/city-tour.mjs             # CI city tour (borough + ferry screenshots)
 └── .github/workflows/                # check.yml (CI) and pages.yml (GitHub Pages deploy)
 ```
 
@@ -73,6 +75,14 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
   - `spawnTurfDefenseWave(racket)` — Teleports player outside a rival racket and spawns 1 defending Turf Capo + 2 Enforcers with `racketGuardId`. Defeating the Capo triggers `onTurfCapoDefeated(racketId)` and transfers ownership to `'player'`.
   - `spawnAlliedHitSquad()` — Spawns 2 allied bodyguards (`role: 'ally'`) that follow the player and shoot hostile NPCs.
   - `triggerHealEffect(text)`
+
+### B2. The City (`src/world/`)
+- **Generation**: `generateCity(1984)` is seeded and deterministic (32 px cells, `CellKind` grid); every building has a unique look (`lookOf`) and a unique sign name; names are invented (no real crime-family surnames). Staten Island is walkable with no rackets; the George Washington Bridge is closed (BARRIER).
+- **Data**: borough `outline`, `bounds` and `spawnPoint`, and racket and contact positions come from `cityData.ts` (`nyc1984Data.ts` imports only that plus the portraits). Saved rackets merge by id through `mergeSavedById`, keeping only `ownerFamily`, `level` and `uncollectedCash`.
+- **Drawing**: `drawCityChunk` bakes 512 px pieces (piece-local pixels) into a cache of at most 24, requested through `chunksForView` (visible first, then the ring as far as 24 allows); visible pieces bake one per frame, ring pieces only on frames under 20 ms. `drawCityOverlay` adds lamp and neon glow in world coordinates. Bridges are smooth decks built from the BRIDGE cells and never cover a building.
+- **Engine**: all bodies move through `moveWithCollision`; bullets die on `blocksBullet`; spawns and teleports go through `randomWalkableIn`/`nearestWalkable` (falling back to a station); `areaAtPoint` drives the borough callback, which never fires for Uptown or Staten Island. Chasers and allies share one flow field around the player (radius 40 cells, rebuilt every 0.5 s) with a 2 s stuck rule; hostile windups need a clear line; Uptown and Staten Island keep 6 civilians each; 40 lane cars (4 police) come from `spawnTraffic`/`stepTraffic`.
+- **Ferry**: the prompt (`InteractPrompt` type `ferry`, label contains "ferry") shows near `FERRY_TERMINALS`; E or bridge `takeFerry()` crosses with a fade, and never while paused.
+- **Tour hook**: `window.__cityTour = { teleport, frameTimeMs, slowestChunkMs }` exists only with `?tour`.
 
 ### C. Combat & Encounter Feel
 - **Clamped Delta Time**: `const dt = Math.min(rawDt, 0.05)` prevents physics tunneling on tab switches.

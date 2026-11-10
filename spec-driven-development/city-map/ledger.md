@@ -1107,7 +1107,7 @@
     },
     {
       "id": "T-009",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Sonnet worker",
       "dependencies": [
         "T-005"
@@ -1132,9 +1132,55 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-009 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 62,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commit 695025a"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 63,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-016",
+          "evidence": "evidence/EV-016-unit-tests.txt passes"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 64,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-017",
+          "evidence": "evidence/EV-017-T-009-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 65,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-016",
+          "review_evidence": "EV-017",
+          "commit": "630b730",
+          "evidence": "merged wt/C-009"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 66,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-016",
+          "review_evidence": "EV-017",
+          "commit": "630b730",
+          "evidence": "EV-016 and EV-017 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-016",
+        "EV-017"
+      ]
     },
     {
       "id": "T-007",
