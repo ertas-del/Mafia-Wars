@@ -30,9 +30,9 @@
       "value": "spec-driven-development/contracts/plan.md"
     },
     "revision": 1,
-    "digest": "7d48fddb8ef0b4a61bd30f39b556ade2c1d3aedc2347f2adea49971670968d26"
+    "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5"
   },
-  "current_state": "PLAN_DRAFT",
+  "current_state": "AWAITING_PLAN_APPROVAL",
   "effective_tasks": [
     {
       "id": "T-001",
@@ -149,6 +149,14 @@
             "value": "src/components/TitleAndEndModals.tsx"
           },
           "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/data/nyc1984Data.ts"
+          },
+          "mode": "exclusive"
         }
       ],
       "consumes": [
@@ -237,6 +245,14 @@
           "path": {
             "scope": "repository",
             "value": "CLAUDE.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "scripts/contracts-smoke.mjs"
           },
           "mode": "exclusive"
         },
@@ -401,6 +417,13 @@
       "from": "AWAITING_SPEC_APPROVAL",
       "to": "PLAN_DRAFT",
       "evidence": "user answered 'I approve'"
+    },
+    {
+      "sequence": 6,
+      "event_sequence": 7,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "plan.md revision 1 validated, critic-reviewed and presented"
     }
   ],
   "artifact_events": [
@@ -529,7 +552,7 @@
 
 ## Bindings
 
-Specification revision 1 is approved; the plan is in draft.
+Specification revision 1 is approved; plan revision 1 is presented for approval.
 
 ## Authority
 

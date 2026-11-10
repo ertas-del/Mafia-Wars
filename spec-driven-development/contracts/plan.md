@@ -67,7 +67,8 @@
         {"type": "file", "path": {"scope": "repository", "value": "src/App.tsx"}, "mode": "exclusive"},
         {"type": "file", "path": {"scope": "repository", "value": "src/components/SyndicateDrawers.tsx"}, "mode": "exclusive"},
         {"type": "file", "path": {"scope": "repository", "value": "src/components/PerimeterHud.tsx"}, "mode": "exclusive"},
-        {"type": "file", "path": {"scope": "repository", "value": "src/components/TitleAndEndModals.tsx"}, "mode": "exclusive"}
+        {"type": "file", "path": {"scope": "repository", "value": "src/components/TitleAndEndModals.tsx"}, "mode": "exclusive"},
+        {"type": "file", "path": {"scope": "repository", "value": "src/data/nyc1984Data.ts"}, "mode": "exclusive"}
       ],
       "consumes": ["contracts pinned interface", "canvas contract props and callbacks types"],
       "produces": ["App state, save field, dossier section, HUD chip, betrayal recovery screen"],
@@ -94,6 +95,7 @@
       "depends_on": ["T-002", "T-003"],
       "ownership": [
         {"type": "file", "path": {"scope": "repository", "value": "CLAUDE.md"}, "mode": "exclusive"},
+        {"type": "file", "path": {"scope": "repository", "value": "scripts/contracts-smoke.mjs"}, "mode": "exclusive"},
         {"type": "file", "path": {"scope": "repository", "value": "spec-driven-development/contracts/evidence/smoke.md"}, "mode": "exclusive"},
         {"type": "file", "path": {"scope": "repository", "value": "spec-driven-development/contracts/evidence/ci-run.md"}, "mode": "exclusive"},
         {"type": "file", "path": {"scope": "repository", "value": "spec-driven-development/contracts/evidence/whole-change-review.md"}, "mode": "exclusive"}
@@ -158,6 +160,8 @@ Deliver specification revision 1. The plan has three parts:
 | `src/components/SyndicateDrawers.tsx` | Adds a Contracts section in the Turf tab. |
 | `src/components/PerimeterHud.tsx` | Adds one contract chip per family, and the sit-down prompt button. |
 | `src/components/TitleAndEndModals.tsx` | Adds the betrayal Recovery variant that lists the losses. |
+| `src/data/nyc1984Data.ts` | Rewords the Street Ceasefire perk text so it says it lowers betrayal risk. |
+| `scripts/contracts-smoke.mjs` (new) | The smoke script that drives the test hooks for AC-004 and AC-005. Run locally on the esbuild build; not part of CI. |
 | `src/components/NycWorldCanvas.tsx` | Takes hostility from `isHostile`. Reports hits and kills. Spawns squads, holds safe passage, marks the sit-down spot and its prompt, holds the bodyguards back, adds `wakeAt`, and adds the `?tour` hooks. |
 | `CLAUDE.md` | Adds a contracts paragraph. |
 
@@ -183,15 +187,22 @@ expireLapsed(s, now): { state; lapsed: FamilyKey[] }                   // adds M
 attemptSitDown(s, family, p: { now; cash; alone: boolean; respectXp; ceasefire; rand: () => number }):
   { outcome: 'refused'; reason: 'window'|'cash'|'alone' } | { outcome: 'honoured'; state; cost } | { outcome: 'betrayed'; state }
 betrayalLosses(p: { cash; respectXp; skillPoints }): { cash; respectXp; skillPoints }   // amounts lost
+tallyAttack(hits: { npcId: string; family: FamilyKey | null; killed: boolean }[]): Partial<Record<FamilyKey, { hits: number; kills: number }>>
+  // one attack: each NPC counts once however many pellets hit it; a killed NPC counts as a kill only (3 points), never also a hit
 ```
 
 `bridgeTypes.ts` adds `'sitdown'` to `InteractPrompt.type`, and these canvas types:
 ```ts
-ContractsView = { state: ContractsState; heat: number; nowOffsetMs: number }   // prop
-onFamilyHarmed(family: FamilyKey, harm: { hits: number; kills: number }): void   // callback
-onSitDownChosen(family: FamilyKey, alone: boolean): void                        // callback
-wakeAt(x: number, y: number): void                                              // bridge
+ContractsView = { state: ContractsState; heat: number; nowOffsetMs: number; respectXp: number; ceasefire: boolean; graceUntil: number }   // prop
+ContractsCallbacks = {
+  onFamilyHarmed(family: FamilyKey, harm: { hits: number; kills: number }): void   // one call per family per finished attack
+  onSitDownChosen(family: FamilyKey, alone: boolean): void
+  onContractsDebug(a: { type: 'heat'; value: number } | { type: 'grudge'; family: FamilyKey; points: number } | { type: 'clock'; ms: number }): void   // ?tour only
+}
+ContractsBridge = { wakeAt(x: number, y: number): void; chooseSitDown(): void }   // chooseSitDown: HUD tap, engine decides family and alone
 ```
+
+These types live in `bridgeTypes.ts`. The canvas `Props`, `WorldCallbacks` and `LiveSimulationBridge` gain them as **optional** members, added by T-003. App (T-002) passes the view and the callbacks as one spread object, and reaches the bridge through an optional cast, the same way it already reaches `takeFerry`. That way each worktree type-checks cleanly on its own, and once both are merged.
 
 ## Binding Fields
 
@@ -215,6 +226,11 @@ These may change without re-approval:
 - **Parallel wave edits the same props.** T-002 and T-003 both work against the props types pinned in `bridgeTypes.ts`. The controller merges them together and runs one type check and one smoke run before anything is pushed.
 - **Debug clock.** The `?tour` hook "advance clock" sets `nowOffsetMs`. App and engine use `Date.now() + nowOffsetMs` everywhere a contract time is read, so the hook can move time forward.
 - **Respect XP.** The value used is the existing `respectXp`, which starts at 120.
+- **Attack attribution.** The engine gives every shot or swing an attack id. It gathers the `{npcId, family, killed}` hits for that id, including deaths found later in the frame loop. It reports once, when the attack's last pellet has expired, using `tallyAttack`, so a killing blow never scores 4.
+- **NYPD threshold.** The spawn condition changes from `> 55` to `>= NYPD_HEAT_LINE`, so AC-004's check at heat 55 can pass.
+- **The contracts clock.** The clock runs on its own one-second interval, in every game state. A window that lapses while the game is not PLAYING (paused, in Recovery, or blocked in portrait) is handled like an absence: it reopens for 3 minutes on resume and is never charged. This is how the spec's Error and Recovery note is read.
+- **Sit-down once.** One sit-down attempt is guarded by an in-progress flag, so a repeated E press or tap cannot roll twice. Every loss and payment is applied with functional state setters.
+- **Betrayal recovery.** A betrayal flag makes Recovery skip the ordinary 10% cash loss, the $500 floor and the heat reset.
 
 ## Requirement Coverage
 
@@ -255,7 +271,7 @@ These may change without re-approval:
 - **Deliverable:** the pure contracts rulebook and the shared types.
 - **Covers:** FR-001, FR-002, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012; AC-001, AC-002, AC-003.
 - **Ownership:** `src/world/contracts.ts`, `src/world/contracts.test.ts`, `src/world/bridgeTypes.ts`.
-- **Concrete change:** implement the pinned interface exactly as the spec's Depth and Defaults table words it. Time comes in as `now` and randomness as `rand`, so tests control both.
+- **Concrete change:** implement the pinned interface exactly as the spec's Depth and Defaults table words it, including `tallyAttack`, plus the canvas types in `bridgeTypes.ts`. Time comes in as `now` and randomness as `rand`, so tests control both.
 - **Verification:** EV-001 runs the tests for AC-001 to AC-003 exactly as worded, plus a clean type check. EV-002 is a fresh Opus reviewer.
 - **Delegation:** a fresh Opus worker, then a fresh Opus reviewer.
 - **Done when:** EV-001 and EV-002 pass.
@@ -264,21 +280,24 @@ These may change without re-approval:
 
 - **Deliverable:** contracts in the app: the save, the dossier section, the HUD chip and the recovery flows.
 - **Covers:** FR-004, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-013; AC-006.
-- **Ownership:** `src/App.tsx`, `src/components/SyndicateDrawers.tsx`, `src/components/PerimeterHud.tsx`, `src/components/TitleAndEndModals.tsx`.
+- **Ownership:** `src/App.tsx`, `src/components/SyndicateDrawers.tsx`, `src/components/PerimeterHud.tsx`, `src/components/TitleAndEndModals.tsx`, `src/data/nyc1984Data.ts`.
 - **Concrete change:**
   - **Saving and loading.** Contracts state lives in App and is saved as an optional field. On load it goes through `parseContracts` and then `resumeAfterAbsence(lastSaveTimestamp)`.
   - **Hits.** `onFamilyHarmed` passes each hit to `recordHarm` and shows a grudge or contract toast.
-  - **Time tick.** A 1-second tick runs `expireLapsed`.
+  - **Time tick.** A separate 1-second contracts clock runs in every state. While PLAYING it runs `expireLapsed`. When play resumes it runs `resumeAfterAbsence`.
+  - **Debug.** `onContractsDebug` sets heat, adds grudge points through repeated `recordHarm` hits, or advances `nowOffsetMs`.
+  - **One attempt.** A guard flag allows one sit-down attempt at a time, and all updates use functional setters.
+  - **Perk text.** The Street Ceasefire wording in `nyc1984Data.ts` is updated.
   - **Requesting a sit-down.** The dossier's Request button calls `requestSitDown` with a spot chosen from the family's rackets or home station.
   - **Sitting down.** `onSitDownChosen` runs `attemptSitDown` with the shared random function.
     - Honoured: the cost is paid and a toast shows.
-    - Betrayed: `betrayalLosses` is applied, the betrayal Recovery variant shows, and the player wakes at the home station.
+    - Betrayed: `betrayalLosses` is applied. The betrayal Recovery variant shows, with a flag that skips the ordinary Recovery penalties, and the player wakes at the home station.
     - Refused: a toast gives the reason.
   - **Ordinary death under a contract.** The usual Recovery runs, and the player is woken at the home station with 30 seconds of grace.
-  - **HUD.** One chip per family with an active contract, plus the sit-down prompt button. Controls use `touch:min-h-11`, and numbers use `font-mono tabular-nums`.
+  - **HUD.** One chip per family with an active contract, plus the sit-down prompt button, which calls the bridge's `chooseSitDown()`. Controls use `touch:min-h-11`, and numbers use `font-mono tabular-nums`.
   - **Engine wiring.** App passes `ContractsView` to the canvas and wires the callbacks.
 - **Verification:**
-  - EV-003: all unit tests pass; the global type check with stubs is clean apart from the canvas props that T-003 adds; the worker's esbuild smoke screenshots show the dossier section, the chip and the betrayal screen.
+  - EV-003: all unit tests pass. The full type check with stubs is clean in this worktree. The worker's esbuild smoke screenshots show the dossier section, the chip and the betrayal screen. To reach those states without the engine, the smoke run uses a temporary local stub that calls the callbacks; the stub is never committed.
   - EV-004: a fresh Opus reviewer.
 - **Delegation:** a fresh Opus worker, in worktree `/home/claude/wt/contracts-app`.
 - **Done when:** EV-003 and EV-004 pass.
@@ -291,14 +310,16 @@ These may change without re-approval:
 - **Concrete change:**
   - **Hostility.** Replace `isHostileByDefault` with `isHostile`, checked at patrol, windup and cooldown. When an NPC stops being hostile it goes back to patrol.
   - **When there is no contract.** A hit NPC without a contract backs away instead of winding up. Allies target only hostile NPCs.
-  - **Hit and kill reports.** Each attack gets an id. One report per attack per NPC goes to `onFamilyHarmed`, and a kill reports `{hits: 0, kills: 1}`.
+  - **Hit and kill reports.** Each shot or swing gets an attack id. When the attack's last pellet has expired, the hits are reported through `tallyAttack` and `onFamilyHarmed`, with deaths noticed later in the frame loop counted as kills.
+  - **NYPD.** The spawn condition becomes `heat >= NYPD_HEAT_LINE`.
   - **Squads and safe passage.** While a family has a contract and no open window, a squad of 2 or 3 spawns every 90 to 150 s of play, with at most one per family. During that family's window it holds fire and sends no squads.
   - **Bodyguards.** Enforcer bodyguards hold back at least 500 px during any open window.
   - **The sit-down spot.** The spot is marked. Within 60 px during the window, a `'sitdown'` prompt shows the price and risk, and E or a tap calls `onSitDownChosen`, passing whether the player is alone.
-  - **Waking.** Add `wakeAt` to the bridge.
-  - **Test hooks.** Only with `?tour`, `__cityTour` also gets `setHeat`, `addGrudge`, `advanceClock` and `spawnSquad`. Advancing the clock moves `nowOffsetMs` through a callback to App.
+  - **Waking and tapping.** Add `wakeAt` and `chooseSitDown` to the bridge, and read `graceUntil` from the view, so no squads come during the grace period.
+  - **Test hooks.** Only with `?tour`, `__cityTour` also gets `setHeat`, `addGrudge`, `advanceClock` and `spawnSquad`. The first three call `onContractsDebug`. `spawnSquad` acts in the engine.
+  - **Types.** Add the optional `bridgeTypes` members to `Props`, `WorldCallbacks` and `LiveSimulationBridge`.
 - **Verification:**
-  - EV-005: all unit tests pass; the type check is clean in the file; the esbuild smoke run shows 0 page errors, peaceful walking and a squad hunting after `addGrudge`.
+  - EV-005: all unit tests pass. The full type check with stubs is clean in this worktree. The esbuild smoke run shows 0 page errors, peaceful walking, and a hunting squad after a contract. A temporary local stub feeds a contracted `ContractsView`; the stub is never committed.
   - EV-006: a fresh Opus reviewer.
 - **Delegation:** a fresh Opus worker, in worktree `/home/claude/wt/contracts-engine`.
 - **Done when:** EV-005 and EV-006 pass.
@@ -307,10 +328,10 @@ These may change without re-approval:
 
 - **Deliverable:** a verified, integrated branch, landed as the user allows.
 - **Covers:** FR-001, FR-003, FR-006, FR-007, FR-008, FR-009, FR-013, FR-014; AC-004, AC-005, AC-006, AC-007.
-- **Ownership:** `CLAUDE.md` and the evidence files `smoke.md`, `ci-run.md` and `whole-change-review.md`.
+- **Ownership:** `CLAUDE.md`, `scripts/contracts-smoke.mjs`, and the evidence files `smoke.md`, `ci-run.md` and `whole-change-review.md`.
 - **Concrete change:**
   1. Merge T-002 and T-003, then run the tests and type check once.
-  2. Run the hook-driven smoke scripts for AC-004 and AC-005, and view their screenshots.
+  2. Write `scripts/contracts-smoke.mjs` and run it on the esbuild build for AC-004 and AC-005, then view its screenshots.
   3. Update `CLAUDE.md`.
   4. Push, then read Check and rebuild the tour shots.
   5. Get a fresh whole-change review.
@@ -342,5 +363,6 @@ Landing happens in this order:
 
 - The plan is bound to spec revision 1 and its digest.
 - Every FR and AC is covered.
-- The wave's file ownership is disjoint, and the shared types are pinned in `bridgeTypes.ts` by T-001.
+- The wave's file ownership is disjoint. The shared types are pinned in `bridgeTypes.ts` by T-001 as optional members, so each worktree type-checks cleanly on its own.
+- The plan critic's seven findings are addressed: attack tally, pinned callbacks, independent verification, NYPD threshold, the contracts clock, sit-down guards, and file ownership.
 - Every piece of evidence has a command or a named reviewer.
