@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "specification",
   "specification_id": "cast",
-  "revision": 1,
+  "revision": 2,
   "path": {"scope": "repository", "value": "spec-driven-development/cast/spec.md"},
   "required_sections": [
     "Context and Evidence",
@@ -24,7 +24,7 @@
 
 # The 50-Character Street Cast — Specification
 
-**Path:** `spec-driven-development/cast/spec.md` · **Revision:** 1 · **Kind:** specification · **Schema:** 1
+**Path:** `spec-driven-development/cast/spec.md` · **Revision:** 2 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
 **Approval status:** Awaiting user approval
@@ -58,7 +58,7 @@ The request is to bring the 50 characters from the user's other repository, `ert
 Confirmed user decisions, all made in this session:
 - **D1:** Every street person is drawn as a full-body, three-quarter, camera-facing figure built from the Mafia-game character traits. This replaces the dots, and no one is drawn side-on or top-down.
 - **D2:** The player is drawn in the same style, dressed in the chosen family's look, with a gold ring so they stand out.
-- **D3:** In this game's copy, the surnames Vitale, Amato and Carbone are replaced with invented ones. Nicknames and roles stay.
+- **D3:** In this game's copy, the surnames Vitale, Amato, Carbone, Santoro and Russo are replaced with invented ones. Nicknames and roles stay.
 - **D4:** The contacts' hidden ids and portrait file names are left as they are. There is no save change.
 - **D5:** Builders and reviewers run on Opus at high effort.
 
@@ -74,7 +74,7 @@ These are my choices. They are ordered by impact.
 | Facing | Figures always face the camera. They mirror left or right to match their movement or aim. The held weapon points along the aim. | medium |
 | Unnamed people | Uptown and Staten Island residents, the generic officers and the allies are figures built from a seeded mix of civilian or family traits. They have no name tag unless engaged. | medium |
 | Player look | A dark overcoat and fedora in the chosen family's colour, the family's signature mark, and a gold ring underfoot. | medium |
-| Replacement surnames | Lorenzo "The Ledger" Ravasi, Frankie "Photo Finish" Cardella and Johnny "Runway" Lomarco. | low |
+| Replacement surnames | Lorenzo "The Ledger" Ravasi, Frankie "Photo Finish" Cardella, Johnny "Runway" Lomarco, Gino "Velvet" Fiorella and Mikey "Nine Lives" Castagna. | low |
 | What is copied | id, number, name, role, bio, family and traits only. Photo crops, image prompts and the photos themselves are not copied. | low |
 
 ## Goals and Non-Goals
@@ -116,7 +116,7 @@ These are my choices. They are ordered by impact.
   - the cast has 50 unique ids and 50 unique names;
   - the per-family counts are 10, 8, 8, 8, 8 and 8;
   - every trait value is one of the allowed values;
-  - no name contains a surname from a denylist of real crime figures. The denylist includes Vitale, Amato, Carbone, Gigante, Gotti, Castellano, Persico, Indelicato, Ruggiero, Casso, Gambino, Genovese, Lucchese, Bonanno and Colombo.
+  - no name contains a surname from a denylist of real crime figures. The denylist includes Vitale, Amato, Carbone, Santoro, Russo, Gigante, Gotti, Castellano, Persico, Indelicato, Ruggiero, Casso, Gambino, Genovese, Lucchese, Bonanno and Colombo.
 - **AC-002** (FR-002) Unit tests draw every cast member, plus unnamed civilian, officer, ally and player trait sets, onto a recording fake context. The tests show that:
   - nothing throws;
   - every save is matched by a restore;
@@ -149,7 +149,7 @@ These are my choices. They are ordered by impact.
 ## Risks and Alternatives
 
 - **Phone performance:** about 60 cached images of roughly 50 × 60 px are drawn with `drawImage`. This is cheaper than today's per-body path drawing.
-- **Other surnames:** some common surnames in the 50 also belong to real people of the era, for example Santoro and Russo. Only the three in D3 are renamed. The rest are flagged at approval.
+- **Other surnames:** some common surnames in the 50 also belong to real people of the era. The five in D3 are renamed. Any others are common names and stay.
 - **Alternative rejected:** rasterizing the SVG component through `Image` and data URLs. It is asynchronous, harder to test, and pulls React into the engine.
 
 ## Readiness Review
