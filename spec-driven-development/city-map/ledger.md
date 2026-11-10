@@ -1236,7 +1236,7 @@
     },
     {
       "id": "T-007",
-      "state": "IN_PROGRESS",
+      "state": "REVIEWED",
       "owner": "controller",
       "dependencies": [
         "T-001",
@@ -1273,6 +1273,29 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "pushing ertas-del/new/city-map for the Check run"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 75,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "branch pushed; Check run 42782826779 green"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 76,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-012, EV-013, EV-014",
+          "evidence": "evidence/EV-012, EV-013, EV-014 recorded"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 77,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-018",
+          "evidence": "evidence/EV-018-whole-change-review.md: PASS"
         }
       ],
       "evidence": []
@@ -1459,20 +1482,20 @@ The user authorized commits and a push of the feature branch, and a merge into m
 
 ## Workflow History
 
-Both artifacts are approved; execution has begun with T-001. At plan approval the user switched every worker and reviewer to Sonnet at high effort.
+Both artifacts are approved. At plan approval the user switched every worker and reviewer to Sonnet at high effort. Plan revision 2 carries PATCH-001 (the chunk ring trimmed to fit 24), approved by the user.
 
 ## Task State
 
-T-001, T-002, T-003, T-004, T-006, T-005, T-009, T-007, T-008 are PENDING until plan approval.
+T-001 to T-006 and T-009 are DONE. T-001 was reopened once and fixed forward for CI lint. T-007 lands the change on main. T-008, the user's phone test, follows the deploy.
 
 ## Amendments
 
-None.
+None. PATCH-001 went through change control as plan revision 2.
 
 ## Evidence
 
-Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020 are not yet implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, AC-014 are pending; planned evidence is EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009, EV-010, EV-011, EV-012, EV-013, EV-014, EV-015, EV-016, EV-017.
+Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020 are implemented; criteria AC-001 to AC-013 are verified and AC-014 is pending the user's phone test; planned evidence is EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009, EV-010, EV-011, EV-012, EV-013, EV-014, EV-015, EV-016, EV-017.
 
 ## Landing State
 
-Nothing is implemented. Push and merge into main are authorized once checks pass.
+Check run 42782826779 is green on the branch, and the whole-change review (EV-018) passed. The merge into main is authorized.
