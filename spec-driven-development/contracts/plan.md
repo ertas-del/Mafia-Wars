@@ -128,11 +128,11 @@
 **Path:** `spec-driven-development/contracts/plan.md` · **Revision:** 1 · **Kind:** implementation plan · **Schema:** 1
 
 <!-- sdd-approval-begin -->
-**Approval status:** Awaiting user approval
-**Approved revision:** Not approved
-**Approved normative digest:** Not approved
-**Approver:** Not approved
-**Approval timestamp:** Not approved
+**Approval status:** Approved
+**Approved revision:** 1
+**Approved normative digest:** `ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5`
+**Approver:** User in the current session
+**Approval timestamp:** 2026-11-10T16:46:31-07:00
 <!-- sdd-approval-end -->
 
 ## Goal

@@ -32,7 +32,7 @@
     "revision": 1,
     "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5"
   },
-  "current_state": "AWAITING_PLAN_APPROVAL",
+  "current_state": "EXECUTING",
   "effective_tasks": [
     {
       "id": "T-001",
@@ -354,10 +354,10 @@
     ],
     "permitted_external_effects": [
       "local repository edits and commits on branch ertas-del/new/contracts",
-      "push of branch ertas-del/new/contracts"
+      "push of branch ertas-del/new/contracts",
+      "merge into main (redeploying Pages) once Check is green and the whole-change review passes (user answer at plan approval)"
     ],
     "prohibited_external_effects": [
-      "merge into main without the user's go-ahead",
       "repository settings, visibility, Pages settings and releases"
     ]
   },
@@ -424,6 +424,20 @@
       "from": "PLAN_DRAFT",
       "to": "AWAITING_PLAN_APPROVAL",
       "evidence": "plan.md revision 1 validated, critic-reviewed and presented"
+    },
+    {
+      "sequence": 7,
+      "event_sequence": 9,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user answered 'I approve the plan' and 'Merge when green'"
+    },
+    {
+      "sequence": 8,
+      "event_sequence": 10,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-001 dispatch"
     }
   ],
   "artifact_events": [
@@ -435,18 +449,43 @@
       "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9",
       "approver": "User in the current session",
       "timestamp": "2026-11-10T16:40:58-07:00"
+    },
+    {
+      "event_sequence": 8,
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T16:46:31-07:00"
     }
   ],
   "tasks": [
     {
       "id": "T-001",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/contracts",
+      "branch": "ertas-del/new/contracts",
+      "baseline": "02709a9",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 11,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 12,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-001 dispatched to a fresh Opus worker"
+        }
+      ],
       "evidence": []
     },
     {
@@ -552,11 +591,11 @@
 
 ## Bindings
 
-Specification revision 1 is approved; plan revision 1 is presented for approval.
+Specification revision 1 is approved; plan revision 1 is approved and execution has begun.
 
 ## Authority
 
-Commits and a push of the feature branch are authorized. A merge into main needs the user's go-ahead. Repository settings and Pages stay the user's.
+Commits and a push of the feature branch are authorized. A merge into main is authorized once Check is green and the whole-change review passes. Repository settings and Pages stay the user's.
 
 ## Workflow History
 
@@ -564,7 +603,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001, T-002, T-003, T-004 and T-005 are PENDING until plan approval.
+T-001 is IN_PROGRESS; T-002, T-003, T-004 and T-005 are PENDING.
 
 ## Amendments
 
