@@ -590,13 +590,29 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "worker (sonnet, effort high)",
       "dependencies": [],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-001",
+      "branch": "wt/C-001",
+      "baseline": "c6fb069",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 11,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies; worktree at c6fb069"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 12,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-001 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
