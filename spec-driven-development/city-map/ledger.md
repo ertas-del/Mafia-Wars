@@ -590,7 +590,7 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "worker (sonnet, effort high)",
       "dependencies": [],
       "worktree": "/home/claude/wt/C-001",
@@ -611,9 +611,55 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-001 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 13,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits f629abb, 2e13e0d, 98d6d59, a47a6a3"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 14,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-001",
+          "evidence": "evidence/EV-001-cityGen-tests.txt: 22 pass, 0 fail"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 15,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-002",
+          "evidence": "evidence/EV-002-T-001-review.md: PASS on round 2"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 16,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "commit": "4584558",
+          "evidence": "merged wt/C-001 into ertas-del/new/city-map",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 17,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "EV-001 and EV-002 pass; merged",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "4584558"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "id": "T-002",

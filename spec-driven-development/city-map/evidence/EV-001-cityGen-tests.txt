@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: AC-001 size and determinism
+ok 1 - AC-001 size and determinism
+  ---
+  duration_ms: 134.086089
+  type: 'test'
+  ...
+# Subtest: AC-002 water, stations and no building on water
+ok 2 - AC-002 water, stations and no building on water
+  ---
+  duration_ms: 6.98795
+  type: 'test'
+  ...
+# Subtest: AC-002 bridges join their shores, the George Washington Bridge is blocked
+ok 3 - AC-002 bridges join their shores, the George Washington Bridge is blocked
+  ---
+  duration_ms: 17.476419
+  type: 'test'
+  ...
+# Subtest: AC-003 every station reaches every other station and Staten Island; ferries are walkable
+ok 4 - AC-003 every station reaches every other station and Staten Island; ferries are walkable
+  ---
+  duration_ms: 6.728113
+  type: 'test'
+  ...
+# Subtest: AC-004 unique look signatures and sign names, signatures hold no position or id
+ok 5 - AC-004 unique look signatures and sign names, signatures hold no position or id
+  ---
+  duration_ms: 1.681628
+  type: 'test'
+  ...
+# Subtest: AC-005 racket lots, contacts and spawn picks
+ok 6 - AC-005 racket lots, contacts and spawn picks
+  ---
+  duration_ms: 4.584042
+  type: 'test'
+  ...
+# Subtest: density: buildings fill at least 38 percent of each area and meet the per-area counts
+ok 7 - density: buildings fill at least 38 percent of each area and meet the per-area counts
+  ---
+  duration_ms: 19.184053
+  type: 'test'
+  ...
+# Subtest: streets: stations reach their rackets on foot without big detours, and the grid has junctions
+ok 8 - streets: stations reach their rackets on foot without big detours, and the grid has junctions
+  ---
+  duration_ms: 31.205973
+  type: 'test'
+  ...
+# Subtest: helpers: nearestWalkable, sliding collision, bullets
+ok 9 - helpers: nearestWalkable, sliding collision, bullets
+  ---
+  duration_ms: 0.550568
+  type: 'test'
+  ...
+# Subtest: game data ids and boroughs match the tuples and tables here
+ok 10 - game data ids and boroughs match the tuples and tables here
+  ---
+  duration_ms: 1.562565
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 476.366676
