@@ -542,11 +542,11 @@
 **Specification:** `spec-driven-development/city-map/spec.md` revision 1, digest `285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716`
 
 <!-- sdd-approval-begin -->
-**Approval status:** Awaiting user approval
-**Approved revision:** Not approved
-**Approved normative digest:** Not approved
-**Approver:** Not approved
-**Approval timestamp:** Not approved
+**Approval status:** Approved
+**Approved revision:** 1
+**Approved normative digest:** `16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5`
+**Approver:** User in the current session
+**Approval timestamp:** 2026-11-09T19:03:04-07:00
 <!-- sdd-approval-end -->
 
 ## Goal

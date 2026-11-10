@@ -41,9 +41,18 @@
       "digest": "285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716",
       "approver": "User in the current session",
       "timestamp": "2026-11-09T18:56:09-07:00"
+    },
+    {
+      "event_sequence": 8,
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-09T19:03:04-07:00"
     }
   ],
-  "current_state": "AWAITING_PLAN_APPROVAL",
+  "current_state": "EXECUTING",
   "workflow_transitions": [
     {
       "sequence": 1,
@@ -86,6 +95,20 @@
       "from": "PLAN_DRAFT",
       "to": "AWAITING_PLAN_APPROVAL",
       "evidence": "plan.md revision 1 validated with --allow-unapproved-plan after critic review"
+    },
+    {
+      "sequence": 7,
+      "event_sequence": 9,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "User replied 'I approve, use sonnet as a subagent'"
+    },
+    {
+      "sequence": 8,
+      "event_sequence": 10,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-001 dispatch begins"
     }
   ],
   "effective_tasks": [
@@ -774,7 +797,7 @@
       "user answers in the current session",
       "repository instructions: CLAUDE.md",
       "track: critical — changes the save data contract and carries more than twelve requirements",
-      "subagents: opus, effort high — user answer at preflight"
+      "subagents: sonnet, effort high — user instruction at plan approval, replacing opus"
     ],
     "permitted_external_effects": [
       "local repository edits and commits on branch ertas-del/new/city-map",
@@ -823,7 +846,7 @@ The user authorized commits and a push of the feature branch, and a merge into m
 
 ## Workflow History
 
-The specification is approved; the plan awaits approval.
+Both artifacts are approved; execution has begun with T-001. At plan approval the user switched every worker and reviewer to Sonnet at high effort.
 
 ## Task State
 
