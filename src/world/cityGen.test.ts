@@ -112,7 +112,8 @@ test('AC-005 racket lots, contacts and spawn picks', () => {
     assert.deepEqual([b.cx * CELL, b.cy * CELL, b.cw * CELL, b.ch * CELL], [r.x, r.y, r.width, r.height]);
     assert.equal(b.sign, RACKET_INFO[id].name);
     const outline = boroughOutline(RACKET_INFO[id].boroughId);
-    for (const [x, y] of [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]]) assert.ok(pointInPoly(x, y, outline), `${id} corner ${x},${y}`);
+    const corners: [number, number][] = [[r.x, r.y], [r.x + r.width, r.y], [r.x, r.y + r.height], [r.x + r.width, r.y + r.height]];
+    for (const [x, y] of corners) assert.ok(pointInPoly(x, y, outline), `${id} corner ${x},${y}`);
     for (let y = b.cy; y < b.cy + b.ch; y++) for (let x = b.cx; x < b.cx + b.cw; x++) {
       assert.equal(city.buildingAt[y * city.cols + x], b.id);
       assert.equal(AREA_IDS[city.areaAt[y * city.cols + x]], RACKET_INFO[id].boroughId, `${id} cell ${x},${y} borough`);
