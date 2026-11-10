@@ -14,6 +14,14 @@ jobs:
         with:
           node-version: 22
       - run: npm install --legacy-peer-deps
+      - name: Unit tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t tests < <(find src -name '*.test.ts' | sort)
+          echo "UNIT_TESTS files: ${#tests[@]}"
+          if [ ${#tests[@]} -eq 0 ]; then echo "UNIT_TESTS FAIL no test files found"; exit 1; fi
+          node --test "${tests[@]}"
       - run: npm run lint
       - id: build
         run: npm run build
@@ -68,4 +76,13 @@ jobs:
         with:
           name: phone-layout-shots
           path: phone-layout-shots
+          if-no-files-found: warn
+      - name: City tour
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: node scripts/city-tour.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: city-tour-shots
+          path: city-tour-shots
           if-no-files-found: warn
