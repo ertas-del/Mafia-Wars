@@ -1184,8 +1184,8 @@
     },
     {
       "id": "T-007",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "controller",
       "dependencies": [
         "T-001",
         "T-002",
@@ -1198,7 +1198,31 @@
       "worktree": "not yet created",
       "branch": "not yet created",
       "baseline": "not yet recorded",
-      "transitions": [],
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 67,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001",
+            "T-002",
+            "T-003",
+            "T-004",
+            "T-005",
+            "T-006",
+            "T-009"
+          ],
+          "evidence": "all implementation tasks merged"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 68,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "pushing ertas-del/new/city-map for the Check run"
+        }
+      ],
       "evidence": []
     },
     {
