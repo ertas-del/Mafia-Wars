@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import {
   BoroughId,
   BoroughZone,
-  FIVE_FAMILIES,
   FamilyId,
   NYC_BOROUGHS,
   RacketBuilding,
@@ -23,6 +22,20 @@ import {
   touchStart,
 } from '../input/touchSticks';
 import { pulse } from '../input/haptics';
+import type { InteractPrompt } from '../world/bridgeTypes';
+import { FERRY_TERMINALS, START_POINT, STATIONS, WORLD_H, WORLD_W } from '../world/cityData';
+import type { GameBoroughId, Pt } from '../world/cityData';
+import {
+  areaAtPoint,
+  generateCity,
+  isDrivable,
+  moveWithCollision,
+  blocksBullet,
+  nearestWalkable,
+  randomWalkableIn,
+} from '../world/cityGen';
+import type { City } from '../world/cityGen';
+import { CHUNK, MAX_CHUNKS, chunksForView, createChunkCache, drawCityChunk, drawCityOverlay } from '../world/cityRender';
 
 export interface WorldNpc {
   id: string;
@@ -99,7 +112,7 @@ export interface WorldCallbacks {
   onPlayerDamaged: (damage: number, attackerName: string) => void;
   onBoroughChanged: (boroughId: BoroughId) => void;
   onSelectWeapon: (weaponId: WeaponId) => void;
-  onNearInteractableChange: (prompt: { type: 'racket' | 'contact' | 'npc'; label: string; sublabel: string; id: string } | null) => void;
+  onNearInteractableChange: (prompt: InteractPrompt | null) => void;
   onTurfCapoDefeated: (racketId: string) => void;
 }
 
@@ -109,6 +122,7 @@ export interface LiveSimulationBridge {
   spawnTurfDefenseWave: (racket: RacketBuilding) => void;
   spawnAlliedHitSquad: () => void;
   triggerHealEffect: (text: string) => void;
+  takeFerry: () => void;
   getPlayerPosition: () => { x: number; y: number; boroughId: BoroughId };
 }
 
@@ -132,8 +146,21 @@ interface NycWorldCanvasProps {
   bridgeRef: React.MutableRefObject<LiveSimulationBridge | null>;
 }
 
-const WORLD_WIDTH = 3200;
-const WORLD_HEIGHT = 2120;
+const WORLD_WIDTH = WORLD_W;
+const WORLD_HEIGHT = WORLD_H;
+
+// The city is generated once per page (deterministic) and shared by every mount of the canvas.
+let cityCache: City | null = null;
+const getCity = (): City => (cityCache ??= generateCity());
+
+const FERRY_PROMPT_RANGE = 110;
+const FERRY_BOARD_RANGE = 200;
+
+interface TourHook {
+  teleport: (x: number, y: number) => void;
+  frameTimeMs: () => number;
+  slowestChunkMs: number;
+}
 
 const FAMILY_COAT_COLORS: Record<
   string,
@@ -290,10 +317,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const city = getCity();
+    const snap = (x: number, y: number, maxCells = 12): Pt => nearestWalkable(city, x, y, maxCells) ?? { x, y };
+    const startPos = snap(START_POINT.x, START_POINT.y);
+
     // Player physical state
     const player = {
-      x: 420,
-      y: 380,
+      x: startPos.x,
+      y: startPos.y,
       vx: 0,
       vy: 0,
       angle: 0,
@@ -306,8 +337,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     };
 
     const camera = {
-      x: 420,
-      y: 380,
+      x: startPos.x,
+      y: startPos.y,
       shake: 0,
       panAngle: 0,
     };
@@ -320,8 +351,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     const mouse = {
       screenX: 0,
       screenY: 0,
-      worldX: 420,
-      worldY: 380,
+      worldX: startPos.x,
+      worldY: startPos.y,
       isDown: false,
       justClicked: false,
     };
@@ -400,8 +431,9 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           const isCourier = i === 0;
           const isCitizen = i === 1;
           const isBrawler = i % 2 === 0 && !isCourier;
-          const px = b.bounds.x + 110 + Math.random() * (b.bounds.width - 220);
-          const py = b.bounds.y + 110 + Math.random() * (b.bounds.height - 220);
+          const spot = randomWalkableIn(city, b.id as GameBoroughId, Math.random);
+          const px = spot.x;
+          const py = spot.y;
           const fam = isCitizen ? 'civilian' : b.controllingFamilyDefault;
           const palette = FAMILY_COAT_COLORS[fam] || FAMILY_COAT_COLORS.civilian;
           const tierScale = 1 + (b.riskTier - 1) * 0.35;
@@ -439,13 +471,36 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       // Spawn 1980s sedans and yellow cabs on the main avenues
       streetCars.length = 0;
       const carColors = ['#EAB308', '#EAB308', '#1E293B', '#450A0A', '#27272A', '#172554'];
+      // Cars start on road or bridge cells, half of them near the start, and turn back at the road's end.
+      const runLen = (x: number, y: number, dx: number, dy: number) => {
+        let n = 0;
+        while (n < 40 && isDrivable(city, x + dx * (n + 1) * 32, y + dy * (n + 1) * 32)) n++;
+        return n;
+      };
       for (let i = 0; i < 10; i++) {
-        const horizontal = i % 2 === 0;
+        let cx = START_POINT.x;
+        let cy = START_POINT.y;
+        for (let tries = 0; tries < 800; tries++) {
+          const near = i % 2 === 0 && tries < 600;
+          const tx = near ? START_POINT.x + (Math.random() - 0.5) * 2400 : Math.random() * WORLD_WIDTH;
+          const ty = near ? START_POINT.y + (Math.random() - 0.5) * 1600 : Math.random() * WORLD_HEIGHT;
+          const gx = Math.floor(tx / 32) * 32 + 16;
+          const gy = Math.floor(ty / 32) * 32 + 16;
+          if (isDrivable(city, gx, gy)) {
+            cx = gx;
+            cy = gy;
+            break;
+          }
+        }
+        const horizontalRun = runLen(cx, cy, 1, 0) + runLen(cx, cy, -1, 0);
+        const verticalRun = runLen(cx, cy, 0, 1) + runLen(cx, cy, 0, -1);
+        const horizontal = horizontalRun >= verticalRun;
+        const sign = i % 3 === 0 ? 1 : -1;
         streetCars.push({
-          x: Math.random() * WORLD_WIDTH,
-          y: horizontal ? 1040 + (i % 4 === 0 ? -22 : 22) : Math.random() * WORLD_HEIGHT,
-          vx: horizontal ? (i % 4 === 0 ? 150 : -150) : 0,
-          vy: horizontal ? 0 : i % 3 === 0 ? 140 : -140,
+          x: cx,
+          y: cy,
+          vx: horizontal ? 150 * sign : 0,
+          vy: horizontal ? 0 : 140 * sign,
           color: carColors[i % carColors.length],
           isPolice: i === 9,
         });
@@ -454,24 +509,69 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
 
     initWorldNpcs();
 
+    // Every teleport lands on a walkable cell and snaps the camera.
+    const teleportPlayer = (x: number, y: number) => {
+      const p = snap(x, y);
+      player.x = p.x;
+      player.y = p.y;
+      camera.x = p.x;
+      camera.y = p.y;
+    };
+
+    // Moves a non-player body through the city so nobody walks through buildings or water.
+    const stepBody = (body: { x: number; y: number }, dx: number, dy: number, radius = 11) => {
+      const p = moveWithCollision(city, body.x, body.y, dx, dy, radius);
+      body.x = p.x;
+      body.y = p.y;
+    };
+
+    // Racket doors sit on the sidewalk below the lot.
+    const doorCache = new Map<string, Pt>();
+    const doorOf = (r: RacketBuilding): Pt => {
+      const key = `${r.id}:${r.x}:${r.y}:${r.width}:${r.height}`;
+      let d = doorCache.get(key);
+      if (!d) {
+        d = snap(r.x + r.width / 2, r.y + r.height + 15, 6);
+        doorCache.set(key, d);
+      }
+      return d;
+    };
+
+    // Ferry: fade out, move to the other terminal, fade in.
+    const ferry = { t: 0, active: false, moved: false, dest: { x: 0, y: 0 }, label: '' };
+    const nearestTerminal = (): { id: 'battery' | 'st_george'; d: number } => {
+      const db = Math.hypot(player.x - FERRY_TERMINALS.battery.x, player.y - FERRY_TERMINALS.battery.y);
+      const ds = Math.hypot(player.x - FERRY_TERMINALS.stGeorge.x, player.y - FERRY_TERMINALS.stGeorge.y);
+      return db <= ds ? { id: 'battery', d: db } : { id: 'st_george', d: ds };
+    };
+    const takeFerry = () => {
+      if (ferry.active) return;
+      const near = nearestTerminal();
+      if (near.d > FERRY_BOARD_RANGE) return;
+      const toStaten = near.id === 'battery';
+      const target = toStaten ? FERRY_TERMINALS.stGeorge : FERRY_TERMINALS.battery;
+      ferry.active = true;
+      ferry.moved = false;
+      ferry.t = 0;
+      ferry.dest = snap(target.x, target.y);
+      ferry.label = toStaten ? 'STATEN ISLAND FERRY: ST. GEORGE' : 'STATEN ISLAND FERRY: BATTERY';
+      soundEngine.playUiClick();
+    };
+
     // Expose imperative bridge for React UI actions
     bridgeRef.current = {
       teleportToBorough: (boroughId: BoroughId) => {
         const b = NYC_BOROUGHS.find((zone) => zone.id === boroughId);
         if (b) {
-          player.x = b.spawnPoint.x;
-          player.y = b.spawnPoint.y;
-          camera.x = b.spawnPoint.x;
-          camera.y = b.spawnPoint.y;
+          const st0 = STATIONS[b.id as GameBoroughId] ?? b.spawnPoint;
+          teleportPlayer(st0.x, st0.y);
           addFloatingText(player.x, player.y - 20, `ARRIVED: ${b.name.toUpperCase()}`, '#F59E0B');
         }
       },
       teleportToCoords: (x: number, y: number) => {
-        player.x = x;
-        player.y = y;
-        camera.x = x;
-        camera.y = y;
+        teleportPlayer(x, y);
       },
+      takeFerry,
       spawnTurfDefenseWave: (racket: RacketBuilding) => {
         const b = NYC_BOROUGHS.find((z) => z.id === racket.boroughId) || NYC_BOROUGHS[0];
         const palette = FAMILY_COAT_COLORS[racket.ownerFamily] || FAMILY_COAT_COLORS.corvini;
@@ -479,11 +579,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         // Teleport player just outside the racket entrance if far away
         const dist = Math.hypot(player.x - (racket.x + racket.width / 2), player.y - (racket.y + racket.height + 55));
         if (dist > 360) {
-          player.x = racket.x + racket.width / 2;
-          player.y = racket.y + racket.height + 65;
-          camera.x = player.x;
-          camera.y = player.y;
+          teleportPlayer(racket.x + racket.width / 2, racket.y + racket.height + 65);
         }
+        const capoSpot = snap(racket.x + racket.width / 2, racket.y + racket.height + 28);
+        const guardSpots = [
+          snap(racket.x - 24, racket.y + racket.height + 20),
+          snap(racket.x + racket.width + 24, racket.y + racket.height + 20),
+        ];
+        const guardOrigin = snap(racket.x + racket.width / 2, racket.y + racket.height + 25);
         // Remove existing guards for this racket first
         for (let i = npcs.length - 1; i >= 0; i--) {
           if (npcs[i].racketGuardId === racket.id) npcs.splice(i, 1);
@@ -494,8 +597,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           name: `Capo defending ${racket.name.split(' ')[0]}`,
           role: 'capo',
           familyId: racket.ownerFamily === 'player' ? 'corvini' : racket.ownerFamily,
-          x: racket.x + racket.width / 2,
-          y: racket.y + racket.height + 28,
+          x: capoSpot.x,
+          y: capoSpot.y,
           vx: 0,
           vy: 0,
           hp: Math.round(240 * tierMult),
@@ -503,8 +606,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           angle: Math.PI / 2,
           state: 'windup',
           stateTimer: 0.5,
-          patrolOriginX: racket.x + racket.width / 2,
-          patrolOriginY: racket.y + racket.height + 28,
+          patrolOriginX: capoSpot.x,
+          patrolOriginY: capoSpot.y,
           coatColor: palette.coat,
           hatColor: '#F59E0B',
           hitFlashTimer: 0,
@@ -519,8 +622,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             name: `${racket.ownerFamily.toUpperCase()} Button Man`,
             role: g === 0 ? 'brawler' : 'soldato',
             familyId: racket.ownerFamily === 'player' ? 'corvini' : racket.ownerFamily,
-            x: racket.x + (g === 0 ? -24 : racket.width + 24),
-            y: racket.y + racket.height + 20,
+            x: guardSpots[g].x,
+            y: guardSpots[g].y,
             vx: 0,
             vy: 0,
             hp: Math.round(130 * tierMult),
@@ -528,8 +631,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             angle: Math.PI / 2,
             state: 'patrol',
             stateTimer: 0.3,
-            patrolOriginX: racket.x + racket.width / 2,
-            patrolOriginY: racket.y + racket.height + 25,
+            patrolOriginX: guardOrigin.x,
+            patrolOriginY: guardOrigin.y,
             coatColor: palette.coat,
             hatColor: palette.hat,
             hitFlashTimer: 0,
@@ -544,13 +647,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       },
       spawnAlliedHitSquad: () => {
         for (let i = 0; i < 2; i++) {
+          const allySpot = snap(player.x + (i === 0 ? -40 : 40), player.y + 30);
           npcs.push({
             id: `ally_${Date.now()}_${i}`,
             name: `Corvini Cadillac Enforcer`,
             role: 'ally',
             familyId: 'player',
-            x: player.x + (i === 0 ? -40 : 40),
-            y: player.y + 30,
+            x: allySpot.x,
+            y: allySpot.y,
             vx: 0,
             vy: 0,
             hp: 220,
@@ -580,6 +684,46 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         boroughId: player.currentBorough,
       }),
     };
+
+    // Tour hook for the CI city tour: present only when the URL has ?tour.
+    const tourWin = window as unknown as { __cityTour?: TourHook };
+    const frameSamples: number[] = [];
+    let tourHook: TourHook | null = null;
+    try {
+      if (new URLSearchParams(window.location.search).has('tour')) {
+        tourHook = {
+          teleport: (x: number, y: number) => teleportPlayer(x, y),
+          frameTimeMs: () => (frameSamples.length ? frameSamples.reduce((a, b) => a + b, 0) / frameSamples.length : 0),
+          slowestChunkMs: 0,
+        };
+        tourWin.__cityTour = tourHook;
+      }
+    } catch {
+      tourHook = null;
+    }
+
+    // City pieces: 512 px canvases drawn once, at most one new piece per frame.
+    interface Piece {
+      key: number;
+      cv: HTMLCanvasElement;
+    }
+    const baked = new Set<number>();
+    const pieces = createChunkCache<Piece>(
+      MAX_CHUNKS,
+      (cx, cy) => {
+        const cv = document.createElement('canvas');
+        cv.width = CHUNK;
+        cv.height = CHUNK;
+        return { key: cy * 1000 + cx, cv };
+      },
+      (p) => {
+        baked.delete(p.key);
+        p.cv.width = 0;
+        p.cv.height = 0;
+      }
+    );
+    const clampCam = (v: number, view: number, world: number) =>
+      world <= view ? world / 2 : Math.max(view / 2, Math.min(world - view / 2, v));
 
     // Resize listener
     const handleResize = () => {
@@ -761,6 +905,19 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       lastTime = now;
       // Clamped delta time per 60fps simulation guideline
       const dt = Math.min(rawDt, 0.05);
+      if (tourHook && rawDt > 0 && rawDt < 1) {
+        frameSamples.push(rawDt * 1000);
+        if (frameSamples.length > 60) frameSamples.shift();
+      }
+      if (ferry.active) {
+        ferry.t += dt;
+        if (!ferry.moved && ferry.t >= 0.25) {
+          ferry.moved = true;
+          teleportPlayer(ferry.dest.x, ferry.dest.y);
+          addFloatingText(player.x, player.y - 24, ferry.label, '#38BDF8');
+        }
+        if (ferry.t >= 0.5) ferry.active = false;
+      }
 
       const st = stateRef.current;
       const touchActive = isTouchMode();
@@ -773,8 +930,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         if (st.isTitleScreen) {
           // Live atmospheric camera pan across 1984 NYC on the Title Screen
           camera.panAngle += dt * 0.18;
-          camera.x = 1550 + Math.cos(camera.panAngle) * 950;
-          camera.y = 1020 + Math.sin(camera.panAngle * 0.7) * 520;
+          camera.x = 2900 + Math.cos(camera.panAngle) * 1200;
+          camera.y = 2500 + Math.sin(camera.panAngle * 0.7) * 800;
         } else {
           // Player movement
           let moveX = 0;
@@ -806,8 +963,9 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           player.vx = moveX * baseSpeed;
           player.vy = moveY * baseSpeed;
 
-          player.x = Math.max(60, Math.min(WORLD_WIDTH - 60, player.x + player.vx * dt));
-          player.y = Math.max(60, Math.min(WORLD_HEIGHT - 60, player.y + player.vy * dt));
+          const moved = moveWithCollision(city, player.x, player.y, player.vx * dt, player.vy * dt, player.radius);
+          player.x = Math.max(20, Math.min(WORLD_WIDTH - 20, moved.x));
+          player.y = Math.max(20, Math.min(WORLD_HEIGHT - 20, moved.y));
 
           // Update mouse world position and player facing angle
           mouse.worldX = camera.x - canvas.width / 2 + mouse.screenX;
@@ -831,28 +989,22 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             triggerPlayerAttack();
           }
 
-          // Detect current Borough
-          for (const b of NYC_BOROUGHS) {
-            if (
-              player.x >= b.bounds.x &&
-              player.x <= b.bounds.x + b.bounds.width &&
-              player.y >= b.bounds.y &&
-              player.y <= b.bounds.y + b.bounds.height
-            ) {
-              if (player.currentBorough !== b.id) {
-                player.currentBorough = b.id;
-                st.callbacks.onBoroughChanged(b.id);
-                const famVisual = FAMILY_COAT_COLORS[b.controllingFamilyDefault];
-                if (famVisual) {
-                  addFloatingText(
-                    player.x,
-                    player.y - 36,
-                    `${famVisual.symbol} ${famVisual.shortFamily} TURF · NPC TRAIT: ${famVisual.traitTag}`,
-                    famVisual.accent
-                  );
-                }
+          // Detect current borough by outline; Uptown and Staten Island never fire the callback
+          const areaHere = areaAtPoint(city, player.x, player.y);
+          if (areaHere && areaHere !== 'uptown' && areaHere !== 'staten_island' && player.currentBorough !== areaHere) {
+            const b = NYC_BOROUGHS.find((z) => z.id === areaHere);
+            if (b) {
+              player.currentBorough = b.id;
+              st.callbacks.onBoroughChanged(b.id);
+              const famVisual = FAMILY_COAT_COLORS[b.controllingFamilyDefault];
+              if (famVisual) {
+                addFloatingText(
+                  player.x,
+                  player.y - 36,
+                  `${famVisual.symbol} ${famVisual.shortFamily} TURF · NPC TRAIT: ${famVisual.traitTag}`,
+                  famVisual.accent
+                );
               }
-              break;
             }
           }
 
@@ -872,7 +1024,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           }
 
           // Check nearest interactable (Racket door, Social Contact, or Courier shakedown)
-          let nearestPrompt: { type: 'racket' | 'contact' | 'npc'; label: string; sublabel: string; id: string } | null = null;
+          let nearestPrompt: InteractPrompt | null = null;
           let minDist = 115;
 
           for (const c of st.contacts) {
@@ -889,9 +1041,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           }
 
           for (const r of st.rackets) {
-            const doorX = r.x + r.width / 2;
-            const doorY = r.y + r.height + 15;
-            const d = Math.hypot(player.x - doorX, player.y - doorY);
+            const door = doorOf(r);
+            const d = Math.hypot(player.x - door.x, player.y - door.y);
             if (d < minDist) {
               minDist = d;
               nearestPrompt = {
@@ -906,6 +1057,17 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             }
           }
 
+          const term = nearestTerminal();
+          if (!ferry.active && term.d < FERRY_PROMPT_RANGE && term.d < minDist) {
+            const toStaten = term.id === 'battery';
+            nearestPrompt = {
+              type: 'ferry',
+              label: toStaten ? '[E] Take the ferry to Staten Island' : '[E] Take the ferry to Manhattan',
+              sublabel: toStaten ? 'Staten Island Ferry · Battery terminal' : 'Staten Island Ferry · St. George terminal',
+              id: term.id,
+            };
+          }
+
           const promptKey = nearestPrompt ? `${nearestPrompt.type}:${nearestPrompt.id}:${nearestPrompt.label}` : '';
           if (promptKey !== lastInteractionLabel) {
             lastInteractionLabel = promptKey;
@@ -918,6 +1080,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               st.callbacks.onOpenContactSitDown(nearestPrompt.id);
             } else if (nearestPrompt.type === 'racket') {
               st.callbacks.onOpenRacketModal(nearestPrompt.id);
+            } else if (nearestPrompt.type === 'ferry') {
+              takeFerry();
             }
           }
 
@@ -928,18 +1092,21 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             camera.shake = Math.max(0, camera.shake - dt * 28);
           }
         }
+        camera.x = clampCam(camera.x, canvas.width, WORLD_WIDTH);
+        camera.y = clampCam(camera.y, canvas.height, WORLD_HEIGHT);
 
         // Ensure Allied Bodyguards exist if unlocked
         if (st.hasAlliedBodyguards) {
           const allyCount = npcs.filter((n) => n.role === 'ally').length;
           if (allyCount < 2) {
+            const skillSpot = snap(player.x + (allyCount === 0 ? -38 : 38), player.y + 32);
             npcs.push({
               id: `ally_skill_${Date.now()}_${allyCount}`,
               name: 'Made Bodyguard',
               role: 'ally',
               familyId: 'player',
-              x: player.x + (allyCount === 0 ? -38 : 38),
-              y: player.y + 32,
+              x: skillSpot.x,
+              y: skillSpot.y,
               vx: 0,
               vy: 0,
               hp: 250,
@@ -962,13 +1129,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         // Spawn NYPD Squad if Police Heat is high (> 55)
         if (st.policeHeat > 55 && npcs.filter((n) => n.role === 'nypd').length < 3 && Math.random() < dt * 0.35) {
           const spawnAngle = Math.random() * Math.PI * 2;
+          const nypdSpot = snap(player.x + Math.cos(spawnAngle) * 420, player.y + Math.sin(spawnAngle) * 420);
           npcs.push({
             id: `nypd_${Date.now()}`,
             name: 'NYPD Organized Crime Task Force',
             role: 'nypd',
             familyId: 'nypd',
-            x: player.x + Math.cos(spawnAngle) * 420,
-            y: player.y + Math.sin(spawnAngle) * 420,
+            x: nypdSpot.x,
+            y: nypdSpot.y,
             vx: 0,
             vy: 0,
             hp: 150,
@@ -993,7 +1161,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           b.x += b.vx * dt;
           b.y += b.vy * dt;
           b.life -= dt;
-          if (b.life <= 0) {
+          if (b.life <= 0 || blocksBullet(city, b.x, b.y) || blocksBullet(city, b.x - b.vx * dt * 0.5, b.y - b.vy * dt * 0.5)) {
             bullets.splice(i, 1);
             continue;
           }
@@ -1073,13 +1241,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             if (!guardId && npc.role !== 'ally' && npc.role !== 'nypd') {
               const b = NYC_BOROUGHS[Math.floor(Math.random() * NYC_BOROUGHS.length)];
               const palette = FAMILY_COAT_COLORS[b.controllingFamilyDefault];
+              const respawnSpot = randomWalkableIn(city, b.id as GameBoroughId, Math.random);
               npcs.push({
                 id: `npc_respawn_${Date.now()}_${Math.random()}`,
                 name: npc.name,
                 role: npc.role,
                 familyId: b.controllingFamilyDefault,
-                x: b.bounds.x + 120 + Math.random() * (b.bounds.width - 240),
-                y: b.bounds.y + 120 + Math.random() * (b.bounds.height - 240),
+                x: respawnSpot.x,
+                y: respawnSpot.y,
                 vx: 0,
                 vy: 0,
                 hp: npc.maxHp,
@@ -1087,8 +1256,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                 angle: 0,
                 state: 'patrol',
                 stateTimer: 2,
-                patrolOriginX: b.spawnPoint.x,
-                patrolOriginY: b.spawnPoint.y,
+                patrolOriginX: respawnSpot.x,
+                patrolOriginY: respawnSpot.y,
                 coatColor: palette.coat,
                 hatColor: palette.hat,
                 hitFlashTimer: 0,
@@ -1114,8 +1283,12 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               npc.vx *= 0.8;
               npc.vy *= 0.8;
             }
-            npc.x += npc.vx * dt;
-            npc.y += npc.vy * dt;
+            if (Math.hypot(player.x - npc.x, player.y - npc.y) > 900) {
+              const back = snap(player.x + (i % 2 === 0 ? -42 : 42), player.y + 36);
+              npc.x = back.x;
+              npc.y = back.y;
+            }
+            stepBody(npc, npc.vx * dt, npc.vy * dt);
 
             // Shoot nearest hostile NPC
             npc.stateTimer -= dt;
@@ -1173,16 +1346,14 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                 npc.vy = Math.sin(wanderAngle) * 55;
                 npc.angle = wanderAngle;
               }
-              npc.x += npc.vx * dt;
-              npc.y += npc.vy * dt;
+              stepBody(npc, npc.vx * dt, npc.vy * dt);
             }
           } else if (npc.state === 'windup') {
             // Visible windup telegraph before attack!
             npc.angle = Math.atan2(player.y - npc.y, player.x - npc.x);
             if (npc.role === 'brawler') {
               // Slowly step in during windup
-              npc.x += Math.cos(npc.angle) * 65 * dt;
-              npc.y += Math.sin(npc.angle) * 65 * dt;
+              stepBody(npc, Math.cos(npc.angle) * 65 * dt, Math.sin(npc.angle) * 65 * dt);
             }
             if (npc.stateTimer <= 0) {
               npc.state = 'attack';
@@ -1216,8 +1387,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               }
             }
           } else if (npc.state === 'attack') {
-            npc.x += npc.vx * dt;
-            npc.y += npc.vy * dt;
+            stepBody(npc, npc.vx * dt, npc.vy * dt);
             npc.vx *= 0.88;
             npc.vy *= 0.88;
             if (npc.stateTimer <= 0) {
@@ -1227,8 +1397,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           } else if (npc.state === 'cooldown') {
             // Reposition slightly
             const strafeAngle = Math.atan2(player.y - npc.y, player.x - npc.x) + Math.PI / 2;
-            npc.x += Math.cos(strafeAngle) * 70 * dt;
-            npc.y += Math.sin(strafeAngle) * 70 * dt;
+            stepBody(npc, Math.cos(strafeAngle) * 70 * dt, Math.sin(strafeAngle) * 70 * dt);
             npc.angle = Math.atan2(player.y - npc.y, player.x - npc.x);
             if (npc.stateTimer <= 0) {
               npc.state = distToPlayer < 360 ? 'windup' : 'patrol';
@@ -1239,12 +1408,19 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
 
         // Update ambient 1984 NYC traffic
         for (const car of streetCars) {
-          car.x += car.vx * dt;
-          car.y += car.vy * dt;
-          if (car.x > WORLD_WIDTH + 80) car.x = -80;
-          if (car.x < -80) car.x = WORLD_WIDTH + 80;
-          if (car.y > WORLD_HEIGHT + 80) car.y = -80;
-          if (car.y < -80) car.y = WORLD_HEIGHT + 80;
+          const carX = car.x + car.vx * dt;
+          const carY = car.y + car.vy * dt;
+          if (isDrivable(city, carX, carY)) {
+            car.x = carX;
+            car.y = carY;
+          }
+          // Turn back where the road ends so a car never leaves road or bridge cells
+          const lookX = car.vx === 0 ? 0 : Math.sign(car.vx) * 36;
+          const lookY = car.vy === 0 ? 0 : Math.sign(car.vy) * 36;
+          if (!isDrivable(city, car.x + lookX, car.y + lookY)) {
+            car.vx = -car.vx;
+            car.vy = -car.vy;
+          }
         }
 
         // Update particles
@@ -1275,111 +1451,52 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       ctx.fillStyle = '#09090B';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+      camera.x = clampCam(camera.x, canvas.width, WORLD_WIDTH);
+      camera.y = clampCam(camera.y, canvas.height, WORLD_HEIGHT);
       ctx.save();
       const shakeX = (Math.random() - 0.5) * camera.shake * 2;
       const shakeY = (Math.random() - 0.5) * camera.shake * 2;
-      ctx.translate(canvas.width / 2 - camera.x + shakeX, canvas.height / 2 - camera.y + shakeY);
+      const originX = Math.round(canvas.width / 2 - camera.x + shakeX);
+      const originY = Math.round(canvas.height / 2 - camera.y + shakeY);
+      ctx.translate(originX, originY);
 
-      // East River / Hudson River dark water channels between boroughs
-      ctx.fillStyle = '#070B12';
-      ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
-
-      // Draw Borough Zones, Territory Crest Medallions & Street Grid
-      for (const b of NYC_BOROUGHS) {
-        const famData = FIVE_FAMILIES.find((f) => f.id === b.controllingFamilyDefault) || FIVE_FAMILIES[0];
-        const famVis = FAMILY_COAT_COLORS[b.controllingFamilyDefault] || FAMILY_COAT_COLORS.corvini;
-
-        ctx.fillStyle = b.floorColor;
-        ctx.fillRect(b.bounds.x, b.bounds.y, b.bounds.width, b.bounds.height);
-
-        // Subtle city block cobblestone/asphalt grid lines
-        ctx.strokeStyle = 'rgba(255,255,255,0.035)';
-        ctx.lineWidth = 1;
-        for (let gx = b.bounds.x + 80; gx < b.bounds.x + b.bounds.width; gx += 90) {
-          ctx.beginPath();
-          ctx.moveTo(gx, b.bounds.y);
-          ctx.lineTo(gx, b.bounds.y + b.bounds.height);
-          ctx.stroke();
-        }
-        for (let gy = b.bounds.y + 80; gy < b.bounds.y + b.bounds.height; gy += 90) {
-          ctx.beginPath();
-          ctx.moveTo(b.bounds.x, gy);
-          ctx.lineTo(b.bounds.x + b.bounds.width, gy);
-          ctx.stroke();
-        }
-
-        // Borough territory perimeter border + double inner family line
-        ctx.strokeStyle = b.borderColor;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(b.bounds.x, b.bounds.y, b.bounds.width, b.bounds.height);
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(b.bounds.x + 6, b.bounds.y + 6, b.bounds.width - 12, b.bounds.height - 12);
-
-        // Draw 4 Corner Family Territory Pylons / Checkpoints so players know which turf they are entering
-        const corners = [
-          { cx: b.bounds.x + 18, cy: b.bounds.y + 18 },
-          { cx: b.bounds.x + b.bounds.width - 18, cy: b.bounds.y + 18 },
-          { cx: b.bounds.x + 18, cy: b.bounds.y + b.bounds.height - 18 },
-          { cx: b.bounds.x + b.bounds.width - 18, cy: b.bounds.y + b.bounds.height - 18 },
-        ];
-        for (const corner of corners) {
-          ctx.fillStyle = famVis.coat;
-          ctx.beginPath();
-          ctx.arc(corner.cx, corner.cy, 12, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.strokeStyle = famVis.accent;
-          ctx.lineWidth = 2;
-          ctx.stroke();
-          ctx.fillStyle = '#F5F0E6';
-          ctx.font = '700 11px "JetBrains Mono", monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText(famVis.symbol, corner.cx, corner.cy + 4);
-        }
-
-        // Borough Ground Stencil Label & Family Trait Identification Banner
-        ctx.textAlign = 'left';
-        ctx.fillStyle = 'rgba(245, 240, 230, 0.16)';
-        ctx.font = '700 22px "Cinzel", serif';
-        ctx.fillText(b.name.toUpperCase(), b.bounds.x + 36, b.bounds.y + 44);
-
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.35)';
-        ctx.font = '600 12px "JetBrains Mono", monospace';
-        ctx.fillText(
-          `${b.riskLabel.toUpperCase()} · ${b.rewardMultiplier.toFixed(2)}X TRIBUTE`,
-          b.bounds.x + 36,
-          b.bounds.y + 64
-        );
-
-        // Territory Family Trait Spotter Stencil on the street
-        ctx.fillStyle = famVis.accent;
-        ctx.globalAlpha = 0.45;
-        ctx.font = '700 11px "JetBrains Mono", monospace';
-        ctx.fillText(
-          `${famVis.symbol} ${famData.turfCornerMarker} · NPC TRAIT: ${famData.traitName.toUpperCase()}`,
-          b.bounds.x + 36,
-          b.bounds.y + 84
-        );
-        ctx.globalAlpha = 1;
+      // City ground: cached 512 px pieces, at most one new piece baked per frame
+      const view = { x: -originX, y: -originY, w: canvas.width, h: canvas.height };
+      const wanted = chunksForView(view, 1, MAX_CHUNKS);
+      for (let k = wanted.length - 1; k >= 0; k--) {
+        if (baked.has(wanted[k].cy * 1000 + wanted[k].cx)) pieces.get(wanted[k].cx, wanted[k].cy);
       }
-
-      // Draw NYC Bridges & Grand Avenues connecting the 5 Boroughs
-      ctx.fillStyle = '#18181B';
-      // Horizontal Grand Expressway
-      ctx.fillRect(80, 1005, WORLD_WIDTH - 160, 74);
-      // Vertical Bridges connecting North & South boroughs
-      ctx.fillRect(1020, 80, 95, WORLD_HEIGHT - 160);
-      ctx.fillRect(2095, 80, 85, WORLD_HEIGHT - 160);
-
-      // Yellow double-dashed centerlines on avenues
-      ctx.strokeStyle = 'rgba(234, 179, 8, 0.35)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([18, 14]);
-      ctx.beginPath();
-      ctx.moveTo(80, 1042);
-      ctx.lineTo(WORLD_WIDTH - 80, 1042);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      for (const w of wanted) {
+        const key = w.cy * 1000 + w.cx;
+        if (baked.has(key)) continue;
+        const piece = pieces.get(w.cx, w.cy);
+        const pctx = piece.cv.getContext('2d');
+        if (pctx) {
+          const t0 = performance.now();
+          try {
+            pctx.clearRect(0, 0, CHUNK, CHUNK);
+            drawCityChunk(pctx, city, w.cx, w.cy);
+            baked.add(key);
+          } catch {
+            // drawn again next frame
+          }
+          if (tourHook) tourHook.slowestChunkMs = Math.max(tourHook.slowestChunkMs, performance.now() - t0);
+        }
+        break;
+      }
+      for (const w of wanted) {
+        const px = w.cx * CHUNK;
+        const py = w.cy * CHUNK;
+        if (px + CHUNK < view.x || px > view.x + view.w || py + CHUNK < view.y || py > view.y + view.h) continue;
+        const key = w.cy * 1000 + w.cx;
+        if (baked.has(key)) {
+          ctx.drawImage(pieces.get(w.cx, w.cy).cv, px, py);
+        } else {
+          ctx.fillStyle = '#0A1018';
+          ctx.fillRect(px, py, CHUNK, CHUNK);
+        }
+      }
+      drawCityOverlay(ctx, city, view, now / 1000);
 
       // Draw 1984 Street Cars
       for (const car of streetCars) {
@@ -1413,32 +1530,16 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       for (const r of st.rackets) {
         const isPlayerOwned = r.ownerFamily === 'player';
         const rFamVis = FAMILY_COAT_COLORS[r.ownerFamily] || FAMILY_COAT_COLORS.corvini;
-        // Drop shadow
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillRect(r.x + 8, r.y + 10, r.width, r.height);
+        // The city draws the building itself; the engine adds an ownership strip and a plaque
+        ctx.fillStyle = isPlayerOwned ? '#10B981' : rFamVis.accent;
+        ctx.fillRect(r.x, r.y + r.height - 4, r.width, 4);
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.72)';
+        ctx.fillRect(r.x + r.width / 2 - 92, r.y + r.height - 44, 184, 36);
 
-        // Building roof
-        ctx.fillStyle = isPlayerOwned ? '#14532D' : r.roofColor;
-        ctx.fillRect(r.x, r.y, r.width, r.height);
-
-        // Building architectural trim
-        ctx.strokeStyle = isPlayerOwned ? '#10B981' : rFamVis.accent;
-        ctx.lineWidth = isPlayerOwned ? 2.5 : 1.8;
-        ctx.strokeRect(r.x, r.y, r.width, r.height);
-
-        // Inner rooftop skylight / HVAC detail
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.32)';
-        ctx.fillRect(r.x + 12, r.y + 12, r.width - 24, r.height - 32);
-
-        // Warm storefront awning at bottom edge
-        ctx.fillStyle = isPlayerOwned ? '#059669' : rFamVis.accent;
-        ctx.fillRect(r.x + r.width / 2 - 28, r.y + r.height - 6, 56, 10);
-
-        // Neon Sign & Racket Name
         ctx.fillStyle = '#F5F0E6';
         ctx.font = '700 12px "Plus Jakarta Sans", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(r.name, r.x + r.width / 2, r.y + 28);
+        ctx.fillText(r.name, r.x + r.width / 2, r.y + r.height - 28);
 
         ctx.fillStyle = isPlayerOwned ? '#6EE7B7' : '#FBBF24';
         ctx.font = '600 10px "JetBrains Mono", monospace';
@@ -1447,7 +1548,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             ? `★ YOUR TURF · LV.${r.level} ($${(r.baseIncomePerHour * r.level).toLocaleString()}/HR)`
             : `${rFamVis.symbol} ${r.ownerFamily.toUpperCase()} TURF · LV.${r.level}`,
           r.x + r.width / 2,
-          r.y + 46
+          r.y + r.height - 14
         );
 
         // Floating Uncollected Cash Envelope indicator
@@ -1778,6 +1879,13 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
 
       ctx.restore();
 
+      // Ferry fade
+      if (ferry.active) {
+        const fa = ferry.t < 0.25 ? ferry.t / 0.25 : Math.max(0, (0.5 - ferry.t) / 0.25);
+        ctx.fillStyle = `rgba(0,0,0,${Math.min(1, fa).toFixed(3)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
       // Screen-space 1984 NYC Rain & Noir Vignette
       ctx.strokeStyle = 'rgba(212, 212, 216, 0.13)';
       ctx.lineWidth = 1;
@@ -1830,6 +1938,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
 
     return () => {
       cancelAnimationFrame(animId);
+      if (tourHook && tourWin.__cityTour === tourHook) delete tourWin.__cityTour;
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
