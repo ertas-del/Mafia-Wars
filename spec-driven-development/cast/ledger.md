@@ -477,7 +477,7 @@
     },
     {
       "id": "T-002",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high",
       "dependencies": [
         "T-001"
@@ -502,21 +502,84 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-002 dispatched to a fresh Opus worker"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 25,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commit 0ad78ba: NycWorldCanvas.tsx only"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 26,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-002",
+          "evidence": "evidence/EV-002-engine-smoke.md; controller reran all unit tests (63 pass) and viewed the crowd shot"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 27,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "controller scope check (standard track; whole-change review under T-003)",
+          "evidence": "one file changed; real-name list removed (0 matches)"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 28,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-002",
+          "review_evidence": "controller scope check",
+          "commit": "0ad78ba",
+          "evidence": "committed on ertas-del/new/cast"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 29,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-002",
+          "review_evidence": "controller scope check",
+          "commit": "0ad78ba",
+          "evidence": "EV-002 passes"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-002"
+      ]
     },
     {
       "id": "T-003",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "controller",
       "dependencies": [
         "T-002"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/cast",
+      "branch": "ertas-del/new/cast",
+      "baseline": "0ad78ba",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 30,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-002"
+          ],
+          "evidence": "T-002 done at 0ad78ba"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 31,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "controller updating CLAUDE.md and pushing for Check"
+        }
+      ],
       "evidence": []
     },
     {
@@ -589,7 +652,7 @@ Preflight and clarification are done; both artifacts are approved and execution 
 
 ## Task State
 
-T-001 is DONE; T-002 is IN_PROGRESS; T-003 and T-004 are PENDING.
+T-001 and T-002 are DONE; T-003 is IN_PROGRESS; T-004 is PENDING.
 
 ## Amendments
 
