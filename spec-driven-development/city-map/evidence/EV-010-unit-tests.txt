@@ -1,0 +1,292 @@
+TAP version 13
+# Subtest: pulse durations
+ok 1 - pulse durations
+  ---
+  duration_ms: 1.353528
+  type: 'test'
+  ...
+# Subtest: one pulse per 100 ms window
+ok 2 - one pulse per 100 ms window
+  ---
+  duration_ms: 0.178744
+  type: 'test'
+  ...
+# Subtest: longer pulse replaces a shorter one inside the window
+ok 3 - longer pulse replaces a shorter one inside the window
+  ---
+  duration_ms: 0.148505
+  type: 'test'
+  ...
+# Subtest: defaults on and persists the choice
+ok 4 - defaults on and persists the choice
+  ---
+  duration_ms: 0.180684
+  type: 'test'
+  ...
+# Subtest: no calls when disabled or unsupported
+ok 5 - no calls when disabled or unsupported
+  ---
+  duration_ms: 0.160246
+  type: 'test'
+  ...
+# Subtest: storage errors are caught and default stays on
+ok 6 - storage errors are caught and default stays on
+  ---
+  duration_ms: 0.110137
+  type: 'test'
+  ...
+# Subtest: dead zone gives no movement
+ok 7 - dead zone gives no movement
+  ---
+  duration_ms: 1.3912
+  type: 'test'
+  ...
+# Subtest: movement scales beyond dead zone and clamps at radius
+ok 8 - movement scales beyond dead zone and clamps at radius
+  ---
+  duration_ms: 0.240337
+  type: 'test'
+  ...
+# Subtest: sprint at 85% of radius
+ok 9 - sprint at 85% of radius
+  ---
+  duration_ms: 0.135103
+  type: 'test'
+  ...
+# Subtest: sticks bind to touch ids; two at once; third ignored
+ok 10 - sticks bind to touch ids; two at once; third ignored
+  ---
+  duration_ms: 0.167271
+  type: 'test'
+  ...
+# Subtest: cancel clears both sticks
+ok 11 - cancel clears both sticks
+  ---
+  duration_ms: 0.126678
+  type: 'test'
+  ...
+# Subtest: aim angle, attack only beyond dead zone, facing kept after release
+ok 12 - aim angle, attack only beyond dead zone, facing kept after release
+  ---
+  duration_ms: 0.155546
+  type: 'test'
+  ...
+# Subtest: AC-001 size and determinism
+ok 13 - AC-001 size and determinism
+  ---
+  duration_ms: 134.787376
+  type: 'test'
+  ...
+# Subtest: AC-002 water, stations and no building on water
+ok 14 - AC-002 water, stations and no building on water
+  ---
+  duration_ms: 7.592291
+  type: 'test'
+  ...
+# Subtest: AC-002 bridges join their shores, the George Washington Bridge is blocked
+ok 15 - AC-002 bridges join their shores, the George Washington Bridge is blocked
+  ---
+  duration_ms: 23.280818
+  type: 'test'
+  ...
+# Subtest: AC-003 every station reaches every other station and Staten Island; ferries are walkable
+ok 16 - AC-003 every station reaches every other station and Staten Island; ferries are walkable
+  ---
+  duration_ms: 8.359948
+  type: 'test'
+  ...
+# Subtest: AC-004 unique look signatures and sign names, signatures hold no position or id
+ok 17 - AC-004 unique look signatures and sign names, signatures hold no position or id
+  ---
+  duration_ms: 1.767789
+  type: 'test'
+  ...
+# Subtest: AC-005 racket lots, contacts and spawn picks
+ok 18 - AC-005 racket lots, contacts and spawn picks
+  ---
+  duration_ms: 4.192325
+  type: 'test'
+  ...
+# Subtest: density: buildings fill at least 38 percent of each area and meet the per-area counts
+ok 19 - density: buildings fill at least 38 percent of each area and meet the per-area counts
+  ---
+  duration_ms: 10.75533
+  type: 'test'
+  ...
+# Subtest: streets: stations reach their rackets on foot without big detours, and the grid has junctions
+ok 20 - streets: stations reach their rackets on foot without big detours, and the grid has junctions
+  ---
+  duration_ms: 32.432587
+  type: 'test'
+  ...
+# Subtest: helpers: nearestWalkable, sliding collision, bullets
+ok 21 - helpers: nearestWalkable, sliding collision, bullets
+  ---
+  duration_ms: 2.974246
+  type: 'test'
+  ...
+# Subtest: game data ids and boroughs match the tuples and tables here
+ok 22 - game data ids and boroughs match the tuples and tables here
+  ---
+  duration_ms: 5.525525
+  type: 'test'
+  ...
+# Subtest: EV-003 constants
+ok 23 - EV-003 constants
+  ---
+  duration_ms: 0.806085
+  type: 'test'
+  ...
+# Subtest: EV-003 cache never exceeds its limit and evicts least recently used
+ok 24 - EV-003 cache never exceeds its limit and evicts least recently used
+  ---
+  duration_ms: 1.013572
+  type: 'test'
+  ...
+# Subtest: EV-003 a cache hit does not rebuild
+ok 25 - EV-003 a cache hit does not rebuild
+  ---
+  duration_ms: 0.120168
+  type: 'test'
+  ...
+# Subtest: EV-003 view plus ring never needs more than 24 pieces, and visible pieces always fit
+ok 26 - EV-003 view plus ring never needs more than 24 pieces, and visible pieces always fit
+  ---
+  duration_ms: 57.887751
+  type: 'test'
+  ...
+# Subtest: EV-003 every piece of the generated city draws without throwing
+ok 27 - EV-003 every piece of the generated city draws without throwing
+  ---
+  duration_ms: 290.354898
+  type: 'test'
+  ...
+# Subtest: overlay draws for several views and time values without throwing
+ok 28 - overlay draws for several views and time values without throwing
+  ---
+  duration_ms: 53.150575
+  type: 'test'
+  ...
+# Subtest: every BRIDGES entry draws into at least one piece without throwing
+ok 29 - every BRIDGES entry draws into at least one piece without throwing
+  ---
+  duration_ms: 151.708748
+  type: 'test'
+  ...
+# Subtest: every corner of every BRIDGE cell lies inside a drawn bridge deck
+ok 30 - every corner of every BRIDGE cell lies inside a drawn bridge deck
+  ---
+  duration_ms: 61.045825
+  type: 'test'
+  ...
+# Subtest: no bridge deck covers a building cell
+ok 31 - no bridge deck covers a building cell
+  ---
+  duration_ms: 1249.707448
+  type: 'test'
+  ...
+# Subtest: AC-007 path search leads around a building to a target behind it (hand-made wall)
+ok 32 - AC-007 path search leads around a building to a target behind it (hand-made wall)
+  ---
+  duration_ms: 6.645136
+  type: 'test'
+  ...
+# Subtest: AC-007 flow field details: radius limit, unreachable cells, target cell
+ok 33 - AC-007 flow field details: radius limit, unreachable cells, target cell
+  ---
+  duration_ms: 0.696744
+  type: 'test'
+  ...
+# Subtest: AC-007 path search leads around a building to a target behind it (real city)
+ok 34 - AC-007 path search leads around a building to a target behind it (real city)
+  ---
+  duration_ms: 15.023503
+  type: 'test'
+  ...
+# Subtest: AC-007 the stuck rule fires after 2 s without progress and picks a new walkable target
+ok 35 - AC-007 the stuck rule fires after 2 s without progress and picks a new walkable target
+  ---
+  duration_ms: 2.636707
+  type: 'test'
+  ...
+# Subtest: AC-007 an NPC pressed into a wall is freed by the stuck rule
+ok 36 - AC-007 an NPC pressed into a wall is freed by the stuck rule
+  ---
+  duration_ms: 0.329407
+  type: 'test'
+  ...
+# Subtest: flow field is cheap enough to rebuild a few times a second for several NPCs
+ok 37 - flow field is cheap enough to rebuild a few times a second for several NPCs
+  ---
+  duration_ms: 39.813315
+  type: 'test'
+  ...
+# Subtest: AC-008 2,000 fixed 1/60 s steps: every car stays on road or bridge cells and one crosses a bridge
+ok 38 - AC-008 2,000 fixed 1/60 s steps: every car stays on road or bridge cells and one crosses a bridge
+  ---
+  duration_ms: 79.782481
+  type: 'test'
+  ...
+# Subtest: AC-008 holds for several other seeds too
+ok 39 - AC-008 holds for several other seeds too
+  ---
+  duration_ms: 129.514521
+  type: 'test'
+  ...
+# Subtest: traffic: same seed gives the same cars, one in ten is police, cars never wrap or leave the world
+ok 40 - traffic: same seed gives the same cars, one in ten is police, cars never wrap or leave the world
+  ---
+  duration_ms: 39.492004
+  type: 'test'
+  ...
+# Subtest: traffic: cars keep to the right-hand lane on plain roads and turn at junctions
+ok 41 - traffic: cars keep to the right-hand lane on plain roads and turn at junctions
+  ---
+  duration_ms: 37.192735
+  type: 'test'
+  ...
+# Subtest: traffic: a spawn in a city with no roads returns no cars and stepping is harmless
+ok 42 - traffic: a spawn in a city with no roads returns no cars and stepping is harmless
+  ---
+  duration_ms: 0.31196
+  type: 'test'
+  ...
+# Subtest: traffic: a big time step does not skip past the road edge
+ok 43 - traffic: a big time step does not skip past the road edge
+  ---
+  duration_ms: 13.294843
+  type: 'test'
+  ...
+# Subtest: AC-006 old positions and sizes are replaced, owner, level and cash are kept
+ok 44 - AC-006 old positions and sizes are replaced, owner, level and cash are kept
+  ---
+  duration_ms: 2.265236
+  type: 'test'
+  ...
+# Subtest: AC-006 ids missing from the save use the defaults
+ok 45 - AC-006 ids missing from the save use the defaults
+  ---
+  duration_ms: 0.235416
+  type: 'test'
+  ...
+# Subtest: AC-006 missing or malformed saves give the defaults, unknown saved ids are dropped, defaults are not mutated
+ok 46 - AC-006 missing or malformed saves give the defaults, unknown saved ids are dropped, defaults are not mutated
+  ---
+  duration_ms: 0.165731
+  type: 'test'
+  ...
+# Subtest: AC-006 non-array saves and null fields fall back to the defaults
+ok 47 - AC-006 non-array saves and null fields fall back to the defaults
+  ---
+  duration_ms: 0.200847
+  type: 'test'
+  ...
+1..47
+# tests 47
+# suites 0
+# pass 47
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3378.444848

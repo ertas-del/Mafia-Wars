@@ -1022,7 +1022,7 @@
     },
     {
       "id": "T-005",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Sonnet worker",
       "dependencies": [
         "T-001",
@@ -1055,21 +1055,85 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-005 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 55,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commit ad3cf22"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 56,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-010",
+          "evidence": "evidence/EV-010-unit-tests.txt passes"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 57,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-011",
+          "evidence": "evidence/EV-011-T-005-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 58,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-010",
+          "review_evidence": "EV-011",
+          "commit": "ec2ef46",
+          "evidence": "merged wt/C-005"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 59,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-010",
+          "review_evidence": "EV-011",
+          "commit": "ec2ef46",
+          "evidence": "EV-010 and EV-011 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-010",
+        "EV-011"
+      ]
     },
     {
       "id": "T-009",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-005"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-009",
+      "branch": "wt/C-009",
+      "baseline": "ec2ef46",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 60,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-005"
+          ],
+          "evidence": "T-005 merged at ec2ef46"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 61,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-009 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
