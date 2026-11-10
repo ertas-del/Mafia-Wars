@@ -21,9 +21,14 @@ import { PerimeterHud } from './components/PerimeterHud';
 import { soundEngine } from './audio/soundEngine';
 import { enterPhoneFullscreen, isFullscreen, isTouchModeAttr } from './input/fullscreen';
 import { RotateCard } from './components/RotateCard';
+import type { InteractPrompt } from './world/bridgeTypes';
+import { mergeSavedById } from './world/saveMerge';
 import { getVibrationEnabled, isVibrationSupported, pulse, setVibrationEnabled } from './input/haptics';
 
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER';
+
+/** The canvas bridge gains takeFerry(); optional here so this compiles before and after it lands. */
+type FerryBridge = LiveSimulationBridge & { takeFerry?: () => void };
 
 const SAVE_STORAGE_KEY = 'commission_1984_empire_v1';
 
@@ -75,12 +80,7 @@ export default function App() {
   const [openDrawerTab, setOpenDrawerTab] = useState<DrawerTab | null>(null);
   const [focusedRacketId, setFocusedRacketId] = useState<string | null>(null);
   const [focusedContactId, setFocusedContactId] = useState<string | null>(null);
-  const [nearPrompt, setNearPrompt] = useState<{
-    type: 'racket' | 'contact' | 'npc';
-    label: string;
-    sublabel: string;
-    id: string;
-  } | null>(null);
+  const [nearPrompt, setNearPrompt] = useState<InteractPrompt | null>(null);
   const [recentToast, setRecentToast] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [vibrationOn, setVibrationOn] = useState<boolean>(() => getVibrationEnabled());
@@ -205,7 +205,9 @@ export default function App() {
         setUnlockedWeapons(parsed.unlockedWeapons || ['knuckles', 'revolver']);
         setEquippedWeapon(parsed.equippedWeapon || 'revolver');
         setUnlockedSkills(parsed.unlockedSkills || []);
-        setRackets(parsed.rackets);
+        // Positions and sizes come from the current map; only ownership, level and cash come from the save.
+        const mergedRackets = mergeSavedById(INITIAL_RACKETS, parsed.rackets, ['ownerFamily', 'level', 'uncollectedCash']);
+        setRackets(mergedRackets);
         if (parsed.contacts && parsed.contacts.length > 0) {
           // Ensure latest portrait URLs stay synced
           const mergedContacts = INITIAL_SOCIAL_CONTACTS.map((initC) => {
@@ -220,7 +222,7 @@ export default function App() {
         const elapsedSec = Math.max(0, Math.floor((now - (parsed.lastSaveTimestamp || now)) / 1000));
         if (elapsedSec >= 45) {
           const cappedSec = Math.min(elapsedSec, 24 * 3600);
-          const owned = parsed.rackets.filter((r) => r.ownerFamily === 'player');
+          const owned = mergedRackets.filter((r) => r.ownerFamily === 'player');
           const rawHourlyCash = owned.reduce((acc, r) => acc + r.baseIncomePerHour * r.level, 0);
           const rawHourlyCrates = owned.reduce((acc, r) => acc + r.baseContrabandPerHour * r.level, 0);
           const caymanBoost = (parsed.unlockedSkills || []).includes('earn_4') ? 1.6 : 1.0;
@@ -849,6 +851,7 @@ export default function App() {
           vibrationOn={vibrationOn}
           hasOfflineReport={Boolean(offlineReport)}
           nearPrompt={nearPrompt}
+          onTakeFerry={() => (bridgeRef.current as FerryBridge | null)?.takeFerry?.()}
           recentToast={recentToast}
           onSelectBorough={(bId) => {
             setCurrentBoroughId(bId);

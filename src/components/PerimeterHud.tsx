@@ -10,6 +10,7 @@ import {
   WeaponId,
 } from '../data/nyc1984Data';
 import { DrawerTab } from './SyndicateDrawers';
+import type { InteractPrompt } from '../world/bridgeTypes';
 import { soundEngine } from '../audio/soundEngine';
 
 interface PerimeterHudProps {
@@ -34,8 +35,9 @@ interface PerimeterHudProps {
   vibrationSupported: boolean;
   vibrationOn: boolean;
   hasOfflineReport: boolean;
-  nearPrompt: { type: 'racket' | 'contact' | 'npc'; label: string; sublabel: string; id: string } | null;
+  nearPrompt: InteractPrompt | null;
   recentToast: string | null;
+  onTakeFerry: () => void;
   onSelectBorough: (boroughId: BoroughId) => void;
   onEquipOrBuyWeapon: (weaponId: WeaponId) => void;
   onOpenDrawer: (tab: DrawerTab, focusId?: string) => void;
@@ -70,6 +72,7 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
   hasOfflineReport,
   nearPrompt,
   recentToast,
+  onTakeFerry,
   onSelectBorough,
   onEquipOrBuyWeapon,
   onOpenDrawer,
@@ -346,7 +349,9 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
               type="button"
               onClick={() => {
                 soundEngine.playUiClick();
-                if (nearPrompt.type === 'contact') {
+                if (nearPrompt.type === 'ferry') {
+                  onTakeFerry();
+                } else if (nearPrompt.type === 'contact') {
                   onOpenDrawer('social', nearPrompt.id);
                 } else {
                   onOpenDrawer('turf', nearPrompt.id);
