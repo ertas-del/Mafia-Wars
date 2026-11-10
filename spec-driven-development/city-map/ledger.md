@@ -24,9 +24,26 @@
     "revision": 1,
     "digest": "285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716"
   },
-  "plan": null,
-  "artifact_events": [],
-  "current_state": "AWAITING_SPEC_APPROVAL",
+  "plan": {
+    "path": {
+      "scope": "repository",
+      "value": "spec-driven-development/city-map/plan.md"
+    },
+    "revision": 1,
+    "digest": "16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5"
+  },
+  "artifact_events": [
+    {
+      "event_sequence": 5,
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 1,
+      "digest": "285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-09T18:56:09-07:00"
+    }
+  ],
+  "current_state": "AWAITING_PLAN_APPROVAL",
   "workflow_transitions": [
     {
       "sequence": 1,
@@ -55,10 +72,625 @@
       "from": "SPEC_DRAFT",
       "to": "AWAITING_SPEC_APPROVAL",
       "evidence": "spec.md revision 1 validated with --allow-unapproved after critic review"
+    },
+    {
+      "sequence": 5,
+      "event_sequence": 6,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "User replied 'I approve all' to the specification approval question"
+    },
+    {
+      "sequence": 6,
+      "event_sequence": 7,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "plan.md revision 1 validated with --allow-unapproved-plan after critic review"
     }
   ],
-  "effective_tasks": [],
-  "tasks": [],
+  "effective_tasks": [
+    {
+      "id": "T-001",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-016"
+        ],
+        "acceptance_criteria": [
+          "AC-001",
+          "AC-002",
+          "AC-003",
+          "AC-004",
+          "AC-005"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "directory",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/city"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cityData.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cityGen.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cityGen.test.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/bridgeTypes.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "design canvas coordinates"
+      ],
+      "produces": [
+        "cityData and cityGen pinned interfaces",
+        "bridgeTypes InteractPrompt union with 'ferry'"
+      ],
+      "verification_ids": [
+        "EV-001",
+        "EV-002"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-002",
+      "covers": {
+        "requirements": [
+          "FR-006",
+          "FR-014",
+          "FR-015",
+          "FR-016"
+        ],
+        "acceptance_criteria": [
+          "AC-009"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cityRender.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/chunkCache.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cityRender.test.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "cityGen interface"
+      ],
+      "produces": [
+        "drawCityChunk, drawCityOverlay, createChunkCache"
+      ],
+      "verification_ids": [
+        "EV-003",
+        "EV-004"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-003",
+      "covers": {
+        "requirements": [
+          "FR-011",
+          "FR-012"
+        ],
+        "acceptance_criteria": [
+          "AC-007",
+          "AC-008"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/pathfind.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/traffic.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/movement.test.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "cityGen interface"
+      ],
+      "produces": [
+        "flow field, stuck tracker, traffic step"
+      ],
+      "verification_ids": [
+        "EV-005",
+        "EV-006"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-004",
+      "covers": {
+        "requirements": [
+          "FR-003",
+          "FR-013",
+          "FR-017"
+        ],
+        "acceptance_criteria": [
+          "AC-006"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/data/nyc1984Data.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/App.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/PerimeterHud.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/saveMerge.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/saveMerge.test.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "cityData interface"
+      ],
+      "produces": [
+        "borough outlines and positions read from cityData, save merge, ferry prompt plumbing in App and HUD"
+      ],
+      "verification_ids": [
+        "EV-007",
+        "EV-008"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-006",
+      "covers": {
+        "requirements": [
+          "FR-019"
+        ],
+        "acceptance_criteria": [
+          "AC-011"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": ".github/workflows/check.yml"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "scripts/city-tour.mjs"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "cityData ferry and station points",
+        "pinned tour hook"
+      ],
+      "produces": [
+        "unit-test step and city-tour step in Check"
+      ],
+      "verification_ids": [
+        "EV-009"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-005",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-003",
+          "FR-009",
+          "FR-010",
+          "FR-013",
+          "FR-014",
+          "FR-015",
+          "FR-018",
+          "FR-020"
+        ],
+        "acceptance_criteria": [
+          "AC-010"
+        ]
+      },
+      "depends_on": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-006"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "all world modules",
+        "App ferry callback"
+      ],
+      "produces": [
+        "engine on the new city: drawing, collision, spawns, borough detection, ferry, tour hook"
+      ],
+      "verification_ids": [
+        "EV-010",
+        "EV-011"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-009",
+      "covers": {
+        "requirements": [
+          "FR-010",
+          "FR-011",
+          "FR-012"
+        ],
+        "acceptance_criteria": [
+          "AC-010"
+        ]
+      },
+      "depends_on": [
+        "T-005"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "T-005 engine",
+        "pathfind and traffic"
+      ],
+      "produces": [
+        "chasing around buildings, stuck rule, unclaimed-area civilians, lane traffic in the engine"
+      ],
+      "verification_ids": [
+        "EV-016",
+        "EV-017"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-007",
+      "covers": {
+        "requirements": [],
+        "acceptance_criteria": [
+          "AC-011",
+          "AC-012",
+          "AC-013"
+        ]
+      },
+      "depends_on": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-009"
+      ],
+      "ownership": [
+        {
+          "type": "directory",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/city-map/evidence"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "git-index",
+          "name": "feature-branch",
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "integrated feature branch",
+        "Check run logs and artifacts list"
+      ],
+      "produces": [
+        "green Check run, city-tour report, screenshot review"
+      ],
+      "verification_ids": [
+        "EV-012",
+        "EV-013",
+        "EV-014"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-008",
+      "covers": {
+        "requirements": [],
+        "acceptance_criteria": [
+          "AC-014"
+        ]
+      },
+      "depends_on": [
+        "T-007"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/city-map/evidence/device-test.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "merged main",
+        "Pages deployment",
+        "user's S26"
+      ],
+      "produces": [
+        "user's device confirmation"
+      ],
+      "verification_ids": [
+        "EV-015"
+      ],
+      "parallel_group": null,
+      "commit_required": false
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-002",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-003",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-004",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-006",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-005",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-006"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-009",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-005"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-007",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001",
+        "T-002",
+        "T-003",
+        "T-004",
+        "T-005",
+        "T-006",
+        "T-009"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-008",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-007"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    }
+  ],
   "amendments": [],
   "acceptance_evidence": [
     {
@@ -183,7 +815,7 @@
 
 ## Bindings
 
-The specification binding is recorded in the contract; no plan exists yet.
+The specification and plan bindings are recorded in the contract.
 
 ## Authority
 
@@ -191,11 +823,11 @@ The user authorized commits and a push of the feature branch, and a merge into m
 
 ## Workflow History
 
-Preflight and one clarification round are complete; the specification awaits approval.
+The specification is approved; the plan awaits approval.
 
 ## Task State
 
-No tasks exist before plan approval.
+T-001, T-002, T-003, T-004, T-006, T-005, T-009, T-007, T-008 are PENDING until plan approval.
 
 ## Amendments
 
@@ -203,7 +835,7 @@ None.
 
 ## Evidence
 
-Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020 are not yet implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, AC-014 are pending.
+Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-020 are not yet implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008, AC-009, AC-010, AC-011, AC-012, AC-013, AC-014 are pending; planned evidence is EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009, EV-010, EV-011, EV-012, EV-013, EV-014, EV-015, EV-016, EV-017.
 
 ## Landing State
 

@@ -27,11 +27,11 @@
 **Path:** `spec-driven-development/city-map/spec.md` · **Revision:** 1 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
-**Approval status:** Awaiting user approval
-**Approved revision:** Not approved
-**Approved normative digest:** Not approved
-**Approver:** Not approved
-**Approval timestamp:** Not approved
+**Approval status:** Approved
+**Approved revision:** 1
+**Approved normative digest:** `285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716`
+**Approver:** User in the current session
+**Approval timestamp:** 2026-11-09T18:56:09-07:00
 <!-- sdd-approval-end -->
 
 ## Context and Evidence
