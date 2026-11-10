@@ -553,7 +553,7 @@
     },
     {
       "id": "T-003",
-      "state": "IN_PROGRESS",
+      "state": "REVIEWED",
       "owner": "controller",
       "dependencies": [
         "T-002"
@@ -578,6 +578,29 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "controller updating CLAUDE.md and pushing for Check"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 32,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "branch pushed; Check run 42915911604 green"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 33,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-003, EV-004",
+          "evidence": "evidence/ci-run.md and evidence/tour-shots.md recorded"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 34,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-005",
+          "evidence": "evidence/whole-change-review.md: PASS"
         }
       ],
       "evidence": []
@@ -599,33 +622,47 @@
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-002",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-003",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-004",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-005",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-002",
+        "EV-005"
+      ]
     },
     {
       "criterion": "AC-006",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-003",
+        "EV-004"
+      ]
     },
     {
       "criterion": "AC-007",
@@ -652,7 +689,7 @@ Preflight and clarification are done; both artifacts are approved and execution 
 
 ## Task State
 
-T-001 and T-002 are DONE; T-003 is IN_PROGRESS; T-004 is PENDING.
+T-001 and T-002 are DONE. T-003 lands the change on main. T-004, the user's phone test, follows.
 
 ## Amendments
 
@@ -660,8 +697,8 @@ None.
 
 ## Evidence
 
-Planned evidence: EV-001 (cast tests), EV-002 (engine smoke run), EV-003 (Check green), EV-004 (tour screenshots), EV-005 (whole-change review), EV-006 (phone check). Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007 are pending.
+Evidence: EV-001 (cast tests), EV-002 (engine smoke run), EV-003 (Check green), EV-004 (tour screenshots), EV-005 (whole-change review) are recorded; EV-006 (phone check) is pending. Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011 are implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006 are verified and AC-007 is pending the user's phone test.
 
 ## Landing State
 
-Nothing is implemented.
+Check run 42915911604 is green and the whole-change review passed; the merge into main is authorized.
