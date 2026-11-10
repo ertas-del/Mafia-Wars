@@ -715,7 +715,7 @@
     },
     {
       "id": "T-002",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Sonnet worker",
       "dependencies": [
         "T-001"
@@ -740,9 +740,55 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-002 dispatch"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 48,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits 08c4e42, 32ece7c, a2cf8ca, f1790c1"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 49,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-003",
+          "evidence": "evidence/EV-003-cityRender-tests.txt passes"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 50,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-004",
+          "evidence": "evidence/EV-004-T-002-review.md: PASS on round 2"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 51,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "51e2b4a",
+          "evidence": "merged wt/C-002"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 52,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "51e2b4a",
+          "evidence": "EV-003 and EV-004 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-003",
+        "EV-004"
+      ]
     },
     {
       "id": "T-003",
