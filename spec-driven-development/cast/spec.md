@@ -27,11 +27,11 @@
 **Path:** `spec-driven-development/cast/spec.md` · **Revision:** 2 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
-**Approval status:** Awaiting user approval
-**Approved revision:** Not approved
-**Approved normative digest:** Not approved
-**Approver:** Not approved
-**Approval timestamp:** Not approved
+**Approval status:** Approved
+**Approved revision:** 2
+**Approved normative digest:** `a645a6dfdcceb58ef7e0a766f280993d13a921d58ec3f42f5b80838fe80d37c9`
+**Approver:** User in the current session
+**Approval timestamp:** 2026-11-10T15:04:56-07:00
 <!-- sdd-approval-end -->
 
 ## Context and Evidence

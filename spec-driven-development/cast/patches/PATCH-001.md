@@ -21,3 +21,7 @@
 ### Risks and Alternatives, "Other surnames"
 - **Before:** some common surnames in the 50 also belong to real people of the era, for example Santoro and Russo. Only the three in D3 are renamed. The rest are flagged at approval.
 - **After:** some common surnames in the 50 also belong to real people of the era. The five in D3 are renamed. Any others are common names and stay.
+
+## Applied note
+
+Approved by the user on 2026-11-10 with the answer "I approve both". Carried by specification revision 2, approved together with plan revision 1.

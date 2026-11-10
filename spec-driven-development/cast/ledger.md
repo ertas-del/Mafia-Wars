@@ -24,9 +24,224 @@
     "revision": 2,
     "digest": "a645a6dfdcceb58ef7e0a766f280993d13a921d58ec3f42f5b80838fe80d37c9"
   },
-  "plan": null,
-  "current_state": "AWAITING_SPEC_APPROVAL",
-  "effective_tasks": [],
+  "plan": {
+    "path": {
+      "scope": "repository",
+      "value": "spec-driven-development/cast/plan.md"
+    },
+    "revision": 1,
+    "digest": "0ee435d2f597b808db421a198addf482c21dd8a34e90eb188510db93efa8d5b0"
+  },
+  "current_state": "EXECUTING",
+  "effective_tasks": [
+    {
+      "id": "T-001",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-008",
+          "FR-009"
+        ],
+        "acceptance_criteria": [
+          "AC-001",
+          "AC-002",
+          "AC-003",
+          "AC-004"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cast.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/characterSprite.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/tagLayout.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/cast.test.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification",
+        "ertas-del/Mafia-game noirPresets.ts and Character2DModelPreview.tsx at b4c8784"
+      ],
+      "produces": [
+        "cast, characterSprite and tagLayout pinned interfaces"
+      ],
+      "verification_ids": [
+        "EV-001"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-002",
+      "covers": {
+        "requirements": [
+          "FR-003",
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "FR-010"
+        ],
+        "acceptance_criteria": [
+          "AC-005"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "cast, characterSprite and tagLayout pinned interfaces"
+      ],
+      "produces": [
+        "engine drawing every body and the player from cached figures"
+      ],
+      "verification_ids": [
+        "EV-002"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-003",
+      "covers": {
+        "requirements": [
+          "FR-011"
+        ],
+        "acceptance_criteria": [
+          "AC-005",
+          "AC-006"
+        ]
+      },
+      "depends_on": [
+        "T-002"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "CLAUDE.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/cast/evidence/ci-run.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/cast/evidence/tour-shots.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/cast/evidence/whole-change-review.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "pushed branch head"
+      ],
+      "produces": [
+        "green Check, tour screenshots, whole-change review, merge into main"
+      ],
+      "verification_ids": [
+        "EV-003",
+        "EV-004",
+        "EV-005"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-004",
+      "covers": {
+        "requirements": [
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "FR-008"
+        ],
+        "acceptance_criteria": [
+          "AC-007"
+        ]
+      },
+      "depends_on": [
+        "T-003"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/cast/evidence/phone-check.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "deployed or locally served build on the user's phone"
+      ],
+      "produces": [
+        "user's written confirmation"
+      ],
+      "verification_ids": [
+        "EV-006"
+      ],
+      "parallel_group": null,
+      "commit_required": false
+    }
+  ],
   "amendments": [],
   "completion_evidence": {
     "final_verification": [],
@@ -120,6 +335,34 @@
       "from": "SPEC_DRAFT",
       "to": "AWAITING_SPEC_APPROVAL",
       "evidence": "spec.md revision 2 presented; plan.md revision 1 (digest 0ee435d2f597b808db421a198addf482c21dd8a34e90eb188510db93efa8d5b0) presented alongside, bound after the spec approval"
+    },
+    {
+      "sequence": 8,
+      "event_sequence": 11,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "user answered 'I approve both'"
+    },
+    {
+      "sequence": 9,
+      "event_sequence": 12,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "plan.md revision 1 presented with spec revision 2"
+    },
+    {
+      "sequence": 10,
+      "event_sequence": 14,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user answered 'I approve both'"
+    },
+    {
+      "sequence": 11,
+      "event_sequence": 15,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-001 dispatch"
     }
   ],
   "artifact_events": [
@@ -139,9 +382,94 @@
       "revision": 1,
       "digest": "3bd4a3e80c9ae2be8d29832ce127a780c2f6483759f02adbf2c7133b6b25dc6a",
       "reason": "patches/PATCH-001.md: also rename Santoro and Russo, asked at spec approval; rides with plan approval"
+    },
+    {
+      "event_sequence": 10,
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 2,
+      "digest": "a645a6dfdcceb58ef7e0a766f280993d13a921d58ec3f42f5b80838fe80d37c9",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T15:04:56-07:00"
+    },
+    {
+      "event_sequence": 13,
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "0ee435d2f597b808db421a198addf482c21dd8a34e90eb188510db93efa8d5b0",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T15:04:56-07:00"
     }
   ],
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "T-001",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high",
+      "dependencies": [],
+      "worktree": "/home/claude/wt/cast",
+      "branch": "ertas-del/new/cast",
+      "baseline": "5ce659e",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 16,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [],
+          "evidence": "no dependencies"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 17,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-001 dispatched to a fresh Opus worker"
+        }
+      ],
+      "evidence": []
+    },
+    {
+      "id": "T-002",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-003",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-002"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-004",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-003"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    }
+  ],
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
@@ -186,7 +514,7 @@
 
 ## Bindings
 
-Specification revision 1 was approved; PATCH-001 makes revision 2, presented with plan revision 1 for one approval.
+Specification revision 2 (with PATCH-001) and plan revision 1 are approved.
 
 ## Authority
 
@@ -194,11 +522,11 @@ The user authorized commits and a push of the feature branch. A merge into main 
 
 ## Workflow History
 
-Preflight and clarification are done; specification revision 1 is approved and planning has begun.
+Preflight and clarification are done; both artifacts are approved and execution has begun.
 
 ## Task State
 
-No tasks until the plan is approved.
+T-001 is IN_PROGRESS; T-002, T-003 and T-004 are PENDING.
 
 ## Amendments
 
@@ -206,7 +534,7 @@ None.
 
 ## Evidence
 
-Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007 are pending.
+Planned evidence: EV-001 (cast tests), EV-002 (engine smoke run), EV-003 (Check green), EV-004 (tour screenshots), EV-005 (whole-change review), EV-006 (phone check). Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007 are pending.
 
 ## Landing State
 
