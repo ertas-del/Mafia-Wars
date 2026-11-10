@@ -276,11 +276,11 @@
     }
   },
   "landing": {
-    "implemented": "yes",
-    "verified": "yes",
-    "committed": "yes",
-    "merged": "yes, main at 9ac19ce",
-    "pushed": "yes",
+    "implemented": "complete",
+    "verified": "complete",
+    "committed": "complete",
+    "merged": "complete",
+    "pushed": "complete",
     "deployed": "not-authorized",
     "emulator_tested": "not-required",
     "device_tested": "not-yet",
@@ -736,4 +736,4 @@ Evidence: EV-001 (cast tests), EV-002 (engine smoke run), EV-003 (Check green), 
 
 ## Landing State
 
-Check run 42915911604 is green and the whole-change review passed; the merge into main is authorized.
+Check run 42915911604 is green, the whole-change review passed, and the change is merged into main at 9ac19ce and pushed. Deployment waits for Pages; the phone test (T-004) is open.
