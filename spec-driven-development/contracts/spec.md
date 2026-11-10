@@ -63,9 +63,9 @@ The work is on branch `ertas-del/new/contracts`, from `main` at `fd372b8`.
 - **D1.** Peace is the default. People only shoot you if there is a contract on you.
 - **D2.** Grudges build up. Three hits, or one kill, puts a contract out.
 - **D3.** While a contract is active, that family's crew attacks on sight, and hit squads are sent after you.
-- **D4.** A contract ends only when it is paid off at a sit-down. It never times out.
+- **D4.** A contract never times out. It ends only when it is paid off at a sit-down. The user called all three offered endings "cool" but said "no timer, it only resets when payment has been made". The spec therefore reads this as payment only, so killing the Capo does not end a contract.
 - **D5.** You request a sit-down. The family names a meeting spot in their turf, at a time up to 20 minutes away. You walk there and sit.
-- **D6.** At the sit-down they can whack you instead. The chance rises with your grudge against them and falls with your respect, and you see the risk before you sit. If they whack you, you lose respect, skill ("attribute") points and 50% of your money.
+- **D6.** At the sit-down they can whack you instead. The chance rises with your grudge against them and falls with your respect (your respect XP), and you see the risk before you sit. If they whack you, you lose respect, skill ("attribute") points and 50% of your money.
 - **D7.** You must come alone. Bringing bodyguards gets the sit-down refused.
 - **D8.** The NYPD only come after you when your heat is high.
 - **D9.** Grudges, contracts and scheduled sit-downs are saved.
@@ -78,17 +78,21 @@ These are my choices, ordered by impact.
 
 | Choice | Default | Impact |
 |---|---|---|
-| **What "whacked" costs** | You go down. The Recovery screen shows, and you wake at your home borough's station. You lose: 50% of your cash; 25% of your respect XP (never below 0); and half your unspent skill points, rounded up. Learned skills are never removed. The contract stays. Its price goes up by $2,500. | high |
+| **What "whacked" costs** | You go down. A betrayal Recovery screen lists the losses, and you wake at full health at your home borough's station. You lose: 50% of your cash; 25% of your respect XP (never below 0); and half your unspent skill points, rounded up. Learned skills are never removed. None of the ordinary Recovery penalties apply on top (10% cash, a $500 floor, heat reset). The contract stays. Its price goes up by $2,500. | high |
+| **Hitting someone with no contract** | They don't fight back. They break off and back away, and the hit counts toward the grudge. Hostility is checked again at every step of an attack, so anyone who stops being hostile (a paid contract, or heat falling below the line) goes straight back to patrolling, even mid-windup. Your allies only shoot people who are hostile to you. | high |
+| **What counts as a hit** | One attack on one person counts once: all the pellets of one shotgun blast, or one knuckle swing that catches two people, scores one hit on each. A kill scores 3 in total, not 3 plus the hit that killed. | high |
 | **Turf takeovers** | The guards of a takeover you start attack you as they do now. Hits and kills on them count toward that family's grudge like any others, so taking a racket by force usually puts a contract out. | high |
 | **Grudge and price numbers** | A hit adds 1 grudge point and a kill adds 3. At 3 points, a contract goes out. The price starts at $5,000. While a contract is active, each further hit adds $1,500 and each kill adds $4,000. | high |
-| **Betrayal risk** | 25%, plus 5% for each of that family's members you have killed since their grudge started, minus 5% for each Inner Circle contact at respect 40 or more, minus 10% with Street Ceasefire. The result is held between 5% and 75%. | high |
-| **Sit-down timing** | The meeting time is random, between 1 and 20 minutes after the request, by the real clock, so it also counts down while the game is closed. You have a 3-minute window to arrive. Missing it adds $1,000 to the price, and you can request again. One request per family at a time. | high |
+| **Betrayal risk** | 25%, plus 5% for each of that family's members you have killed since their grudge started, minus 1% for each 100 respect XP (at most 20%), minus 10% with Street Ceasefire. The result is held between 5% and 75%. | high |
+| **Sit-down timing** | The meeting time is random, between 1 and 20 minutes after the request, by the real clock, so it also counts down while the game is closed. You have a 3-minute window to arrive. If the window opened or closed while the game was closed, it opens fresh for 3 minutes when you come back. During the window that family holds fire and sends no squads (safe passage). Missing a window you were playing through adds $1,000 to the price, and you can request again. One request per family at a time. | high |
 | Hit squads | While a family has a contract on you, a squad of 2 to 3 of its members spawns off-screen near you every 90 to 150 seconds of play. At most one squad per family is alive at a time. | medium |
 | NYPD heat line | NYPD attack only while heat is 55 or more, the line at which squads already spawn. Below it they patrol. | medium |
 | Meeting spot | The door of one of that family's rackets, in its home borough when it has one. Otherwise its home borough's station. The spot is marked on the street. | medium |
 | Who counts | The player's bullets and melee count, and so do the player's allied bodyguards. Your own family is under the same rules. Hurting civilians adds heat as it does now, but no grudge. | medium |
 | Where you see it | A new Contracts section in the dossier's Turf tab. It shows, for each family, its grudge, contract, price, betrayal risk, and the sit-down countdown and spot, with a Request button. A small HUD chip for each active contract shows the family colour and the next sit-down countdown. | medium |
-| Alone check | Any living allied bodyguard within 400 px of you refuses the sit-down. The prompt says why. | low |
+| Alone check | A hired hit squad (the temporary allies) within 400 px refuses the sit-down, and the prompt says why. Permanent bodyguards from the Enforcer skill wait at a distance on their own during a sit-down window, so they never block it. | medium |
+| Dying under a contract | An ordinary death keeps the usual Recovery, but you wake at your home borough's station, the contract stays, and no squads come for 30 seconds. | medium |
+| Test hooks | With `?tour` only, the existing `window.__cityTour` also offers: set heat, add grudge points, advance the sit-down clock, and spawn a squad now. These hooks drive the smoke runs. | low |
 | Street Ceasefire perk | It no longer stops families attacking, because peace is now the default. It lowers the betrayal risk instead. | low |
 
 ## Goals and Non-Goals
@@ -121,7 +125,7 @@ These are my choices, ordered by impact.
 
 ## Requirements
 
-- **FR-001.** A family NPC never attacks the player unless that family has an active contract on the player. This covers soldati, brawlers, couriers, Capos and citizens of any family, including the player's own. The one exception is the guards of a turf takeover the player started. NYPD attack only when heat is at or above the NYPD heat line.
+- **FR-001.** A family NPC never attacks the player unless that family has an active contract on the player. This covers soldati, brawlers, couriers, Capos and citizens of any family, including the player's own, and someone the player has just hit (see "Hitting someone with no contract"). The one exception is the guards of a turf takeover the player started. NYPD attack only when heat is at or above the NYPD heat line. Hostility is decided by one pure function and checked again at every attack step.
 - **FR-002.** Grudge points and the contract trigger follow D2 and the grudge numbers default. They count hits and kills by the player and the player's allies on members of that family.
 - **FR-003.** While a contract is active, every member of that family attacks on sight with the existing chase and windup behaviour, and hit squads spawn as in the hit squads default.
 - **FR-004.** The contract price follows the grudge and price numbers default. It also goes up for a betrayal and for a missed sit-down, as those defaults state.
@@ -129,18 +133,20 @@ These are my choices, ordered by impact.
 - **FR-006.** The player can request a sit-down with a family that has an active contract. The family sets the time and spot as described in the sit-down timing and meeting spot defaults.
 - **FR-007.** At the spot, during the window, an interact prompt offers the sit-down with its price and risk. It is refused when the player cannot pay or is not alone.
 - **FR-008.** When the family honours the deal, the price is taken and that family's contract, grudge and kill count are cleared.
-- **FR-009.** When the family betrays the player, the losses follow the "what whacked costs" default, and the contract stays.
+- **FR-009.** When the family betrays the player, the losses and the wake-up follow the "what whacked costs" default, and the contract stays. An ordinary death under a contract follows the "dying under a contract" default.
 - **FR-010.** A missed window lapses as described in the sit-down timing default.
 - **FR-011.** Grudges, contracts, kill counts and scheduled sit-downs are saved in the existing save under the same key. A save without them loads with no grudges.
-- **FR-012.** All of these rules live in a pure, tested module. The engine and the app only call it.
+- **FR-012.** All of these rules live in a pure, tested module, including the hostility decision and hit counting. The engine and the app only call it. The test hooks follow the "test hooks" default.
 - **FR-013.** The dossier and the HUD show the state as described in the "where you see it" default. The HUD addition keeps the 85% clear-playfield guardrail.
 - **FR-014.** Check still passes, including the phone-layout check and the city tour.
 
 ## Acceptance Criteria
 
-- **AC-001** (FR-002, FR-004, FR-005, FR-012). Unit tests on the pure module show:
+- **AC-001** (FR-001, FR-002, FR-004, FR-005, FR-012). Unit tests on the pure module show:
   - three hits, or one kill, starts a contract;
   - two hits do not;
+  - one shotgun blast scores one hit, and a kill scores 3 in total;
+  - the hostility decision for: a family with and without a contract, the player's own family, a courier, a takeover guard, a person just hit, NYPD at heat 54 and 55, and a family during its safe-passage window;
   - the price follows the stated numbers, including the betrayal and missed-window increases;
   - the risk formula matches the numbers and stays within its 5–75% bounds.
 - **AC-002** (FR-006, FR-007, FR-008, FR-009, FR-010, FR-012). Unit tests with an injected clock and random source show:
@@ -151,10 +157,12 @@ These are my choices, ordered by impact.
   - the betrayed outcome returns the stated losses and raises the price;
   - a lapsed window adds $1,000.
 - **AC-003** (FR-011). Unit tests show that the state survives serialising and reloading, and that an old save with no contracts field loads with empty state.
-- **AC-004** (FR-001, FR-003). A smoke run of the built game shows:
+- **AC-004** (FR-001, FR-003). A smoke run of the built game, driven by the test hooks, shows:
   - with heat under 55 and no contracts, no NPC damages the player during 60 seconds of walking among family crews;
-  - after three hits on one family's member, that family's NPCs attack and a squad appears;
-  - another family stays peaceful.
+  - hitting one person once does not make them attack;
+  - after three hits on one family's members, that family's NPCs attack and a squad spawned through the hook hunts the player;
+  - another family stays peaceful;
+  - with heat set to 55, the NYPD attack.
 - **AC-005** (FR-006, FR-007, FR-008, FR-009, FR-013). A smoke run with a debug clock shows a full sit-down that is honoured, and another that is betrayed. Screenshots show the dossier section, the HUD chip and the street prompt.
 - **AC-006** (FR-001, FR-003, FR-011, FR-012, FR-013). A fresh reviewer of each task, and a fresh whole-change reviewer, confirm:
   - the engine uses only the module's decisions;

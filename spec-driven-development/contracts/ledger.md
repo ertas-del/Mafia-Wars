@@ -22,7 +22,7 @@
       "value": "spec-driven-development/contracts/spec.md"
     },
     "revision": 1,
-    "digest": "4b735e46ce98feb13f7ef04b1ab2a4748ee3e85bbfdfc667129c19e0ae96b855"
+    "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9"
   },
   "plan": null,
   "current_state": "AWAITING_SPEC_APPROVAL",
