@@ -108,8 +108,8 @@ const STYLE: Record<string, StyleDef> = {
   tenement: { walls: ['#6a3a2e', '#7c4a37', '#5a2f27', '#85604a', '#6f6858', '#7a3b34', '#4f3b35', '#8b6b4c'], face: 'brick', roof: '#2a2c30', roofFrac: 0.4, pitch: 'flat', floorH: 18 },
   little_italy: { walls: ['#8a5a45', '#a1764f', '#7f4f3f', '#9b8a6a', '#8f6a52', '#b08a5c', '#76503f', '#a0684f'], face: 'stucco', roof: '#35302b', roofFrac: 0.4, pitch: 'flat', floorH: 18 },
   financial: { walls: ['#8e8a7c', '#7c7f80', '#9a9484', '#6f7378', '#a39d8c', '#85807a', '#74786f', '#8b8e92'], face: 'stone', roof: '#3a3c40', roofFrac: 0.36, pitch: 'flat', floorH: 18 },
-  tower: { walls: ['#4f5d70', '#3f4e5e', '#5c6670', '#49576b', '#6a7078', '#38495a', '#566a78', '#505a66'], face: 'glass', roof: '#2f343b', roofFrac: 0.34, pitch: 'tower', floorH: 14 },
-  theatre: { walls: ['#6b2d3a', '#4a2f5c', '#2f4a5a', '#7a5a2e', '#5a2e2e', '#3a3560', '#6a3f2a', '#2f5a4a'], face: 'stone', roof: '#2a2a30', roofFrac: 0.36, pitch: 'flat', floorH: 20 },
+  tower: { walls: ['#4f5d70', '#3f4e5e', '#5c6670', '#49576b', '#6a7078', '#38495a', '#566a78', '#505a66'], face: 'glass', roof: '#2f343b', roofFrac: 0.24, pitch: 'tower', floorH: 14 },
+  theatre: { walls: ['#6b2d3a', '#4a2f5c', '#2f4a5a', '#7a5a2e', '#5a2e2e', '#3a3560', '#6a3f2a', '#2f5a4a'], face: 'stone', roof: '#2a2a30', roofFrac: 0.3, pitch: 'flat', floorH: 20 },
   neon: { walls: ['#2a2733', '#232a36', '#312530', '#26302f', '#2d2b25', '#1f2230', '#352a2a', '#2a2a38'], face: 'dark', roof: '#1e2025', roofFrac: 0.36, pitch: 'flat', floorH: 18 },
   brownstone: { walls: ['#5d3b2b', '#6b4533', '#4e3328', '#7a5239', '#58372a', '#6a4a3c', '#473026', '#7b5a40'], face: 'stone', roof: '#26272b', roofFrac: 0.4, pitch: 'flat', floorH: 20 },
   arthur_shop: { walls: ['#7a4a38', '#8a6a4a', '#6a4033', '#9a7a58', '#704a40', '#85583f', '#8f7a5f', '#6a5040'], face: 'brick', roof: '#2d2b29', roofFrac: 0.4, pitch: 'flat', floorH: 18 },
@@ -485,10 +485,11 @@ function drawFurniture(ctx: Ctx, city: City, cx: number, cy: number): void {
 }
 
 
-// ---------------------------------------------------------------- bridge decks (smooth strokes along BRIDGES polylines)
+// ---------------------------------------------------------------- bridge decks (smooth shapes along BRIDGES polylines)
 
 interface BGeom { pts: Pt[]; cum: number[]; total: number; x0: number; y0: number; x1: number; y1: number }
 interface BStyle { kind: 'susp' | 'truss'; col: string; stone: boolean }
+type BridgeDef = { id: string; name: string; points: Pt[]; open: boolean };
 const BSTYLE: Record<string, BStyle> = {
   brooklyn: { kind: 'susp', col: '#8a7560', stone: true },
   williamsburg: { kind: 'susp', col: '#5f7690', stone: false },
@@ -499,18 +500,19 @@ const BSTYLE: Record<string, BStyle> = {
   verrazzano: { kind: 'susp', col: '#a3acb4', stone: false },
   gwb: { kind: 'susp', col: '#4f5c66', stone: false },
 };
-const DECK_W = 84;
+const MIN_HALF = 42;
+const STEP = 8;
+const EXTEND = 56;
 const geomCache = new Map<string, BGeom>();
-function bgeom(br: { id: string; points: Pt[]; open: boolean }): BGeom {
+function bgeom(br: BridgeDef): BGeom {
   let g = geomCache.get(br.id);
   if (g) return g;
   const pts = br.points.map((p) => ({ x: p.x, y: p.y }));
   if (br.open && pts.length >= 2) { // run the deck a little onto land so it joins the road ramp
-    const EXT = 56;
     const a = pts[0], b = pts[1], c = pts[pts.length - 1], d = pts[pts.length - 2];
     const la = Math.hypot(a.x - b.x, a.y - b.y) || 1, lc = Math.hypot(c.x - d.x, c.y - d.y) || 1;
-    pts.unshift({ x: a.x + ((a.x - b.x) / la) * EXT, y: a.y + ((a.y - b.y) / la) * EXT });
-    pts.push({ x: c.x + ((c.x - d.x) / lc) * EXT, y: c.y + ((c.y - d.y) / lc) * EXT });
+    pts.unshift({ x: a.x + ((a.x - b.x) / la) * EXTEND, y: a.y + ((a.y - b.y) / la) * EXTEND });
+    pts.push({ x: c.x + ((c.x - d.x) / lc) * EXTEND, y: c.y + ((c.y - d.y) / lc) * EXTEND });
   }
   const cum = [0];
   for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
@@ -522,55 +524,141 @@ function bgeom(br: { id: string; points: Pt[]; open: boolean }): BGeom {
   geomCache.set(br.id, g);
   return g;
 }
+/** Point and frame at arclength s; beyond either end the first or last segment is continued in a straight line. */
 function at(g: BGeom, s: number): { x: number; y: number; nx: number; ny: number; ux: number; uy: number } {
   let i = 1;
   while (i < g.pts.length - 1 && g.cum[i] < s) i++;
   const a = g.pts[i - 1], b = g.pts[i];
   const len = g.cum[i] - g.cum[i - 1] || 1;
-  const t = clamp((s - g.cum[i - 1]) / len, 0, 1);
+  const t = (s - g.cum[i - 1]) / len;
   const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, nx: -uy, ny: ux, ux, uy };
 }
-function polyline(ctx: Ctx, g: BGeom, off: number, dx = 0, dy = 0): void {
-  ctx.beginPath();
-  const n = Math.max(2, Math.ceil(g.total / 10));
-  for (let i = 0; i <= n; i++) {
-    const p = at(g, (g.total * i) / n);
-    const x = p.x + p.nx * off + dx, y = p.y + p.ny * off + dy;
+/** Arclength and signed lateral offset of a point, measured on the nearest segment with the ends continued. */
+function project(g: BGeom, px: number, py: number): { s: number; lat: number; d: number } {
+  let best = { s: 0, lat: 0, d: Infinity };
+  for (let i = 1; i < g.pts.length; i++) {
+    const a = g.pts[i - 1], b = g.pts[i];
+    const len = g.cum[i] - g.cum[i - 1] || 1;
+    const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+    const t = (px - a.x) * ux + (py - a.y) * uy;
+    const tc = clamp(t, 0, len);
+    const d = Math.hypot(px - a.x - ux * tc, py - a.y - uy * tc);
+    if (d < best.d) best = { s: g.cum[i - 1] + (i === 1 || i === g.pts.length - 1 ? t : tc), lat: (px - a.x) * -uy + (py - a.y) * ux, d };
+  }
+  return best;
+}
+
+/** The deck outline: at s = s0 + i * STEP the deck reaches `left[i]` along the normal and `right[i]` against it. */
+export interface BridgeDeck { s0: number; left: number[]; right: number[] }
+const deckCache = new WeakMap<City, Map<string, BridgeDeck>>();
+function decksOf(city: City): Map<string, BridgeDeck> {
+  let m = deckCache.get(city);
+  if (m) return m;
+  const geoms = BRIDGES.map((b) => bgeom(b));
+  // every bridge-span cell belongs to its nearest bridge; collect its corners as (s, lateral) pairs
+  const marks: { s: number; lat: number }[][] = BRIDGES.map(() => []);
+  for (let i = 0; i < city.kinds.length; i++) {
+    if (city.kinds[i] !== K.BRIDGE) continue;
+    const cx = i % city.cols, cy = (i - cx) / city.cols;
+    let bi = 0, bd = Infinity;
+    geoms.forEach((g, k) => { const d = project(g, cx * CELL + CELL / 2, cy * CELL + CELL / 2).d; if (d < bd) { bd = d; bi = k; } });
+    for (const [ox, oy] of [[0, 0], [CELL, 0], [0, CELL], [CELL, CELL]]) {
+      const p = project(geoms[bi], cx * CELL + ox, cy * CELL + oy);
+      marks[bi].push({ s: p.s, lat: p.lat });
+    }
+  }
+  m = new Map();
+  BRIDGES.forEach((br, k) => {
+    const g = geoms[k];
+    let lo = 0, hi = g.total;
+    for (const mk of marks[k]) { lo = Math.min(lo, mk.s); hi = Math.max(hi, mk.s); }
+    const s0 = Math.floor((lo - 12) / STEP) * STEP;
+    const n = Math.ceil((hi + 12 - s0) / STEP) + 1;
+    const L = new Array<number>(n).fill(MIN_HALF), Rr = new Array<number>(n).fill(MIN_HALF);
+    for (const mk of marks[k]) {
+      const bi = clamp(Math.round((mk.s - s0) / STEP), 0, n - 1);
+      if (mk.lat > 0) L[bi] = Math.max(L[bi], mk.lat); else Rr[bi] = Math.max(Rr[bi], -mk.lat);
+    }
+    // grow by seven bins either way, then average over six: the result is never narrower than any corner it covers
+    const smooth = (a: number[]): number[] => {
+      const d = a.map((_, i) => { let v = a[i]; for (let j = -7; j <= 7; j++) v = Math.max(v, a[clamp(i + j, 0, n - 1)]); return v; });
+      return d.map((_, i) => { let t = 0; for (let j = -6; j <= 6; j++) t += d[clamp(i + j, 0, n - 1)]; return t / 13 + 3; });
+    };
+    m!.set(br.id, { s0, left: smooth(L), right: smooth(Rr) });
+  });
+  deckCache.set(city, m);
+  return m;
+}
+const offAt = (d: BridgeDeck, side: 1 | -1, s: number): number => {
+  const a = side === 1 ? d.left : d.right;
+  return a[clamp(Math.round((s - d.s0) / STEP), 0, a.length - 1)];
+};
+
+/** The deck outline as a closed polygon in world pixels, the same shape the renderer fills. */
+export function bridgeDeckPolygon(city: City, br: BridgeDef): Pt[] {
+  const g = bgeom(br), d = decksOf(city).get(br.id) as BridgeDeck;
+  const out: Pt[] = [];
+  const back: Pt[] = [];
+  for (let i = 0; i < d.left.length; i++) {
+    const p = at(g, d.s0 + i * STEP);
+    out.push({ x: p.x + p.nx * d.left[i], y: p.y + p.ny * d.left[i] });
+    back.push({ x: p.x - p.nx * d.right[i], y: p.y - p.ny * d.right[i] });
+  }
+  return out.concat(back.reverse());
+}
+
+function pathOf(ctx: Ctx, g: BGeom, d: BridgeDeck, side: 0 | 1 | -1, inset: number, dx = 0, dy = 0): void {
+  for (let i = 0; i < d.left.length; i++) {
+    const p = at(g, d.s0 + i * STEP);
+    const o = side === 0 ? 0 : side === 1 ? d.left[i] - inset : -(d.right[i] - inset);
+    const x = p.x + p.nx * o + dx, y = p.y + p.ny * o + dy;
     if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
   }
 }
+function fillDeck(ctx: Ctx, g: BGeom, d: BridgeDeck, grow: number, dx: number, dy: number, color: string): void {
+  ctx.beginPath();
+  pathOf(ctx, g, d, 1, -grow, dx, dy);
+  const rev: Pt[] = [];
+  for (let i = 0; i < d.left.length; i++) { const p = at(g, d.s0 + i * STEP); rev.push({ x: p.x - p.nx * (d.right[i] + grow) + dx, y: p.y - p.ny * (d.right[i] + grow) + dy }); }
+  for (let i = rev.length - 1; i >= 0; i--) ctx.lineTo(rev[i].x, rev[i].y);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.fill();
+}
 
-function drawBridgeDeck(ctx: Ctx, br: { id: string; name: string; points: Pt[]; open: boolean }): void {
-  const g = bgeom(br);
+function drawBridgeDeck(ctx: Ctx, city: City, br: BridgeDef): void {
+  const g = bgeom(br), d = decksOf(city).get(br.id) as BridgeDeck;
   const st = BSTYLE[br.id] || { kind: 'truss', col: '#66717c', stone: false };
-  const W = DECK_W;
   ctx.lineCap = 'butt';
   ctx.lineJoin = 'round';
   // shadow on the river, then the girder underside, then the roadway
-  ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = W + 10; polyline(ctx, g, 0, 6, 9); ctx.stroke();
-  ctx.strokeStyle = shade(st.col, 0.5); ctx.lineWidth = W + 8; polyline(ctx, g, 0); ctx.stroke();
-  ctx.strokeStyle = '#24262b'; ctx.lineWidth = W; polyline(ctx, g, 0); ctx.stroke();
+  fillDeck(ctx, g, d, 6, 6, 9, 'rgba(0,0,0,0.4)');
+  fillDeck(ctx, g, d, 4, 0, 0, shade(st.col, 0.5));
+  fillDeck(ctx, g, d, 0, 0, 0, '#24262b');
   // lane edge lines and the single dashed centre line
   ctx.strokeStyle = 'rgba(225,225,215,0.35)'; ctx.lineWidth = 1.5;
-  polyline(ctx, g, W / 2 - 10); ctx.stroke();
-  polyline(ctx, g, -(W / 2 - 10)); ctx.stroke();
+  ctx.beginPath(); pathOf(ctx, g, d, 1, 12); ctx.stroke();
+  ctx.beginPath(); pathOf(ctx, g, d, -1, 12); ctx.stroke();
   ctx.strokeStyle = 'rgba(232,178,50,0.9)'; ctx.lineWidth = 2.5;
   ctx.setLineDash([16, 12]);
-  polyline(ctx, g, 0); ctx.stroke();
+  ctx.beginPath(); pathOf(ctx, g, d, 0, 0); ctx.stroke();
   ctx.setLineDash([]);
   // expansion joints
   ctx.fillStyle = 'rgba(255,255,255,0.05)';
-  for (let s = 24; s < g.total; s += 32) { const p = at(g, s); ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.uy, p.ux)); ctx.fillRect(-1, -W / 2, 2, W); ctx.restore(); }
-  // rails with posts
+  for (let sj = 24; sj < g.total; sj += 32) {
+    const p = at(g, sj), l = offAt(d, 1, sj), r = offAt(d, -1, sj);
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.uy, p.ux)); ctx.fillRect(-1, -r, 2, l + r); ctx.restore();
+  }
+  // rails
   const rail = shade(st.col, 1.3);
-  for (const side of [1, -1]) {
-    ctx.strokeStyle = shade(st.col, 0.7); ctx.lineWidth = 5; polyline(ctx, g, (side * W) / 2); ctx.stroke();
-    ctx.strokeStyle = rail; ctx.lineWidth = 2; polyline(ctx, g, (side * W) / 2); ctx.stroke();
+  for (const side of [1, -1] as const) {
+    ctx.strokeStyle = shade(st.col, 0.7); ctx.lineWidth = 5; ctx.beginPath(); pathOf(ctx, g, d, side, 1); ctx.stroke();
+    ctx.strokeStyle = rail; ctx.lineWidth = 2; ctx.beginPath(); pathOf(ctx, g, d, side, 1); ctx.stroke();
   }
   // the structure above the deck
   const L1 = 0.2, L2 = 0.8, TH = 32;
-  const ext = br.open ? 56 : 0;
+  const ext = br.open ? EXTEND : 0;
   const lift = (u: number): number => {
     if (st.kind === 'truss') return 15;
     const s0 = ext / g.total;
@@ -580,30 +668,28 @@ function drawBridgeDeck(ctx: Ctx, br: { id: string; name: string; points: Pt[]; 
     return 7 + (TH - 7) * m * m;
   };
   const step = st.kind === 'truss' ? 14 : 13;
-  for (const side of [-1, 1]) { // the far rail first, so the near one overlaps it
-    const off = (side * W) / 2;
+  const railPt = (side: 1 | -1, sp: number): Pt => { const p = at(g, sp); const o = side * (offAt(d, side, sp) - 1); return { x: p.x + p.nx * o, y: p.y + p.ny * o }; };
+  for (const side of [-1, 1] as const) { // the far rail first, so the near one overlaps it
     ctx.strokeStyle = shade(st.col, 1.15); ctx.lineWidth = st.kind === 'truss' ? 2.5 : 1.8;
     ctx.beginPath();
-    const n = Math.max(2, Math.ceil(g.total / 8));
-    for (let i = 0; i <= n; i++) { const s = (g.total * i) / n; const p = at(g, s); const y = p.y + p.ny * off - lift(s / g.total); if (i === 0) ctx.moveTo(p.x + p.nx * off, y); else ctx.lineTo(p.x + p.nx * off, y); }
+    for (let sp = ext; sp <= g.total - ext + 0.1; sp += 8) { const q = railPt(side, sp); const y = q.y - lift(sp / g.total); if (sp === ext) ctx.moveTo(q.x, y); else ctx.lineTo(q.x, y); }
     ctx.stroke();
     ctx.strokeStyle = rgba(shade(st.col, 1.1), 0.75); ctx.lineWidth = 1;
     ctx.beginPath();
     let k = 0;
-    for (let s = ext + 4; s < g.total - ext - 4; s += step, k++) {
-      const p = at(g, s);
-      const bx = p.x + p.nx * off, by = p.y + p.ny * off;
-      const h = lift(s / g.total);
+    for (let sp = ext + 4; sp < g.total - ext - 4; sp += step, k++) {
+      const q = railPt(side, sp);
+      const h = lift(sp / g.total);
       if (h < 2) continue;
-      ctx.moveTo(bx, by); ctx.lineTo(bx, by - h);
-      if (st.kind === 'truss') { const q = at(g, Math.min(g.total, s + step / 2)); ctx.moveTo(bx, by - (k % 2 ? 0 : h)); ctx.lineTo(q.x + q.nx * off, q.y + q.ny * off - (k % 2 ? h : 0)); }
+      ctx.moveTo(q.x, q.y); ctx.lineTo(q.x, q.y - h);
+      if (st.kind === 'truss') { const q2 = railPt(side, Math.min(g.total, sp + step / 2)); ctx.moveTo(q.x, q.y - (k % 2 ? 0 : h)); ctx.lineTo(q2.x, q2.y - (k % 2 ? h : 0)); }
     }
     ctx.stroke();
   }
   if (st.kind === 'susp') { // towers, one pair per end of the main span
     for (const u of [L1, L2]) {
-      const p = at(g, g.total * u);
-      const legs: Pt[] = [{ x: p.x + (p.nx * W) / 2, y: p.y + (p.ny * W) / 2 }, { x: p.x - (p.nx * W) / 2, y: p.y - (p.ny * W) / 2 }];
+      const sp = g.total * u;
+      const legs: Pt[] = [railPt(1, sp), railPt(-1, sp)];
       for (const l of legs) {
         fr(ctx, 'rgba(0,0,0,0.35)', l.x - 4, l.y - 2, 14, 8);
         fr(ctx, shade(st.col, 0.75), l.x - 5, l.y - TH - 2, 10, TH + 4);
@@ -617,17 +703,16 @@ function drawBridgeDeck(ctx: Ctx, br: { id: string; name: string; points: Pt[]; 
   }
   // a closed bridge ends in hazard barriers
   if (!br.open) {
-    for (const s of [16, g.total - 16]) {
-      const p = at(g, s);
+    for (const sp of [16, g.total - 16]) {
+      const p = at(g, sp), l = offAt(d, 1, sp), r = offAt(d, -1, sp);
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(Math.atan2(p.uy, p.ux));
-      fr(ctx, '#141414', -5, -W / 2, 10, W);
+      fr(ctx, '#141414', -5, -r, 10, l + r);
       ctx.fillStyle = '#e0a81c';
-      for (let y = -W / 2; y < W / 2; y += 14) ctx.fillRect(-5, y, 10, 7);
-      disc(ctx, '#ff3b30', 0, -W / 2 + 3, 2.2); disc(ctx, '#ff3b30', 0, W / 2 - 3, 2.2);
+      for (let y = -r; y < l; y += 14) ctx.fillRect(-5, y, 10, 7);
+      disc(ctx, '#ff3b30', 0, -r + 3, 2.2); disc(ctx, '#ff3b30', 0, l - 3, 2.2);
       ctx.restore();
     }
   }
-  ctx.lineCap = 'butt';
 }
 
 // ---------------------------------------------------------------- buildings
@@ -1003,13 +1088,16 @@ function drawRoof(ctx: Ctx, b: Building, L: Layout, rnd: () => number): void {
     fr(ctx, tone, x + 3, y + 3, W - 6, R - 7);
     fr(ctx, 'rgba(0,0,0,0.35)', x + 3, y + 3, W - 6, 2);
     for (let i = 0; i < 14; i++) fr(ctx, 'rgba(255,255,255,0.05)', x + 4 + rnd() * (W - 9), y + 5 + rnd() * (R - 11), 1.5, 1.5); // gravel
-    if (st.pitch === 'tower') { // setback crown
-      const m = Math.max(8, W * 0.2);
-      fr(ctx, shade(L.wall, 0.8), x + m, y + 6, W - m * 2, R - 14);
-      fr(ctx, shade(L.wall, 1.15), x + m, y + 6, W - m * 2, 2);
-      fr(ctx, 'rgba(0,0,0,0.3)', x + m, y + R - 8, W - m * 2, 2);
-      ctx.strokeStyle = '#111'; ctx.beginPath(); ctx.moveTo(x + W / 2, y + 7); ctx.lineTo(x + W / 2, y - 0); ctx.stroke();
-      disc(ctx, '#ff3b30', x + W / 2, y + 1, 1.2);
+    if (st.pitch === 'tower') { // stepped setbacks: a lower shoulder, an upper block and a spire
+      const m1 = Math.max(5, W * 0.12), m2 = Math.max(10, W * 0.26);
+      fr(ctx, 'rgba(0,0,0,0.35)', x + m1 + 2, y + 5, W - m1 * 2, R - 9);
+      fr(ctx, shade(L.wall, 0.95), x + m1, y + 3, W - m1 * 2, R - 6);
+      fr(ctx, shade(L.wall, 1.35), x + m1, y + 3, W - m1 * 2, 2);
+      for (let c = x + m1 + 4; c < x + W - m1 - 3; c += 6) fr(ctx, 'rgba(255,214,140,0.35)', c, y + R - 8, 2, 2);
+      fr(ctx, shade(L.wall, 0.8), x + m2, y + 1, W - m2 * 2, Math.max(6, R - 12));
+      fr(ctx, shade(L.wall, 1.4), x + m2, y + 1, W - m2 * 2, 2);
+      ctx.strokeStyle = '#111'; ctx.beginPath(); ctx.moveTo(x + W / 2, y + 2); ctx.lineTo(x + W / 2, y - 4); ctx.stroke();
+      disc(ctx, '#ff3b30', x + W / 2, y - 4, 1.4);
     } else drawRoofItems(ctx, b, L, rnd);
   }
 }
@@ -1084,8 +1172,8 @@ export function drawCityChunk(ctx: CanvasRenderingContext2D, city: City, chunkX:
   // 1b bridge decks over the water, drawn whole in every piece they cross
   for (const br of BRIDGES) {
     const g = bgeom(br);
-    if (g.x1 + 70 < ox || g.x0 - 70 > ox + CHUNK || g.y1 + 70 < oy || g.y0 - 70 > oy + CHUNK) continue;
-    drawBridgeDeck(ctx, br);
+    if (g.x1 + 140 < ox || g.x0 - 140 > ox + CHUNK || g.y1 + 140 < oy || g.y0 - 140 > oy + CHUNK) continue;
+    drawBridgeDeck(ctx, city, br);
   }
 
   // 2 lamp pools lie on the ground, under buildings

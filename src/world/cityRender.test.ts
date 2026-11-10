@@ -1,8 +1,9 @@
 /// <reference types="node" />
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { CHUNK, CHUNKS_X, CHUNKS_Y, MAX_CHUNKS, chunksForView, createChunkCache, drawCityChunk, drawCityOverlay } from './cityRender.ts';
-import { generateCity } from './cityGen.ts';
+import { CHUNK, CHUNKS_X, CHUNKS_Y, MAX_CHUNKS, bridgeDeckPolygon, chunksForView, createChunkCache, drawCityChunk, drawCityOverlay } from './cityRender.ts';
+import { CellKind, generateCity } from './cityGen.ts';
+import { pointInPoly } from './city/geom.ts';
 import { BRIDGES } from './cityData.ts';
 
 test('EV-003 constants', () => {
@@ -109,4 +110,20 @@ test('every BRIDGES entry draws into at least one piece without throwing', () =>
     }
     assert.ok(drawn >= 1, `${br.id} drew into no piece`);
   }
+});
+
+test('every corner of every BRIDGE cell lies inside a drawn bridge deck', () => {
+  const city = generateCity(1984);
+  const polys = BRIDGES.map((b) => bridgeDeckPolygon(city, b));
+  let cells = 0;
+  for (let i = 0; i < city.kinds.length; i++) {
+    if (city.kinds[i] !== CellKind.BRIDGE) continue;
+    cells++;
+    const cx = i % city.cols, cy = (i - cx) / city.cols;
+    for (const [ox, oy] of [[0, 0], [32, 0], [0, 32], [32, 32]]) {
+      const x = cx * 32 + ox, y = cy * 32 + oy;
+      assert.ok(polys.some((p) => pointInPoly(x, y, p)), `corner ${x},${y} of bridge cell ${cx},${cy} is off the deck`);
+    }
+  }
+  assert.ok(cells > 100);
 });
