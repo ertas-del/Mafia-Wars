@@ -1236,7 +1236,7 @@
     },
     {
       "id": "T-007",
-      "state": "REVIEWED",
+      "state": "DONE",
       "owner": "controller",
       "dependencies": [
         "T-001",
@@ -1296,13 +1296,37 @@
           "to": "REVIEWED",
           "review_evidence": "evidence/whole-change-review.md",
           "evidence": "evidence/whole-change-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 78,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-012, EV-013, EV-014",
+          "review_evidence": "evidence/whole-change-review.md",
+          "commit": "84c5bff",
+          "evidence": "ertas-del/new/city-map merged into main at 84c5bff"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 79,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-012, EV-013, EV-014",
+          "review_evidence": "evidence/whole-change-review.md",
+          "commit": "84c5bff",
+          "evidence": "all three evidence items recorded; whole-change review passed; merged into main"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-012",
+        "EV-013",
+        "EV-014"
+      ]
     },
     {
       "id": "T-008",
-      "state": "PENDING",
+      "state": "READY",
       "owner": "unassigned",
       "dependencies": [
         "T-007"
@@ -1310,7 +1334,18 @@
       "worktree": "not yet created",
       "branch": "not yet created",
       "baseline": "not yet recorded",
-      "transitions": [],
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 80,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-007"
+          ],
+          "evidence": "merged into main; Pages deploy follows the push"
+        }
+      ],
       "evidence": []
     }
   ],
@@ -1486,7 +1521,7 @@ Both artifacts are approved. At plan approval the user switched every worker and
 
 ## Task State
 
-T-001, T-002, T-003, T-004, T-005, T-006 and T-009 are DONE. T-001 was reopened once and fixed forward for CI lint. T-007 lands the change on main. T-008, the user's phone test, follows the deploy.
+T-001, T-002, T-003, T-004, T-005, T-006 and T-009 are DONE. T-001 was reopened once and fixed forward for CI lint. T-007 merged the change into main at 84c5bff. T-008, the user's phone test, follows the deploy.
 
 ## Amendments
 
