@@ -1295,68 +1295,104 @@
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-002",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-003",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-004",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-005",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
     },
     {
       "criterion": "AC-006",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-007",
+        "EV-008"
+      ]
     },
     {
       "criterion": "AC-007",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-005",
+        "EV-006"
+      ]
     },
     {
       "criterion": "AC-008",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-005",
+        "EV-006"
+      ]
     },
     {
       "criterion": "AC-009",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-003",
+        "EV-004"
+      ]
     },
     {
       "criterion": "AC-010",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-011",
+        "EV-017"
+      ]
     },
     {
       "criterion": "AC-011",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-012"
+      ]
     },
     {
       "criterion": "AC-012",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-013"
+      ]
     },
     {
       "criterion": "AC-013",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-014"
+      ]
     },
     {
       "criterion": "AC-014",
