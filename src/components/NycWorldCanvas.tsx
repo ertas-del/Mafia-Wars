@@ -40,6 +40,25 @@ import type { FlowField, StuckTracker } from '../world/pathfind';
 import { spawnTraffic, stepTraffic } from '../world/traffic';
 import type { Car } from '../world/traffic';
 import { CHUNK, MAX_CHUNKS, chunksForView, createChunkCache, drawCityChunk, drawCityOverlay } from '../world/cityRender';
+import { CAST, FAMILY_ACCENT, assignCast, createCastPool, genericTraits } from '../world/cast';
+import type { CastFamily, CastMember, CharacterTraits } from '../world/cast';
+import { CIVILIAN_ACCENT, FIGURE_FOOT, FIGURE_GRIP, bakeCharacter, drawCharacter, traitSignature } from '../world/characterSprite';
+import type { CanvasLike, Ctx2D } from '../world/characterSprite';
+import { layoutTags } from '../world/tagLayout';
+import type { TagRequest } from '../world/tagLayout';
+
+/** A figure's look: its traits, the family accent it is drawn with, and the figure-cache key for both. */
+interface FigureLook {
+  traits: CharacterTraits;
+  accent: string;
+  key: string;
+}
+
+const lookOf = (traits: CharacterTraits, accent: string): FigureLook => ({
+  traits,
+  accent,
+  key: `${traitSignature(traits)}#${accent}`,
+});
 
 export interface WorldNpc {
   id: string;
@@ -57,8 +76,15 @@ export interface WorldNpc {
   stateTimer: number;
   patrolOriginX: number;
   patrolOriginY: number;
-  coatColor: string;
-  hatColor: string;
+  /** The cast member this body is wearing (src/world/cast.ts); unset for unnamed people. */
+  castId?: string;
+  look: FigureLook;
+  /** Second line of the name tag (family or affiliation) and the tag's accent colour. */
+  tagFamily: string;
+  tagColor: string;
+  /** Draw-time state: +1 faces right, -1 left; cached tag width. */
+  facing?: number;
+  tagW?: number;
   hitFlashTimer: number;
   squash: number;
   cashDrop: number;
@@ -184,6 +210,52 @@ interface TourHook {
   slowestChunkMs: number;
 }
 
+// ---- Street figures (src/world/characterSprite.ts): baked once per look, drawn anchored at the feet.
+/** Bake scale: about 43 px from hat to feet. */
+const FIG_SCALE = 0.42;
+const FIG_FOOT_X = Math.round(FIGURE_FOOT.x * FIG_SCALE);
+const FIG_FOOT_Y = Math.round(FIGURE_FOOT.y * FIG_SCALE);
+/** Near-hand offset from the feet (facing right). */
+const GRIP_DX = (FIGURE_GRIP.x - FIGURE_FOOT.x) * FIG_SCALE;
+const GRIP_DY = (FIGURE_GRIP.y - FIGURE_FOOT.y) * FIG_SCALE;
+/** Head top above the feet. */
+const FIG_TOP = Math.round((FIGURE_FOOT.y - 6) * FIG_SCALE);
+/** Tracers are drawn at hand height so they leave the gun (the simulation is unchanged). */
+const SHOT_LIFT = Math.round(-GRIP_DY);
+const MAX_FIGURES = 160;
+const FIGURE_RETRY_FRAMES = 30;
+/** Seed ranges for unnamed looks; they bound how many different figures can be cached. */
+const CIVILIAN_LOOKS = 64;
+const GENERIC_LOOKS = 16;
+const PLAYER_LOOK_SEED = 1984;
+
+// ---- Name tags (src/world/tagLayout.ts)
+const TAG_MAX = 4;
+const NEAREST_TAG_RANGE = 160;
+const TAG_NAME_FONT = '600 10px "Plus Jakarta Sans", sans-serif';
+const TAG_FAMILY_FONT = '700 8px "JetBrains Mono", monospace';
+const TAG_H = 28;
+const TAG_H_BAR = 34;
+
+// ---- Who wears the 50 (src/world/cast.ts)
+/** The two outside-the-families cops head NYPD squads; the other six outside characters are named citizens. */
+const COP_IDS: ReadonlySet<string> = new Set(CAST.filter((m) => m.familyId === 'outside' && /\bNYPD\b/.test(m.role)).map((m) => m.id));
+const isCopCast = (m: CastMember) => COP_IDS.has(m.id);
+const isCitizenCast = (m: CastMember) => !COP_IDS.has(m.id);
+/** Turf-wave Capos prefer a Capo or Underboss; street soldati and brawlers prefer the lower ranks. */
+const isTurfCapoCast = (m: CastMember) => /^(Capo|Underboss)\b/.test(m.role);
+const isStreetRankCast = (m: CastMember) => !/^(Capo|Underboss|Consigliere|The Don)\b/.test(m.role);
+
+const WEAPON_NONE = 0;
+const WEAPON_KNUCKLES = 1;
+const WEAPON_PISTOL = 2;
+const WEAPON_SHOTGUN = 3;
+const WEAPON_TOMMY = 4;
+const npcWeapon = (role: WorldNpc['role']): number =>
+  role === 'brawler' ? WEAPON_KNUCKLES : role === 'capo' ? WEAPON_TOMMY : role === 'soldato' || role === 'nypd' || role === 'ally' ? WEAPON_PISTOL : WEAPON_NONE;
+const playerWeapon = (id: WeaponId): number =>
+  id === 'knuckles' ? WEAPON_KNUCKLES : id === 'shotgun' ? WEAPON_SHOTGUN : id === 'tommy' ? WEAPON_TOMMY : WEAPON_PISTOL;
+
 const FAMILY_COAT_COLORS: Record<
   string,
   { coat: string; hat: string; accent: string; symbol: string; shortFamily: string; traitTag: string }
@@ -253,6 +325,12 @@ const FAMILY_COAT_COLORS: Record<
     traitTag: 'GOLD SIGNET',
   },
 };
+
+const familyTag = (fam: FamilyId): string => {
+  const v = FAMILY_COAT_COLORS[fam];
+  return v ? `${v.symbol} ${v.shortFamily}` : fam.toUpperCase();
+};
+const familyName = (fam: FamilyId): string => fam.charAt(0).toUpperCase() + fam.slice(1);
 
 export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
   isTitleScreen,
@@ -438,12 +516,76 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       });
     };
 
+    // One cast pool per mount: no two living bodies wear the same cast member.
+    const pool = createCastPool();
+    interface Dress {
+      name: string;
+      castId?: string;
+      look: FigureLook;
+      tagFamily: string;
+      tagColor: string;
+    }
+    const seedOf = (range: number) => Math.floor(Math.random() * range);
+    const fromMember = (m: CastMember, fam: CastFamily, tagFamily: string, tagColor: string): Dress => ({
+      name: m.name,
+      castId: m.id,
+      look: lookOf(m.traits, FAMILY_ACCENT[fam]),
+      tagFamily,
+      tagColor,
+    });
+    /** A distinct member of `fam` (preferring `prefer`), or a generic made man of that family once all are in use. */
+    const familyDress = (fam: FamilyId, fallbackName: string, prefer?: (m: CastMember) => boolean): Dress => {
+      const m = (prefer && pool.take(fam, prefer)) || pool.take(fam);
+      if (m) return fromMember(m, fam, familyTag(fam), FAMILY_ACCENT[fam]);
+      const a = assignCast(pool, fam, seedOf(GENERIC_LOOKS), 'ally');
+      return { name: fallbackName, look: lookOf(a.traits, FAMILY_ACCENT[fam]), tagFamily: familyTag(fam), tagColor: FAMILY_ACCENT[fam] };
+    };
+    const civilianDress = (name: string): Dress => ({
+      name,
+      look: lookOf(genericTraits('civilian', seedOf(CIVILIAN_LOOKS)), CIVILIAN_ACCENT),
+      tagFamily: 'CITIZEN',
+      tagColor: '#A1A1AA',
+    });
+    /** Game-borough citizens are the six outside non-cop characters while any is free. */
+    const citizenDress = (fallbackName: string): Dress => {
+      const m = pool.take('outside', isCitizenCast);
+      return m ? fromMember(m, 'outside', 'INDEPENDENT', '#CBD5E1') : civilianDress(fallbackName);
+    };
+    /** The two outside cops lead NYPD squads; further officers are generic. */
+    const officerDress = (): Dress => {
+      const m = pool.take('outside', isCopCast);
+      if (m) return fromMember(m, 'outside', 'NYPD', '#38BDF8');
+      return {
+        name: 'NYPD Organized Crime Task Force',
+        look: lookOf(genericTraits('officer', seedOf(GENERIC_LOOKS)), FAMILY_ACCENT.outside),
+        tagFamily: 'NYPD',
+        tagColor: '#38BDF8',
+      };
+    };
+    const courierDress = (fam: FamilyId, name: string): Dress => ({
+      name,
+      look: lookOf(genericTraits('ally', seedOf(GENERIC_LOOKS), fam), FAMILY_ACCENT[fam]),
+      tagFamily: `${familyTag(fam)} · COURIER`,
+      tagColor: '#F59E0B',
+    });
+    const allyDress = (name: string): Dress => {
+      const fam = stateRef.current.playerFamily;
+      return {
+        name,
+        look: lookOf(genericTraits('ally', seedOf(GENERIC_LOOKS), fam), FAMILY_ACCENT[fam]),
+        tagFamily: 'YOUR CREW',
+        tagColor: '#10B981',
+      };
+    };
+    const releaseCast = (npc: WorldNpc) => {
+      if (npc.castId) pool.release(npc.castId);
+    };
+
     const makeCivilian = (area: AreaId): WorldNpc => {
       const spot = randomWalkableIn(city, area, Math.random);
-      const palette = FAMILY_COAT_COLORS.civilian;
       return {
         id: `civ_${area}_${Math.random().toString(36).slice(2, 8)}`,
-        name: area === 'uptown' ? '1984 Uptown Resident' : '1984 Ferry Commuter',
+        ...civilianDress(area === 'uptown' ? '1984 Uptown Resident' : '1984 Ferry Commuter'),
         role: 'citizen',
         familyId: 'civilian',
         x: spot.x,
@@ -457,8 +599,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         stateTimer: 1 + Math.random() * 3,
         patrolOriginX: spot.x,
         patrolOriginY: spot.y,
-        coatColor: palette.coat,
-        hatColor: palette.hat,
         hitFlashTimer: 0,
         squash: 1,
         cashDrop: 300,
@@ -469,23 +609,10 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
 
     // Populate living 1984 NYC NPCs across all 5 boroughs
     const initWorldNpcs = () => {
+      for (const n of npcs) releaseCast(n);
       npcs.length = 0;
-      const npcNames = [
-        'Frankie "Two-Times" Russo',
-        'Paulie "Walnuts" Gualtieri',
-        'Sonny "Red" Indelicato',
-        'Nicky "Glasses" Santoro',
-        'Tommy "Karate" Pitera',
-        'Vinnie "The Chin" Gigante',
-        'Joey "Doves" Aiuppa',
-        'Mickey "Feather" Featherstone',
-        'Dominick "Sonny Black" Napolitano',
-        'Jimmy "The Gent" Burke',
-        'Angelo "Quack Quack" Ruggiero',
-        'Gaspipe Casso',
-      ];
 
-      NYC_BOROUGHS.forEach((b, bIdx) => {
+      NYC_BOROUGHS.forEach((b) => {
         const count = 8;
         for (let i = 0; i < count; i++) {
           const isCourier = i === 0;
@@ -495,16 +622,20 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           const px = spot.x;
           const py = spot.y;
           const fam = isCitizen ? 'civilian' : b.controllingFamilyDefault;
-          const palette = FAMILY_COAT_COLORS[fam] || FAMILY_COAT_COLORS.civilian;
           const tierScale = 1 + (b.riskTier - 1) * 0.35;
+          const dress = isCourier
+            ? courierDress(b.controllingFamilyDefault, `${b.name.split(' ')[0]} Contraband Runner`)
+            : isCitizen
+            ? citizenDress('1984 Garment Merchant')
+            : familyDress(
+                b.controllingFamilyDefault,
+                `${familyName(b.controllingFamilyDefault)} ${isBrawler ? 'Enforcer' : 'Soldato'}`,
+                isStreetRankCast
+              );
 
           npcs.push({
             id: `npc_${b.id}_${i}_${Math.random().toString(36).slice(2, 6)}`,
-            name: isCourier
-              ? `${b.name.split(' ')[0]} Contraband Runner`
-              : isCitizen
-              ? `1984 Garment Merchant`
-              : npcNames[(bIdx * 5 + i) % npcNames.length],
+            ...dress,
             role: isCourier ? 'courier' : isCitizen ? 'citizen' : isBrawler ? 'brawler' : 'soldato',
             familyId: fam,
             x: px,
@@ -518,8 +649,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             stateTimer: 1 + Math.random() * 3,
             patrolOriginX: px,
             patrolOriginY: py,
-            coatColor: palette.coat,
-            hatColor: palette.hat,
             hitFlashTimer: 0,
             squash: 1,
             cashDrop: Math.round((isCourier ? 1800 : isCitizen ? 450 : 950) * b.rewardMultiplier),
@@ -712,7 +841,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       takeFerry,
       spawnTurfDefenseWave: (racket: RacketBuilding) => {
         const b = NYC_BOROUGHS.find((z) => z.id === racket.boroughId) || NYC_BOROUGHS[0];
-        const palette = FAMILY_COAT_COLORS[racket.ownerFamily] || FAMILY_COAT_COLORS.corvini;
+        const waveFamily: FamilyId = racket.ownerFamily === 'player' ? 'corvini' : racket.ownerFamily;
         const tierMult = 1 + (racket.defenseDifficulty - 1) * 0.4;
         // Teleport player just outside the racket entrance if far away
         const dist = Math.hypot(player.x - (racket.x + racket.width / 2), player.y - (racket.y + racket.height + 55));
@@ -727,12 +856,15 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         const guardOrigin = snap(racket.x + racket.width / 2, racket.y + racket.height + 25);
         // Remove existing guards for this racket first
         for (let i = npcs.length - 1; i >= 0; i--) {
-          if (npcs[i].racketGuardId === racket.id) npcs.splice(i, 1);
+          if (npcs[i].racketGuardId === racket.id) {
+            releaseCast(npcs[i]);
+            npcs.splice(i, 1);
+          }
         }
-        // Spawn 1 Turf Capo + 2 Enforcers
+        // Spawn 1 Turf Capo + 2 Enforcers, all members of the racket owner's family
         npcs.push({
           id: `capo_${racket.id}_${Date.now()}`,
-          name: `Capo defending ${racket.name.split(' ')[0]}`,
+          ...familyDress(waveFamily, `Capo defending ${racket.name.split(' ')[0]}`, isTurfCapoCast),
           role: 'capo',
           familyId: racket.ownerFamily === 'player' ? 'corvini' : racket.ownerFamily,
           x: capoSpot.x,
@@ -746,8 +878,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           stateTimer: 0.5,
           patrolOriginX: capoSpot.x,
           patrolOriginY: capoSpot.y,
-          coatColor: palette.coat,
-          hatColor: '#F59E0B',
           hitFlashTimer: 0,
           squash: 1,
           cashDrop: Math.round(3500 * b.rewardMultiplier),
@@ -757,7 +887,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         for (let g = 0; g < 2; g++) {
           npcs.push({
             id: `guard_${racket.id}_${g}_${Date.now()}`,
-            name: `${racket.ownerFamily.toUpperCase()} Button Man`,
+            ...familyDress(waveFamily, `${racket.ownerFamily.toUpperCase()} Button Man`, isStreetRankCast),
             role: g === 0 ? 'brawler' : 'soldato',
             familyId: racket.ownerFamily === 'player' ? 'corvini' : racket.ownerFamily,
             x: guardSpots[g].x,
@@ -771,8 +901,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             stateTimer: 0.3,
             patrolOriginX: guardOrigin.x,
             patrolOriginY: guardOrigin.y,
-            coatColor: palette.coat,
-            hatColor: palette.hat,
             hitFlashTimer: 0,
             squash: 1,
             cashDrop: Math.round(1200 * b.rewardMultiplier),
@@ -788,7 +916,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           const allySpot = snap(player.x + (i === 0 ? -40 : 40), player.y + 30);
           npcs.push({
             id: `ally_${Date.now()}_${i}`,
-            name: `Corvini Cadillac Enforcer`,
+            ...allyDress('Corvini Cadillac Enforcer'),
             role: 'ally',
             familyId: 'player',
             x: allySpot.x,
@@ -802,8 +930,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             stateTimer: 1,
             patrolOriginX: player.x,
             patrolOriginY: player.y,
-            coatColor: '#1C1917',
-            hatColor: '#F59E0B',
             hitFlashTimer: 0,
             squash: 1,
             cashDrop: 0,
@@ -1048,6 +1174,321 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       }
     };
 
+    // ---- Figures: each look is baked once, lazily, into a small canvas; at most MAX_FIGURES are kept.
+    interface Figure {
+      img: HTMLCanvasElement | null;
+      white: HTMLCanvasElement | null;
+      red: HTMLCanvasElement | null;
+      retryAt: number;
+      used: number;
+    }
+    const figures = new Map<string, Figure>();
+    const makeFigureCanvas = (w: number, h: number): CanvasLike | null => {
+      const c = document.createElement('canvas');
+      c.width = w;
+      c.height = h;
+      return c as unknown as CanvasLike;
+    };
+    const freeCanvas = (c: HTMLCanvasElement | null) => {
+      if (c) {
+        c.width = 0;
+        c.height = 0;
+      }
+    };
+    const figureFor = (look: FigureLook): Figure => {
+      let f = figures.get(look.key);
+      if (!f) {
+        if (figures.size >= MAX_FIGURES) {
+          // Evict the look drawn longest ago.
+          let oldKey = '';
+          let old: Figure | null = null;
+          for (const [k, v] of figures) {
+            if (!old || v.used < old.used) {
+              old = v;
+              oldKey = k;
+            }
+          }
+          if (old) {
+            freeCanvas(old.img);
+            freeCanvas(old.white);
+            freeCanvas(old.red);
+            figures.delete(oldKey);
+          }
+        }
+        f = { img: null, white: null, red: null, retryAt: 0, used: frameNo };
+        figures.set(look.key, f);
+      }
+      f.used = frameNo;
+      if (!f.img && frameNo >= f.retryAt) {
+        let img: CanvasLike | null = null;
+        try {
+          img = bakeCharacter(look.traits, look.accent, makeFigureCanvas, FIG_SCALE);
+        } catch {
+          img = null;
+        }
+        f.img = img as unknown as HTMLCanvasElement | null;
+        if (!f.img) f.retryAt = frameNo + FIGURE_RETRY_FRAMES;
+      }
+      return f;
+    };
+    // Hit flash: a white (NPC) or red (player) silhouette of the baked figure, made on the first hit.
+    const tintOf = (f: Figure, red: boolean): HTMLCanvasElement | null => {
+      const have = red ? f.red : f.white;
+      if (have || !f.img) return have;
+      try {
+        const c = document.createElement('canvas');
+        c.width = f.img.width;
+        c.height = f.img.height;
+        const tctx = c.getContext('2d');
+        if (!tctx) return null;
+        tctx.drawImage(f.img, 0, 0);
+        tctx.globalCompositeOperation = 'source-atop';
+        tctx.fillStyle = red ? '#EF4444' : '#FFFFFF';
+        tctx.fillRect(0, 0, c.width, c.height);
+        if (red) f.red = c;
+        else f.white = c;
+        return c;
+      } catch {
+        return null;
+      }
+    };
+    // Feet at (x, y); mirrored to face left when facing < 0; squash and stretch about the feet.
+    const drawFigure = (look: FigureLook, x: number, y: number, facing: number, squash: number, flash: 0 | 1 | 2) => {
+      const f = figureFor(look);
+      const sq = Math.abs(squash - 1) < 0.01 ? 1 : squash;
+      ctx.save();
+      ctx.translate(Math.round(x), Math.round(y));
+      if (facing < 0 || sq !== 1) ctx.scale(facing < 0 ? -sq : sq, 2 - sq);
+      if (f.img) {
+        ctx.drawImage(f.img, -FIG_FOOT_X, -FIG_FOOT_Y);
+        if (flash) {
+          const t = tintOf(f, flash === 2);
+          if (t) {
+            ctx.globalAlpha = 0.85;
+            ctx.drawImage(t, -FIG_FOOT_X, -FIG_FOOT_Y);
+          }
+        }
+      } else {
+        // The bake failed: draw this frame directly (the bake is retried later).
+        ctx.translate(-FIGURE_FOOT.x * FIG_SCALE, -FIGURE_FOOT.y * FIG_SCALE);
+        ctx.scale(FIG_SCALE, FIG_SCALE);
+        try {
+          drawCharacter(ctx as unknown as Ctx2D, look.traits, look.accent);
+        } catch {
+          // never block the frame
+        }
+      }
+      ctx.restore();
+    };
+    // The held weapon, from the near hand along the aim; flipped when aiming left so it stays upright.
+    const drawWeapon = (gx: number, gy: number, angle: number, kind: number) => {
+      if (kind === WEAPON_NONE) return;
+      ctx.save();
+      ctx.translate(gx, gy);
+      ctx.rotate(angle);
+      if (Math.cos(angle) < 0) ctx.scale(1, -1);
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = '#08090C';
+      if (kind === WEAPON_KNUCKLES) {
+        ctx.fillStyle = '#E5C07B';
+        ctx.fillRect(-0.5, -3, 4.5, 6);
+        ctx.strokeRect(-0.5, -3, 4.5, 6);
+      } else {
+        const len = kind === WEAPON_PISTOL ? 9 : kind === WEAPON_TOMMY ? 13 : 16;
+        if (kind !== WEAPON_PISTOL) {
+          ctx.fillStyle = '#7C4A21';
+          ctx.fillRect(-6, -1.5, 6, 3.5);
+          ctx.strokeRect(-6, -1.5, 6, 3.5);
+        }
+        ctx.fillStyle = '#A1A1AA';
+        ctx.fillRect(0, -1.8, len, 3.2);
+        ctx.strokeRect(0, -1.8, len, 3.2);
+        ctx.fillStyle = '#3F3F46';
+        ctx.fillRect(0.5, 1.4, 2.6, 3.4);
+        if (kind === WEAPON_TOMMY) {
+          ctx.beginPath();
+          ctx.arc(5.5, 3.4, 2.7, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      ctx.restore();
+    };
+    const facingOf = (npc: WorldNpc): number => {
+      // Toward movement while walking, toward the aim when engaged or standing.
+      let f = npc.facing ?? 1;
+      const c = Math.cos(npc.angle);
+      if (npc.state === 'patrol' && Math.abs(npc.vx) > 4) f = npc.vx > 0 ? 1 : -1;
+      else if (Math.abs(c) > 0.2) f = c > 0 ? 1 : -1;
+      npc.facing = f;
+      return f;
+    };
+    const drawNpcFigure = (npc: WorldNpc) => {
+      const facing = facingOf(npc);
+      const sq = npc.squash;
+      const kind = npcWeapon(npc.role);
+      const gx = npc.x + facing * GRIP_DX * sq;
+      const gy = npc.y + GRIP_DY * (2 - sq);
+      const behind = Math.sin(npc.angle) < -0.5;
+      if (behind) drawWeapon(gx, gy, npc.angle, kind);
+      drawFigure(npc.look, npc.x, npc.y, facing, sq, npc.hitFlashTimer > 0 ? 1 : 0);
+      if (!behind) drawWeapon(gx, gy, npc.angle, kind);
+    };
+
+    // ---- The player: a figure in the chosen family's look, with a gold ring underfoot.
+    const playerLook: { fam: FamilyId | null; look: FigureLook | null } = { fam: null, look: null };
+    const playerLookFor = (fam: FamilyId): FigureLook => {
+      if (playerLook.fam !== fam || !playerLook.look) {
+        playerLook.fam = fam;
+        playerLook.look = lookOf(genericTraits('player', PLAYER_LOOK_SEED, fam), FAMILY_ACCENT[fam]);
+      }
+      return playerLook.look;
+    };
+    let playerFacing = 1;
+    const drawPlayerRing = () => {
+      const px = Math.round(player.x);
+      const py = Math.round(player.y) + 1;
+      ctx.save();
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.16)';
+      ctx.strokeStyle = '#FACC15';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(px, py, 17, 6.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Aim notch on the ring (keyboard/mouse and touch aim alike)
+      ctx.translate(px, py);
+      ctx.scale(1, 6.5 / 17);
+      const a = player.angle;
+      ctx.fillStyle = '#FACC15';
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 25, Math.sin(a) * 25);
+      ctx.lineTo(Math.cos(a - 0.3) * 18, Math.sin(a - 0.3) * 18);
+      ctx.lineTo(Math.cos(a + 0.3) * 18, Math.sin(a + 0.3) * 18);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    };
+    const drawPlayerFigure = (fam: FamilyId, weapon: WeaponId) => {
+      const c = Math.cos(player.angle);
+      if (Math.abs(c) > 0.2) playerFacing = c > 0 ? 1 : -1;
+      const sq = player.squash;
+      const gx = player.x + playerFacing * GRIP_DX * sq;
+      const gy = player.y + GRIP_DY * (2 - sq);
+      const kind = playerWeapon(weapon);
+      const behind = Math.sin(player.angle) < -0.5;
+      if (behind) drawWeapon(gx, gy, player.angle, kind);
+      drawFigure(playerLookFor(fam), player.x, player.y, playerFacing, sq, player.hitFlash > 0 ? 2 : 0);
+      if (!behind) drawWeapon(gx, gy, player.angle, kind);
+    };
+
+    // ---- Draw list and name tags: arrays reused every frame.
+    const drawList: WorldNpc[] = [];
+    const tagPool: TagRequest[] = [];
+    const tagReqs: TagRequest[] = [];
+    const tagNpcs: WorldNpc[] = [];
+    const tagBars: boolean[] = [];
+    const pushTag = (npc: WorldNpc, priority: number, bar: boolean) => {
+      const i = tagReqs.length;
+      let r = tagPool[i];
+      if (!r) {
+        r = { id: '', x: 0, y: 0, w: 0, h: 0, priority: 0 };
+        tagPool[i] = r;
+      }
+      if (npc.tagW === undefined) {
+        ctx.font = TAG_NAME_FONT;
+        const nameW = ctx.measureText(npc.name).width;
+        ctx.font = TAG_FAMILY_FONT;
+        const famW = ctx.measureText(npc.tagFamily).width;
+        npc.tagW = Math.ceil(Math.max(nameW, famW, 40)) + 12;
+      }
+      const h = bar ? TAG_H_BAR : TAG_H;
+      r.id = npc.id;
+      r.w = npc.tagW;
+      r.h = h;
+      r.x = Math.round(npc.x - npc.tagW / 2);
+      r.y = Math.round(npc.y - FIG_TOP - h - 3);
+      r.priority = priority;
+      tagReqs.push(r);
+      tagNpcs[i] = npc;
+      tagBars[i] = bar;
+    };
+    // Tags for engaged, damaged, Capo and courier NPCs, plus the nearest other named NPC within 160 px.
+    // Unnamed people (generic citizens, officers and allies) get a tag only while engaged.
+    const buildTags = (titleScreen: boolean) => {
+      tagReqs.length = 0;
+      tagNpcs.length = 0;
+      tagBars.length = 0;
+      let nearest: WorldNpc | null = null;
+      let nearestD = NEAREST_TAG_RANGE;
+      for (let k = 0; k < drawList.length; k++) {
+        const n = drawList[k];
+        const engaged = n.state !== 'patrol';
+        const quiet = n.castId === undefined && (n.role === 'citizen' || n.role === 'ally' || n.role === 'nypd');
+        const d = Math.hypot(n.x - player.x, n.y - player.y);
+        let pri = 0;
+        if (n.role === 'capo') pri = 5;
+        else if (engaged) pri = 4;
+        else if (!quiet && n.hp < n.maxHp) pri = 3;
+        else if (n.role === 'courier') pri = 2;
+        if (pri > 0) {
+          // Within a class, nearer NPCs are placed first.
+          pushTag(n, pri + 0.5 * (1 - Math.min(d, 1000) / 1000), true);
+        } else if (!quiet && !titleScreen && d < nearestD) {
+          nearestD = d;
+          nearest = n;
+        }
+      }
+      if (nearest) pushTag(nearest, 1, nearest.hp < nearest.maxHp);
+    };
+    const drawTags = () => {
+      if (tagReqs.length === 0) return;
+      const placed = layoutTags(tagReqs, TAG_MAX);
+      if (placed.length === 0) return;
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      for (let p = 0; p < placed.length; p++) {
+        const pt = placed[p];
+        let idx = 0;
+        while (idx < tagReqs.length && tagReqs[idx].id !== pt.id) idx++;
+        if (idx >= tagReqs.length) continue;
+        const r = tagReqs[idx];
+        const n = tagNpcs[idx];
+        const x = pt.x;
+        const y = pt.y;
+        if (y < r.y) {
+          // Lifted clear of another tag: a thin leader line down to the head.
+          const lx = Math.round(n.x) + 0.5;
+          ctx.strokeStyle = 'rgba(228, 228, 231, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(lx, y + r.h);
+          ctx.lineTo(lx, r.y + r.h + 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
+        ctx.fillRect(x, y, r.w, r.h);
+        ctx.fillStyle = n.tagColor;
+        ctx.fillRect(x, y, 2, r.h);
+        ctx.font = TAG_NAME_FONT;
+        ctx.fillStyle = '#F4F4F5';
+        ctx.fillText(n.name, x + 6, y + 4);
+        ctx.font = TAG_FAMILY_FONT;
+        ctx.fillStyle = n.tagColor;
+        ctx.fillText(n.tagFamily, x + 6, y + 17);
+        if (tagBars[idx]) {
+          const bw = r.w - 12;
+          const pct = Math.max(0, Math.min(1, n.hp / n.maxHp));
+          ctx.fillStyle = 'rgba(63, 63, 70, 0.95)';
+          ctx.fillRect(x + 6, y + r.h - 7, bw, 3);
+          ctx.fillStyle = n.role === 'ally' ? '#10B981' : n.role === 'courier' ? '#F59E0B' : n.tagColor;
+          ctx.fillRect(x + 6, y + r.h - 7, bw * pct, 3);
+        }
+      }
+      ctx.restore();
+    };
+
     let animId = 0;
     let lastTime = performance.now();
 
@@ -1256,7 +1697,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             const skillSpot = snap(player.x + (allyCount === 0 ? -38 : 38), player.y + 32);
             npcs.push({
               id: `ally_skill_${Date.now()}_${allyCount}`,
-              name: 'Made Bodyguard',
+              ...allyDress('Made Bodyguard'),
               role: 'ally',
               familyId: 'player',
               x: skillSpot.x,
@@ -1270,8 +1711,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               stateTimer: 1,
               patrolOriginX: player.x,
               patrolOriginY: player.y,
-              coatColor: '#1C1917',
-              hatColor: '#F59E0B',
               hitFlashTimer: 0,
               squash: 1,
               cashDrop: 0,
@@ -1286,7 +1725,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           const nypdSpot = snap(player.x + Math.cos(spawnAngle) * 420, player.y + Math.sin(spawnAngle) * 420);
           npcs.push({
             id: `nypd_${Date.now()}`,
-            name: 'NYPD Organized Crime Task Force',
+            ...officerDress(),
             role: 'nypd',
             familyId: 'nypd',
             x: nypdSpot.x,
@@ -1300,8 +1739,6 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             stateTimer: 0.4,
             patrolOriginX: player.x,
             patrolOriginY: player.y,
-            coatColor: '#172554',
-            hatColor: '#38BDF8',
             hitFlashTimer: 0,
             squash: 1,
             cashDrop: 800,
@@ -1398,11 +1835,18 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               npcs.push(makeCivilian(npc.homeArea));
             } else if (!guardId && npc.role !== 'ally' && npc.role !== 'nypd') {
               const b = NYC_BOROUGHS[Math.floor(Math.random() * NYC_BOROUGHS.length)];
-              const palette = FAMILY_COAT_COLORS[npc.role === 'citizen' ? 'civilian' : b.controllingFamilyDefault];
               const respawnSpot = randomWalkableIn(city, b.id as GameBoroughId, Math.random);
+              // The replacement is dressed before the dead member is released, so it is never the same person.
+              const fam = b.controllingFamilyDefault;
+              const dress =
+                npc.role === 'citizen'
+                  ? citizenDress('1984 Garment Merchant')
+                  : npc.role === 'courier'
+                  ? courierDress(fam, `${b.name.split(' ')[0]} Contraband Runner`)
+                  : familyDress(fam, `${familyName(fam)} ${npc.role === 'brawler' ? 'Enforcer' : 'Soldato'}`, isStreetRankCast);
               npcs.push({
                 id: `npc_respawn_${Date.now()}_${Math.random()}`,
-                name: npc.name,
+                ...dress,
                 role: npc.role,
                 familyId: npc.role === 'citizen' ? 'civilian' : b.controllingFamilyDefault,
                 x: respawnSpot.x,
@@ -1416,14 +1860,13 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                 stateTimer: 2,
                 patrolOriginX: respawnSpot.x,
                 patrolOriginY: respawnSpot.y,
-                coatColor: palette.coat,
-                hatColor: palette.hat,
                 hitFlashTimer: 0,
                 squash: 1,
                 cashDrop: npc.cashDrop,
                 contrabandDrop: npc.contrabandDrop,
               });
             }
+            releaseCast(npc);
             continue;
           }
 
@@ -1819,257 +2262,87 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.restore();
       }
 
-      // Draw all Active World NPCs with Unique Five Families 'Family Trait' Visual Indicators
-      for (const npc of npcs) {
-        const famVis = FAMILY_COAT_COLORS[npc.familyId] || FAMILY_COAT_COLORS.civilian;
-        const bodyRadius = npc.role === 'capo' ? 16 : 13;
+      // People: full-body figures from the figure cache. Cull to the view, then sort by the feet so
+      // lower bodies draw in front; the player is drawn in the same order.
+      drawList.length = 0;
+      for (let k = 0; k < npcs.length; k++) {
+        const n = npcs[k];
+        if (n.x < view.x - 80 || n.x > view.x + view.w + 80 || n.y < view.y - 40 || n.y > view.y + view.h + 80) continue;
+        drawList.push(n);
+      }
+      for (let a = 1; a < drawList.length; a++) {
+        const n = drawList[a];
+        let b = a - 1;
+        while (b >= 0 && drawList[b].y > n.y) {
+          drawList[b + 1] = drawList[b];
+          b--;
+        }
+        drawList[b + 1] = n;
+      }
+      const showPlayer = !st.isTitleScreen;
 
-        ctx.save();
-
-        // 1. Ground-Level Family Territory Alignment Ring beneath NPC
-        if (npc.familyId !== 'civilian') {
-          ctx.strokeStyle = famVis.accent;
-          ctx.globalAlpha = npc.role === 'capo' ? 0.75 : 0.42;
-          ctx.lineWidth = npc.role === 'capo' ? 2.2 : 1.5;
+      // Ground layer: brawler windup arcs, Capo rings and the player's gold ring.
+      for (let k = 0; k < drawList.length; k++) {
+        const npc = drawList[k];
+        if (npc.state === 'windup' && npc.role === 'brawler') {
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
+          ctx.strokeStyle = '#EF4444';
+          ctx.lineWidth = 2;
           ctx.beginPath();
-          ctx.arc(npc.x, npc.y, bodyRadius + 6, 0, Math.PI * 2);
+          ctx.arc(npc.x, npc.y, 68, npc.angle - 0.6, npc.angle + 0.6);
+          ctx.lineTo(npc.x, npc.y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+        if (npc.role === 'capo') {
+          ctx.strokeStyle = npc.tagColor;
+          ctx.globalAlpha = 0.85;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(Math.round(npc.x), Math.round(npc.y) + 1, 15, 5.5, 0, 0, Math.PI * 2);
           ctx.stroke();
           ctx.globalAlpha = 1;
         }
-
-        // Draw visible Windup Telegraph BEFORE attack!
-        if (npc.state === 'windup') {
-          if (npc.role === 'brawler') {
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
-            ctx.strokeStyle = '#EF4444';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(npc.x, npc.y, 68, npc.angle - 0.6, npc.angle + 0.6);
-            ctx.lineTo(npc.x, npc.y);
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          } else {
-            // Gunman laser sight telegraph cone
-            ctx.strokeStyle = 'rgba(248, 113, 113, 0.75)';
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6, 6]);
-            ctx.beginPath();
-            ctx.moveTo(npc.x, npc.y);
-            ctx.lineTo(npc.x + Math.cos(npc.angle) * 260, npc.y + Math.sin(npc.angle) * 260);
-            ctx.stroke();
-            ctx.setLineDash([]);
-          }
-        }
-
-        ctx.translate(npc.x, npc.y);
-        ctx.scale(npc.squash, 2 - npc.squash);
-
-        // Shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.45)';
-        ctx.beginPath();
-        ctx.arc(2, 4, 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Shoulders / Coat
-        ctx.fillStyle = npc.hitFlashTimer > 0 ? '#FFFFFF' : npc.coatColor;
-        ctx.beginPath();
-        ctx.arc(0, 0, bodyRadius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = npc.role === 'capo' ? '#F59E0B' : famVis.accent;
-        ctx.lineWidth = npc.role === 'capo' ? 2.5 : 1.5;
-        ctx.stroke();
-
-        // 2. Render Unique Five Families On-Body Sartorial 'Family Trait' Visuals
-        ctx.save();
-        ctx.rotate(npc.angle);
-
-        if (npc.familyId === 'corvini') {
-          // Corvini Family Trait: Chalk-white pinstripes + Blood-Red Lapel Carnation
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(-6, -8);
-          ctx.lineTo(6, -8);
-          ctx.moveTo(-6, 8);
-          ctx.lineTo(6, 8);
-          ctx.stroke();
-          // Green carnation leaf & crimson flower on left lapel
-          ctx.fillStyle = '#22C55E';
-          ctx.beginPath();
-          ctx.arc(5, -7, 3.2, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.fillStyle = '#EF4444';
-          ctx.beginPath();
-          ctx.arc(6, -6.5, 2.6, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (npc.familyId === 'bellini') {
-          // Bellini Syndicate Trait: Gold Collar Chevron + Brass-Latched Concrete Ledger Briefcase
-          ctx.strokeStyle = '#FBBF24';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(2, -9);
-          ctx.lineTo(7, -5);
-          ctx.lineTo(2, -1);
-          ctx.stroke();
-          // Carried leather & brass briefcase in off-hand
-          ctx.fillStyle = '#451A03';
-          ctx.fillRect(-4, -17, 10, 6);
-          ctx.strokeStyle = '#F59E0B';
-          ctx.lineWidth = 1.2;
-          ctx.strokeRect(-4, -17, 10, 6);
-        } else if (npc.familyId === 'valenti') {
-          // Valenti Crew Trait: Twin Emerald Racing Stripes on sleeves + Green Aviator Shades
-          ctx.strokeStyle = '#34D399';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.moveTo(-5, -11);
-          ctx.lineTo(7, -11);
-          ctx.moveTo(-5, 11);
-          ctx.lineTo(7, 11);
-          ctx.stroke();
-          // Emerald aviator lenses at front of head
-          ctx.fillStyle = '#10B981';
-          ctx.fillRect(6, -5.5, 3.5, 4.5);
-          ctx.fillRect(6, 1, 3.5, 4.5);
-          ctx.strokeStyle = '#FDE047';
-          ctx.lineWidth = 0.8;
-          ctx.strokeRect(6, -5.5, 3.5, 4.5);
-          ctx.strokeRect(6, 1, 3.5, 4.5);
-        } else if (npc.familyId === 'moretti') {
-          // Moretti Waterfront Trait: Steel-Riveted Stevedore Epaulets + Silver Cargo Hook Sash
-          ctx.fillStyle = '#60A5FA';
-          ctx.fillRect(-4, -13, 8, 4);
-          ctx.fillRect(-4, 9, 8, 4);
-          // Diagonal silver dock chain sash
-          ctx.strokeStyle = '#E2E8F0';
-          ctx.lineWidth = 1.8;
-          ctx.setLineDash([2, 2]);
-          ctx.beginPath();
-          ctx.moveTo(-7, -8);
-          ctx.lineTo(7, 8);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        } else if (npc.familyId === 'rastelli') {
-          // Rastelli Faction Trait: Purple Velour Shawl Collar + Lit Cuban Cigar with glowing ember
-          ctx.strokeStyle = '#C084FC';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.arc(0, 0, 9.5, -Math.PI * 0.65, Math.PI * 0.65);
-          ctx.stroke();
-          // Cuban cigar & glowing orange ember
-          ctx.fillStyle = '#78350F';
-          ctx.fillRect(7, 2, 7, 2.5);
-          ctx.fillStyle = Math.floor(now / 160) % 2 === 0 ? '#F97316' : '#EF4444';
-          ctx.fillRect(13, 2, 2.2, 2.5);
-        } else if (npc.familyId === 'nypd') {
-          // Gold NYPD breast shield
-          ctx.fillStyle = '#FACC15';
-          ctx.beginPath();
-          ctx.arc(5, -6, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (npc.familyId === 'player') {
-          // Allied Made Man gold lapel pin
-          ctx.fillStyle = '#F59E0B';
-          ctx.beginPath();
-          ctx.arc(5, -6, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        // Gun barrel / Brass Knuckles indicator
-        ctx.fillStyle = '#A1A1AA';
-        ctx.fillRect(10, -2, npc.role === 'brawler' ? 7 : 13, 4);
-        ctx.restore();
-
-        // Fedora crown
-        ctx.fillStyle = npc.hitFlashTimer > 0 ? '#FCA5A5' : npc.hatColor;
-        ctx.beginPath();
-        ctx.arc(0, 0, 7.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Hatband ribbon in family accent color
-        ctx.strokeStyle = famVis.accent;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(0, 0, 5.5, 0, Math.PI * 2);
-        ctx.stroke();
-
-        ctx.restore();
-
-        // 3. Overhead Family Alignment Emblem & Trait Indicator Tag
-        if (npc.familyId !== 'civilian') {
-          ctx.fillStyle = famVis.accent;
-          ctx.font = '700 9px "JetBrains Mono", monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText(
-            `${famVis.symbol} ${famVis.shortFamily} · ${famVis.traitTag}`,
-            npc.x,
-            npc.y - (npc.hp < npc.maxHp || npc.role === 'capo' || npc.state !== 'patrol' ? 41 : 22)
-          );
-        }
-
-        // Health bar & Nameplate when engaged, damaged, or special role
-        if (npc.hp < npc.maxHp || npc.role === 'capo' || npc.role === 'courier' || npc.state !== 'patrol') {
-          const barW = 38;
-          const pct = Math.max(0, npc.hp / npc.maxHp);
-          ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
-          ctx.fillRect(npc.x - barW / 2, npc.y - 25, barW, 5);
-          ctx.fillStyle = npc.role === 'ally' ? '#10B981' : npc.role === 'courier' ? '#F59E0B' : famVis.accent;
-          ctx.fillRect(npc.x - barW / 2, npc.y - 25, barW * pct, 5);
-
-          ctx.fillStyle = '#E4E4E7';
-          ctx.font = '600 10px "Plus Jakarta Sans", sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(npc.name, npc.x, npc.y - 30);
-        }
       }
+      if (showPlayer) drawPlayerRing();
 
-      // Draw Player Character (The Rising Don)
-      if (!st.isTitleScreen) {
-        ctx.save();
-        ctx.translate(player.x, player.y);
-        ctx.scale(player.squash, 2 - player.squash);
+      // Bodies, back to front.
+      let playerDrawn = !showPlayer;
+      for (let k = 0; k < drawList.length; k++) {
+        const npc = drawList[k];
+        if (!playerDrawn && npc.y > player.y) {
+          drawPlayerFigure(st.playerFamily, st.equippedWeapon);
+          playerDrawn = true;
+        }
+        drawNpcFigure(npc);
+      }
+      if (!playerDrawn) drawPlayerFigure(st.playerFamily, st.equippedWeapon);
 
-        // Player subtle selection ring
-        ctx.strokeStyle = 'rgba(220, 38, 38, 0.55)';
+      // Gunman laser-sight telegraph, from the gun hand along the aim (also for gunmen just off screen).
+      for (let k = 0; k < npcs.length; k++) {
+        const npc = npcs[k];
+        if (npc.state !== 'windup' || npc.role === 'brawler') continue;
+        const f = Math.cos(npc.angle) >= 0 ? 1 : -1;
+        const lx = npc.x + f * GRIP_DX;
+        const ly = npc.y + GRIP_DY;
+        ctx.strokeStyle = 'rgba(248, 113, 113, 0.75)';
         ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
         ctx.beginPath();
-        ctx.arc(0, 0, 21, 0, Math.PI * 2);
+        ctx.moveTo(lx, ly);
+        ctx.lineTo(lx + Math.cos(npc.angle) * 260, ly + Math.sin(npc.angle) * 260);
         ctx.stroke();
-
-        // Rotate toward aim angle
-        ctx.save();
-        ctx.rotate(player.angle);
-        // Weapon silhouette
-        ctx.fillStyle = '#D4D4D8';
-        ctx.fillRect(12, -2.5, st.equippedWeapon === 'knuckles' ? 8 : 16, 5);
-        ctx.restore();
-
-        // Pinstripe Overcoat shoulders
-        ctx.fillStyle = player.hitFlash > 0 ? '#EF4444' : '#1C1917';
-        ctx.beginPath();
-        ctx.arc(0, 0, 15, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#F59E0B';
-        ctx.lineWidth = 2.2;
-        ctx.stroke();
-
-        // Don's Fedora
-        ctx.fillStyle = '#B91C1C';
-        ctx.beginPath();
-        ctx.arc(0, 0, 8.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
+        ctx.setLineDash([]);
       }
 
-      // Draw Bullets & Tracers
+      // Draw Bullets & Tracers (drawn at hand height; they fly at the bodies' feet)
       for (const b of bullets) {
         ctx.strokeStyle = b.color;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(b.x, b.y);
-        ctx.lineTo(b.x - b.vx * 0.022, b.y - b.vy * 0.022);
+        ctx.moveTo(b.x, b.y - SHOT_LIFT);
+        ctx.lineTo(b.x - b.vx * 0.022, b.y - SHOT_LIFT - b.vy * 0.022);
         ctx.stroke();
       }
 
@@ -2081,6 +2354,10 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
       }
       ctx.globalAlpha = 1;
+
+      // Name tags: at most four, laid out so that none overlap (src/world/tagLayout.ts)
+      buildTags(st.isTitleScreen);
+      drawTags();
 
       // Draw Floating Damage & Tribute Numbers
       for (const ft of floatingTexts) {
@@ -2164,6 +2441,13 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       failedUntil.clear();
       req.list = [];
       req.visible = [];
+      // Release every baked figure.
+      for (const f of figures.values()) {
+        freeCanvas(f.img);
+        freeCanvas(f.white);
+        freeCanvas(f.red);
+      }
+      figures.clear();
       if (tourHook && tourWin.__cityTour === tourHook) delete tourWin.__cityTour;
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);

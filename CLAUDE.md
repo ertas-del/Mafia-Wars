@@ -42,7 +42,7 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 │   ├── data/
 │   │   └── nyc1984Data.ts            # Static definitions: 5 Families, 5 Boroughs, 15 Rackets, 6 Contacts, 15 Skills, 4 Weapons, 5 Narrative Acts
 │   ├── input/                        # Phone input: touchMode, touchSticks, haptics, fullscreen (+ *.test.ts)
-│   ├── world/                        # Pure city modules (+ *.test.ts): cityData (6400×4240 geography, bridges, ferry, stations, racket/contact placement), cityGen (seeded 32 px grid, unique buildings), city/ (grid, ground, names), cityRender + chunkCache (512 px pieces, max 24), pathfind (flow field + stuck rule), traffic (lane cars), saveMerge, bridgeTypes
+│   ├── world/                        # Pure city modules (+ *.test.ts): cityData (6400×4240 geography, bridges, ferry, stations, racket/contact placement), cityGen (seeded 32 px grid, unique buildings), city/ (grid, ground, names), cityRender + chunkCache (512 px pieces, max 24), pathfind (flow field + stuck rule), traffic (lane cars), saveMerge, bridgeTypes, cast + characterSprite + tagLayout (the 50-character street cast)
 │   ├── components/
 │   │   ├── NycWorldCanvas.tsx        # Isolated 60fps 2D Canvas engine (6400×4240 generated city, AI, bullets, rain, traffic)
 │   │   ├── PerimeterHud.tsx          # Low-occlusion (<15% screen) HUD, borough fast-travel, weapon bar, context prompts
@@ -83,6 +83,11 @@ The narrative and mechanics are grounded in the 1980s American Mafia ("Five Fami
 - **Engine**: all bodies move through `moveWithCollision`; bullets die on `blocksBullet`; spawns and teleports go through `randomWalkableIn`/`nearestWalkable` (falling back to a station); `areaAtPoint` drives the borough callback, which never fires for Uptown or Staten Island. Chasers and allies share one flow field around the player (radius 40 cells, rebuilt every 0.5 s) with a 2 s stuck rule; hostile windups need a clear line; Uptown and Staten Island keep 6 civilians each; 40 lane cars (4 police) come from `spawnTraffic`/`stepTraffic`.
 - **Ferry**: the prompt (`InteractPrompt` type `ferry`, label contains "ferry") shows near `FERRY_TERMINALS`; E or bridge `takeFerry()` crosses with a fade, and never while paused.
 - **Tour hook**: `window.__cityTour = { teleport, frameTimeMs, slowestChunkMs }` exists only with `?tour`.
+
+### B3. The Street Cast (`src/world/cast.ts`, `characterSprite.ts`, `tagLayout.ts`)
+- **Cast**: 50 invented characters (10 Corvini, 8 each for Bellini, Valenti, Moretti and Rastelli, 8 outside the families) copied from the `ertas-del/Mafia-game` character bible, with no real crime-figure surnames (a denylist test guards this). `NycWorldCanvas` takes names from one `createCastPool()` per mount: each borough's family NPCs are distinct members of its controlling family, turf Capos and button men come from the racket owner's family, the two outside cops head NYPD squads, and the other outsiders appear as named citizens; a member is released when its NPC dies or despawns. `assignCast` falls back to `genericTraits` (civilian, officer, ally, player).
+- **Figures**: `drawCharacter` draws a full-body, three-quarter, camera-facing figure in a 100×120 box from traits; never side-on or top-down. The engine bakes each look once (`bakeCharacter` at scale about 0.42, about 44 px tall, at most 160 cached), anchors it at the feet (`FIGURE_FOOT`), mirrors it by facing, sorts bodies by y, and draws the weapon from `FIGURE_GRIP`. The player is a figure in the chosen family's look with a gold ring. Tracers are drawn a few px above the simulated bullet (`SHOT_LIFT`).
+- **Tags**: name tags go only through `layoutTags` (at most 4, never overlapping, engaged first, then the nearest named NPC within 160 px). Tests: `node --test src/world/cast.test.ts`.
 
 ### C. Combat & Encounter Feel
 - **Clamped Delta Time**: `const dt = Math.min(rawDt, 0.05)` prevents physics tunneling on tab switches.

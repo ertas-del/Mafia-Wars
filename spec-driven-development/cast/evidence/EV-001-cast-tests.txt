@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: AC-001 the cast has 50 unique ids and 50 unique names
+ok 1 - AC-001 the cast has 50 unique ids and 50 unique names
+  ---
+  duration_ms: 1.730108
+  type: 'test'
+  ...
+# Subtest: AC-001 the per-family counts are 10, 8, 8, 8, 8 and 8
+ok 2 - AC-001 the per-family counts are 10, 8, 8, 8, 8 and 8
+  ---
+  duration_ms: 0.228094
+  type: 'test'
+  ...
+# Subtest: AC-001 every trait value is one of the allowed values
+ok 3 - AC-001 every trait value is one of the allowed values
+  ---
+  duration_ms: 1.896865
+  type: 'test'
+  ...
+# Subtest: AC-001 no name contains a surname from the denylist of real crime figures
+ok 4 - AC-001 no name contains a surname from the denylist of real crime figures
+  ---
+  duration_ms: 1.557871
+  type: 'test'
+  ...
+# Subtest: AC-002 every cast member draws without throwing and every save is matched by a restore
+ok 5 - AC-002 every cast member draws without throwing and every save is matched by a restore
+  ---
+  duration_ms: 28.107436
+  type: 'test'
+  ...
+# Subtest: AC-002 unnamed civilian, officer, ally and player trait sets draw without throwing, balanced
+ok 6 - AC-002 unnamed civilian, officer, ally and player trait sets draw without throwing, balanced
+  ---
+  duration_ms: 21.642604
+  type: 'test'
+  ...
+# Subtest: AC-002 each cast member's trait tuple is unique
+ok 7 - AC-002 each cast member's trait tuple is unique
+  ---
+  duration_ms: 0.440792
+  type: 'test'
+  ...
+# Subtest: every single trait value draws, and unknown values and bad colours fall back without throwing
+ok 8 - every single trait value draws, and unknown values and bad colours fall back without throwing
+  ---
+  duration_ms: 66.568423
+  type: 'test'
+  ...
+# Subtest: bakeCharacter returns null when makeCanvas or getContext gives null, and bakes balanced otherwise
+ok 9 - bakeCharacter returns null when makeCanvas or getContext gives null, and bakes balanced otherwise
+  ---
+  duration_ms: 0.677049
+  type: 'test'
+  ...
+# Subtest: AC-003 the pool returns distinct members of the asked family until all are in use, then null
+ok 10 - AC-003 the pool returns distinct members of the asked family until all are in use, then null
+  ---
+  duration_ms: 0.572093
+  type: 'test'
+  ...
+# Subtest: AC-003 the assignment returns distinct members of the asked family until all are in use, then a generic member
+ok 11 - AC-003 the assignment returns distinct members of the asked family until all are in use, then a generic member
+  ---
+  duration_ms: 0.587505
+  type: 'test'
+  ...
+# Subtest: AC-003 a released member can be taken again, filters apply, and pools are independent
+ok 12 - AC-003 a released member can be taken again, filters apply, and pools are independent
+  ---
+  duration_ms: 0.179737
+  type: 'test'
+  ...
+# Subtest: genericTraits is seeded, and civilians, officers, allies and players get their looks
+ok 13 - genericTraits is seeded, and civilians, officers, allies and players get their looks
+  ---
+  duration_ms: 1.125521
+  type: 'test'
+  ...
+# Subtest: AC-004 ten tags requested at nearly the same spot come out with at most 4 shown and none overlapping
+ok 14 - AC-004 ten tags requested at nearly the same spot come out with at most 4 shown and none overlapping
+  ---
+  duration_ms: 0.665124
+  type: 'test'
+  ...
+# Subtest: AC-004 engaged NPCs are kept ahead of the nearest-NPC tag
+ok 15 - AC-004 engaged NPCs are kept ahead of the nearest-NPC tag
+  ---
+  duration_ms: 0.145985
+  type: 'test'
+  ...
+# Subtest: tag layout edge cases: empty input, zero max, far-apart tags stay put
+ok 16 - tag layout edge cases: empty input, zero max, far-apart tags stay put
+  ---
+  duration_ms: 0.141567
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 269.222654
