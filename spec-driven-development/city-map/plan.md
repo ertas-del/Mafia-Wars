@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "implementation-plan",
   "plan_id": "city-map-plan",
-  "revision": 1,
+  "revision": 2,
   "path": {
     "scope": "repository",
     "value": "spec-driven-development/city-map/plan.md"
@@ -538,15 +538,15 @@
 
 # Real City Map — Implementation Plan
 
-**Path:** `spec-driven-development/city-map/plan.md` · **Revision:** 1 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
+**Path:** `spec-driven-development/city-map/plan.md` · **Revision:** 2 · **Kind:** implementation-plan · **Schema:** 1 · **Status:** awaiting user approval
 **Specification:** `spec-driven-development/city-map/spec.md` revision 1, digest `285c4831b33e945228cf1c40014a03cb6872bdff62d7fafcd1a694782b3a0716`
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 1
-**Approved normative digest:** `16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5`
+**Approved revision:** 2
+**Approved normative digest:** `0545295cabc87e1ef3e02e62c6b89b1695e8c1eb1f2f80a4646b7a134c5d3169`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-09T19:03:04-07:00
+**Approval timestamp:** 2026-11-10T04:38:13Z
 <!-- sdd-approval-end -->
 
 ## Goal
@@ -640,7 +640,7 @@ export type InteractPrompt = { type: 'racket' | 'contact' | 'npc' | 'ferry'; lab
 |---|---|---|---|
 | City data | rectangles in `nyc1984Data.ts:232-296` | `cityData.ts`: outlines from the turf map times 4, bridges, ferry, stations, racket and contact placement, labels, parks, piers, special areas | T-001 |
 | City generation | none | `cityGen.ts`: cell grid, block layout (alley row on top, one building row facing south, sidewalk, road), unique buildings and signs per borough style set, lamps, helpers, collision | T-001 |
-| Rendering | rectangles at `NycWorldCanvas.tsx:1285-1380` | `cityRender.ts` draws tiles and three-quarter buildings per 512 piece; `chunkCache.ts` LRU; the engine keeps a one-piece ring around the view drawn ahead, at most one new piece per frame | T-002, T-005 |
+| Rendering | rectangles at `NycWorldCanvas.tsx:1285-1380` | `cityRender.ts` draws tiles and three-quarter buildings per 512 piece; `chunkCache.ts` LRU; the engine keeps a one-piece ring around the view drawn ahead, as far as the 24-piece cap allows (requested through `chunksForView`), at most one new piece per frame | T-002, T-005 |
 | Movement | straight lines | `pathfind.ts` flow field and stuck rule; `traffic.ts` lane driving | T-003 |
 | Data and save | positions in data and save | `nyc1984Data.ts` reads outlines and positions from `cityData.ts`; `App.tsx` merges saved rackets via `saveMerge.ts`; ferry prompt type and HUD branch | T-004 |
 | Engine core | old map, no collision | `NycWorldCanvas.tsx`: world size, piece drawing, collision, bullets, spawns, borough detection, ferry, tour hook | T-005 |
@@ -730,7 +730,7 @@ T-001 first, because every other task consumes its interface. Then wave 2, in pa
 **Interfaces consumed:** cityGen.
 **Interfaces produced:** drawCityChunk, drawCityOverlay, createChunkCache as pinned.
 **Concrete change:** Port the look of the design canvas (tile kit, props, Bronx buildings) to canvas 2D drawing per building style and per borough; buildings straddling a piece edge are drawn into each piece; no images, no DOM access at module load.
-**Verification:** EV-003: `node --test src/world/cityRender.test.ts` passes: the cache never exceeds 24 and evicts least recently used; the pieces needed for a 915 × 412 and a 1920 × 1080 view plus a one-piece ring never exceed 24; every piece of the generated city draws against a recording fake context without throwing. EV-004: fresh reviewer.
+**Verification:** EV-003: `node --test src/world/cityRender.test.ts` passes: the cache never exceeds 24 and evicts least recently used; the visible pieces for a 915 × 412 and a 1920 × 1080 view are never dropped and the requested set never exceeds 24; a 915 × 412 view gets its full one-piece ring; every piece of the generated city draws against a recording fake context without throwing. EV-004: fresh reviewer.
 **Documentation, migration, and rollback:** worker reports a CLAUDE.md line; revert to roll back.
 **Delegation and integration:** fresh Opus worker; fresh Opus reviewer.
 **Commit boundary:** one commit.
@@ -789,7 +789,7 @@ T-001 first, because every other task consumes its interface. Then wave 2, in pa
 **Ownership:** `src/components/NycWorldCanvas.tsx`.
 **Interfaces consumed:** every world module; ferry callback; tour hook shape.
 **Interfaces produced:** `takeFerry()` on the bridge; `window.__cityTour` with `?tour`.
-**Concrete change:** Replace world constants with `WORLD_W`, `WORLD_H`; generate the city once per mount; draw visible pieces from the cache then the overlay, replacing the old ground drawing, with a one-piece ring drawn ahead at most one new piece per frame; player, NPC and ally movement through `moveWithCollision`; bullets removed when `blocksBullet`; every spawn through `randomWalkableIn`, `nearestWalkable` and `STATIONS`; borough detection with `areaAtPoint` and no callback outside game boroughs; prompt typed as `InteractPrompt`, ferry prompt, E and `takeFerry` with a short fade; `LiveSimulationBridge` gains `takeFerry`; the tour hook only with `?tour`, including slowest piece draw time. Existing NPC wander and car code stays as is for T-009. Keyboard, mouse and touch paths unchanged.
+**Concrete change:** Replace world constants with `WORLD_W`, `WORLD_H`; generate the city once per mount; draw visible pieces from the cache then the overlay, replacing the old ground drawing, with a one-piece ring drawn ahead, as far as the 24-piece cap allows, through `chunksForView`, at most one new piece per frame; player, NPC and ally movement through `moveWithCollision`; bullets removed when `blocksBullet`; every spawn through `randomWalkableIn`, `nearestWalkable` and `STATIONS`; borough detection with `areaAtPoint` and no callback outside game boroughs; prompt typed as `InteractPrompt`, ferry prompt, E and `takeFerry` with a short fade; `LiveSimulationBridge` gains `takeFerry`; the tour hook only with `?tour`, including slowest piece draw time. Existing NPC wander and car code stays as is for T-009. Keyboard, mouse and touch paths unchanged.
 **Verification:** EV-010: `node --test "src/**/*.test.ts"` still passes. EV-011: fresh reviewer checks the AC-010 points this task owns.
 
 ### T-009

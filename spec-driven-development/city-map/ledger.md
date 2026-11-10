@@ -29,8 +29,8 @@
       "scope": "repository",
       "value": "spec-driven-development/city-map/plan.md"
     },
-    "revision": 1,
-    "digest": "16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5"
+    "revision": 2,
+    "digest": "0545295cabc87e1ef3e02e62c6b89b1695e8c1eb1f2f80a4646b7a134c5d3169"
   },
   "artifact_events": [
     {
@@ -50,6 +50,23 @@
       "digest": "16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5",
       "approver": "User in the current session",
       "timestamp": "2026-11-09T19:03:04-07:00"
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "16a6a813fe4e6a399b955b263146afa11a341e9423f2de1b9b218eb9aec28bd5",
+      "reason": "patches/PATCH-001.md: the one-piece ring is trimmed to fit 24 on large screens",
+      "event_sequence": 42
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 2,
+      "digest": "0545295cabc87e1ef3e02e62c6b89b1695e8c1eb1f2f80a4646b7a134c5d3169",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T04:38:13Z",
+      "event_sequence": 45
     }
   ],
   "current_state": "EXECUTING",
@@ -109,6 +126,41 @@
       "from": "READY",
       "to": "EXECUTING",
       "evidence": "T-001 dispatch begins"
+    },
+    {
+      "sequence": 9,
+      "event_sequence": 41,
+      "from": "EXECUTING",
+      "to": "CHANGE_CONTROL",
+      "evidence": "chunk ring cannot fit 24 at 1920x1080; patches/PATCH-001.md"
+    },
+    {
+      "sequence": 10,
+      "event_sequence": 43,
+      "from": "CHANGE_CONTROL",
+      "to": "PLAN_DRAFT",
+      "evidence": "patches/PATCH-001.md applied to plan.md revision 2; spec unchanged"
+    },
+    {
+      "sequence": 11,
+      "event_sequence": 44,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "patches/PATCH-001.md presented in a structured question"
+    },
+    {
+      "sequence": 12,
+      "event_sequence": 46,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user answered 'Approve' to the PATCH-001 question"
+    },
+    {
+      "sequence": 13,
+      "event_sequence": 47,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "T-002 review continues"
     }
   ],
   "effective_tasks": [
