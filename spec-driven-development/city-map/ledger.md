@@ -1022,8 +1022,8 @@
     },
     {
       "id": "T-005",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Sonnet worker",
       "dependencies": [
         "T-001",
         "T-002",
@@ -1031,10 +1031,32 @@
         "T-004",
         "T-006"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/C-005",
+      "branch": "wt/C-005",
+      "baseline": "1d7ae15",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 53,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001",
+            "T-002",
+            "T-003",
+            "T-004",
+            "T-006"
+          ],
+          "evidence": "wave 2 merged at 1d7ae15"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 54,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-005 dispatch"
+        }
+      ],
       "evidence": []
     },
     {
