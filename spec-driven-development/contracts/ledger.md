@@ -24,9 +24,305 @@
     "revision": 1,
     "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9"
   },
-  "plan": null,
-  "current_state": "AWAITING_SPEC_APPROVAL",
-  "effective_tasks": [],
+  "plan": {
+    "path": {
+      "scope": "repository",
+      "value": "spec-driven-development/contracts/plan.md"
+    },
+    "revision": 1,
+    "digest": "7d48fddb8ef0b4a61bd30f39b556ade2c1d3aedc2347f2adea49971670968d26"
+  },
+  "current_state": "PLAN_DRAFT",
+  "effective_tasks": [
+    {
+      "id": "T-001",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-004",
+          "FR-005",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "FR-010",
+          "FR-011",
+          "FR-012"
+        ],
+        "acceptance_criteria": [
+          "AC-001",
+          "AC-002",
+          "AC-003"
+        ]
+      },
+      "depends_on": [],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/contracts.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/contracts.test.ts"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/world/bridgeTypes.ts"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "approved specification"
+      ],
+      "produces": [
+        "contracts pinned interface",
+        "bridgeTypes InteractPrompt with 'sitdown' and the canvas contract props and callbacks types"
+      ],
+      "verification_ids": [
+        "EV-001",
+        "EV-002"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-002",
+      "covers": {
+        "requirements": [
+          "FR-004",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "FR-010",
+          "FR-011",
+          "FR-013"
+        ],
+        "acceptance_criteria": [
+          "AC-006"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/App.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/SyndicateDrawers.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/PerimeterHud.tsx"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/TitleAndEndModals.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "contracts pinned interface",
+        "canvas contract props and callbacks types"
+      ],
+      "produces": [
+        "App state, save field, dossier section, HUD chip, betrayal recovery screen"
+      ],
+      "verification_ids": [
+        "EV-003",
+        "EV-004"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-003",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-003",
+          "FR-007",
+          "FR-009",
+          "FR-012"
+        ],
+        "acceptance_criteria": [
+          "AC-006"
+        ]
+      },
+      "depends_on": [
+        "T-001"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "src/components/NycWorldCanvas.tsx"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "contracts pinned interface",
+        "canvas contract props and callbacks types"
+      ],
+      "produces": [
+        "engine hostility, hit attribution, squads, safe passage, sit-down spot and prompt, wake-up teleport, test hooks"
+      ],
+      "verification_ids": [
+        "EV-005",
+        "EV-006"
+      ],
+      "parallel_group": "wave-2",
+      "commit_required": true
+    },
+    {
+      "id": "T-004",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-003",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "FR-013",
+          "FR-014"
+        ],
+        "acceptance_criteria": [
+          "AC-004",
+          "AC-005",
+          "AC-006",
+          "AC-007"
+        ]
+      },
+      "depends_on": [
+        "T-002",
+        "T-003"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "CLAUDE.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/contracts/evidence/smoke.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/contracts/evidence/ci-run.md"
+          },
+          "mode": "exclusive"
+        },
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/contracts/evidence/whole-change-review.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "integrated branch head"
+      ],
+      "produces": [
+        "hook-driven smoke runs, green Check, viewed tour shots, whole-change review, landing"
+      ],
+      "verification_ids": [
+        "EV-007",
+        "EV-008",
+        "EV-009",
+        "EV-010"
+      ],
+      "parallel_group": null,
+      "commit_required": true
+    },
+    {
+      "id": "T-005",
+      "covers": {
+        "requirements": [
+          "FR-001",
+          "FR-002",
+          "FR-003",
+          "FR-006",
+          "FR-007",
+          "FR-008",
+          "FR-009",
+          "FR-010"
+        ],
+        "acceptance_criteria": [
+          "AC-008"
+        ]
+      },
+      "depends_on": [
+        "T-004"
+      ],
+      "ownership": [
+        {
+          "type": "file",
+          "path": {
+            "scope": "repository",
+            "value": "spec-driven-development/contracts/evidence/phone-check.md"
+          },
+          "mode": "exclusive"
+        }
+      ],
+      "consumes": [
+        "deployed build on the user's phone"
+      ],
+      "produces": [
+        "user's written confirmation"
+      ],
+      "verification_ids": [
+        "EV-011"
+      ],
+      "parallel_group": null,
+      "commit_required": false
+    }
+  ],
   "amendments": [],
   "completion_evidence": {
     "final_verification": [],
@@ -98,10 +394,92 @@
       "from": "SPEC_DRAFT",
       "to": "AWAITING_SPEC_APPROVAL",
       "evidence": "spec.md revision 1 validated, critic-reviewed and presented"
+    },
+    {
+      "sequence": 5,
+      "event_sequence": 6,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "user answered 'I approve'"
     }
   ],
-  "artifact_events": [],
-  "tasks": [],
+  "artifact_events": [
+    {
+      "event_sequence": 5,
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 1,
+      "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T16:40:58-07:00"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T-001",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-002",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-003",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-004",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-002",
+        "T-003"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    },
+    {
+      "id": "T-005",
+      "state": "PENDING",
+      "owner": "unassigned",
+      "dependencies": [
+        "T-004"
+      ],
+      "worktree": "not yet created",
+      "branch": "not yet created",
+      "baseline": "not yet recorded",
+      "transitions": [],
+      "evidence": []
+    }
+  ],
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
@@ -151,7 +529,7 @@
 
 ## Bindings
 
-Specification revision 1 is presented for approval; no plan exists yet.
+Specification revision 1 is approved; the plan is in draft.
 
 ## Authority
 
@@ -159,11 +537,11 @@ Commits and a push of the feature branch are authorized. A merge into main needs
 
 ## Workflow History
 
-Preflight and clarification are done; specification revision 1 awaits approval.
+Preflight and clarification are done; specification revision 1 is approved and planning has begun.
 
 ## Task State
 
-No tasks until the plan is approved.
+T-001, T-002, T-003, T-004 and T-005 are PENDING until plan approval.
 
 ## Amendments
 
@@ -171,7 +549,7 @@ None.
 
 ## Evidence
 
-Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008 are pending.
+Planned evidence: EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009, EV-010, EV-011. Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008 are pending.
 
 ## Landing State
 
