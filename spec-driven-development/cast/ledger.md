@@ -276,11 +276,11 @@
     }
   },
   "landing": {
-    "implemented": "not-yet",
-    "verified": "not-yet",
-    "committed": "not-yet",
-    "merged": "not-yet",
-    "pushed": "not-yet",
+    "implemented": "yes",
+    "verified": "yes",
+    "committed": "yes",
+    "merged": "yes, main at 9ac19ce",
+    "pushed": "yes",
     "deployed": "not-authorized",
     "emulator_tested": "not-required",
     "device_tested": "not-yet",
@@ -553,7 +553,7 @@
     },
     {
       "id": "T-003",
-      "state": "REVIEWED",
+      "state": "DONE",
       "owner": "controller",
       "dependencies": [
         "T-002"
@@ -601,13 +601,37 @@
           "to": "REVIEWED",
           "review_evidence": "EV-005",
           "evidence": "evidence/whole-change-review.md: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 35,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "evidence": "ertas-del/new/cast merged into main at 9ac19ce",
+          "verification_evidence": "EV-003, EV-004",
+          "review_evidence": "EV-005",
+          "commit": "9ac19ce"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 36,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "Check green, tour shots viewed, whole-change review passed; merged into main",
+          "verification_evidence": "EV-003, EV-004",
+          "review_evidence": "EV-005",
+          "commit": "9ac19ce"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-003",
+        "EV-004",
+        "EV-005"
+      ]
     },
     {
       "id": "T-004",
-      "state": "PENDING",
+      "state": "READY",
       "owner": "unassigned",
       "dependencies": [
         "T-003"
@@ -615,7 +639,18 @@
       "worktree": "not yet created",
       "branch": "not yet created",
       "baseline": "not yet recorded",
-      "transitions": [],
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 37,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-003"
+          ],
+          "evidence": "merged into main; waits for Pages or another way onto the phone"
+        }
+      ],
       "evidence": []
     }
   ],
@@ -689,7 +724,7 @@ Preflight and clarification are done; both artifacts are approved and execution 
 
 ## Task State
 
-T-001 and T-002 are DONE. T-003 lands the change on main. T-004, the user's phone test, follows.
+T-001 and T-002 are DONE. T-003 merged the change into main at 9ac19ce. T-004, the user's phone test, follows.
 
 ## Amendments
 
