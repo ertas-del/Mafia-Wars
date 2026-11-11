@@ -536,7 +536,7 @@
     },
     {
       "id": "T-002",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high",
       "dependencies": [
         "T-001"
@@ -561,13 +561,59 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-002 dispatched (wave 2)"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 22,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits b51c7ec, 7c483fd"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 23,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-003",
+          "evidence": "evidence/EV-003 recorded"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 24,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-004",
+          "evidence": "evidence/EV-004: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 25,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "d42faeb",
+          "evidence": "merged into ertas-del/new/contracts at d42faeb"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 26,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "d42faeb",
+          "evidence": "EV-003 and EV-004 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-003",
+        "EV-004"
+      ]
     },
     {
       "id": "T-003",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high",
       "dependencies": [
         "T-001"
@@ -592,22 +638,87 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-003 dispatched (wave 2)"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 27,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commit 73c6079"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 28,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-005",
+          "evidence": "evidence/EV-005 recorded"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 29,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-006",
+          "evidence": "evidence/EV-006: PASS"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 30,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-005",
+          "review_evidence": "EV-006",
+          "commit": "adb8b9d",
+          "evidence": "merged into ertas-del/new/contracts at adb8b9d"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 31,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-005",
+          "review_evidence": "EV-006",
+          "commit": "adb8b9d",
+          "evidence": "EV-005 and EV-006 pass; merged"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-005",
+        "EV-006"
+      ]
     },
     {
       "id": "T-004",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "controller",
       "dependencies": [
         "T-002",
         "T-003"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/contracts",
+      "branch": "ertas-del/new/contracts",
+      "baseline": "adb8b9d",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 32,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-002",
+            "T-003"
+          ],
+          "evidence": "wave 2 merged at adb8b9d; 88 tests pass; integrated tsc clean"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 33,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "controller running scripts/contracts-smoke.mjs"
+        }
+      ],
       "evidence": []
     },
     {
@@ -685,7 +796,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001 is DONE; T-002 and T-003 are IN_PROGRESS as wave 2; T-004 and T-005 are PENDING.
+T-001, T-002 and T-003 are DONE; T-004 is IN_PROGRESS; T-005 is PENDING.
 
 ## Amendments
 
