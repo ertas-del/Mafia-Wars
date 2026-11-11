@@ -11,6 +11,14 @@ import {
   SocialContact,
 } from '../data/nyc1984Data';
 import { soundEngine } from '../audio/soundEngine';
+import { CONTRACT_POINTS, FAMILY_KEYS, betrayalRisk, windowState } from '../world/contracts';
+import type { ContractsState, FamilyKey } from '../world/contracts';
+
+/** m:ss for a countdown in ms (never negative). */
+const formatCountdown = (ms: number): string => {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
 
 export type DrawerTab = 'turf' | 'social' | 'skills' | 'vault' | 'leaderboard';
 
@@ -39,6 +47,13 @@ interface SyndicateDrawerModalProps {
     racketsCount: number;
   } | null;
   leaderboard: LeaderboardEntry[];
+  /** Grudges, contracts and sit-downs per family. */
+  contracts: ContractsState;
+  /** The contracts clock (Date.now() + debug offset) as of the last tick. */
+  contractsNow: number;
+  respectXp: number;
+  hasStreetCeasefire: boolean;
+  onRequestSitDown: (family: FamilyKey) => void;
   onTravelToBorough: (boroughId: BoroughId) => void;
   onUpgradeRacket: (racketId: string) => void;
   onBuyoutRacket: (racketId: string) => void;
@@ -74,6 +89,11 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
   currentActIndex,
   offlineReport,
   leaderboard,
+  contracts,
+  contractsNow,
+  respectXp,
+  hasStreetCeasefire,
+  onRequestSitDown,
   onTravelToBorough,
   onUpgradeRacket,
   onBuyoutRacket,
@@ -204,6 +224,106 @@ export const SyndicateDrawerModal: React.FC<SyndicateDrawerModalProps> = ({
           {/* TAB 1: BOROUGHS & RACKETS */}
           {activeTab === 'turf' && (
             <div className="space-y-6">
+              {/* Contracts & Sit-Downs: grudge, contract, price, betrayal risk and the sit-down per family */}
+              <div data-section="contracts">
+                <div className="mb-3 min-w-0">
+                  <h3 className="text-base font-bold text-[#F5F0E6]">Contracts & Sit-Downs</h3>
+                  <p className="text-xs text-[#A89F91]">
+                    The streets keep the peace until you spill blood. Three hits or one kill on a family's people puts a
+                    contract on your head, and only a paid sit-down lifts it. Come alone, bring the money, and know the risk.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 short:grid-cols-3 short:gap-2">
+                  {FAMILY_KEYS.map((k) => {
+                    const fam = FIVE_FAMILIES.find((f) => f.id === k) || FIVE_FAMILIES[0];
+                    const shortName = fam.name.split(' ')[0];
+                    const g = contracts.families[k];
+                    const ws = windowState(contracts, k, contractsNow);
+                    const risk = Math.round(betrayalRisk(contracts, k, { respectXp, ceasefire: hasStreetCeasefire }) * 100);
+                    const d = g.sitDown;
+
+                    return (
+                      <div
+                        key={k}
+                        data-contract-family={k}
+                        className={`p-3.5 rounded-lg border flex flex-col justify-between min-w-0 short:p-2.5 ${
+                          g.contract ? 'bg-[#1C1412] border-[#7F1D1D]' : 'bg-[#181512] border-[#2C2520]'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
+                            <span style={{ color: fam.accentHex }} className="font-bold truncate">
+                              {fam.traitSymbol} {shortName}
+                            </span>
+                            <span className={g.contract ? 'text-[#EF4444] font-bold' : 'text-[#78716C]'}>
+                              {g.contract ? 'CONTRACT' : 'PEACE'}
+                            </span>
+                          </div>
+                          <dl className="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 font-mono tabular-nums text-xs">
+                            <dt className="text-[#A89F91]">Grudge</dt>
+                            <dd className="text-right text-[#F5F0E6]">
+                              {g.contract ? g.points : `${g.points}/${CONTRACT_POINTS}`}
+                            </dd>
+                            <dt className="text-[#A89F91]">Price</dt>
+                            <dd className={`text-right ${g.contract ? 'text-[#F59E0B] font-semibold' : 'text-[#78716C]'}`}>
+                              {g.contract ? `$${g.price.toLocaleString()}` : '—'}
+                            </dd>
+                            <dt className="text-[#A89F91]">Killed</dt>
+                            <dd className="text-right text-[#F5F0E6]">{g.kills}</dd>
+                            <dt className="text-[#A89F91]">Betrayal</dt>
+                            <dd className={`text-right ${risk >= 40 ? 'text-[#EF4444]' : 'text-[#FDE68A]'}`}>{risk}%</dd>
+                          </dl>
+                        </div>
+
+                        <div className="mt-3 pt-2.5 border-t border-[#2C2520] text-[11px]">
+                          {!g.contract ? (
+                            <div className="text-[#78716C]">No contract. Their crews leave you be.</div>
+                          ) : ws === 'waiting' && d ? (
+                            <div>
+                              <div className="text-[#D6CFC2]">
+                                Meet at <strong className="text-[#FDE68A]">{d.spot.label}</strong>
+                              </div>
+                              <div className="font-mono tabular-nums text-[#F59E0B] mt-0.5">
+                                in {formatCountdown(d.meetAt - contractsNow)}
+                              </div>
+                            </div>
+                          ) : ws === 'open' && d ? (
+                            <div>
+                              <div className="text-[#FDE68A] font-semibold">
+                                Waiting for you at {d.spot.label}
+                              </div>
+                              <div className="font-mono tabular-nums text-[#10B981] mt-0.5">
+                                {formatCountdown(d.windowEnd - contractsNow)} left · walk there alone and sit
+                              </div>
+                            </div>
+                          ) : ws === 'lapsed' ? (
+                            <div className="text-[#A89F91]">The window has closed.</div>
+                          ) : (
+                            <div className="flex flex-col gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  soundEngine.playUiClick();
+                                  onRequestSitDown(k);
+                                }}
+                                className="w-full py-1.5 px-2.5 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-[11px] font-semibold rounded transition-colors whitespace-nowrap cursor-pointer touch:min-h-11"
+                              >
+                                Request Sit-Down
+                              </button>
+                              {cash < g.price && (
+                                <span className="font-mono tabular-nums text-[10px] text-[#A89F91]">
+                                  Bring ${g.price.toLocaleString()} to the table
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* 5 NYC Borough Risk-Reward Selector Cards */}
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">

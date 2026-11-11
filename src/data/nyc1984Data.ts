@@ -730,7 +730,7 @@ export const INITIAL_SOCIAL_CONTACTS: SocialContact[] = [
     favorActionLabel: 'Broker Borough Truce & Tribute Pact',
     favorCostTokens: 2,
     favorRewardDescription: 'Halts Rival Turf Raids for 10 minutes and awards +2 Omertà Skill Points.',
-    alliancePerk40: 'Street Ceasefire: Rival patrols ignore you unless provoked',
+    alliancePerk40: 'Street Ceasefire: -10% betrayal risk at family sit-downs',
     alliancePerk80: 'Blood Oath Pact: +30% Damage & +25% Turf Takeover Speed',
     bio: 'Fierce, unpredictable street tactician who survived three gang wars in Brooklyn and the Bronx. Respects sheer nerve above boardroom diplomacy.',
     sitDownQuotes: [
