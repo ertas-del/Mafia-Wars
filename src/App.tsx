@@ -67,7 +67,15 @@ const homeBoroughOf = (family: FamilyId): BoroughId =>
 /** A family's home station in world pixels: where the player wakes after a whacking or a death under contract. */
 const homeStationOf = (family: FamilyId): { x: number; y: number } => STATIONS[homeBoroughOf(family)];
 
-const hasAnyContract = (s: ContractsState): boolean => FAMILY_KEYS.some((k) => s.families[k].contract);
+/** A borough station's display name, e.g. "Little Italy subway station". */
+const stationLabelOf = (borough: BoroughId): string => {
+  const zone = NYC_BOROUGHS.find((b) => b.id === borough);
+  return `${zone ? zone.name.split('&')[0].trim() : 'home'} subway station`;
+};
+
+const homeStationLabel = (family: FamilyId): string => stationLabelOf(homeBoroughOf(family));
+
+const hasAnyContract =(s: ContractsState): boolean => FAMILY_KEYS.some((k) => s.families[k].contract);
 
 /**
  * The meeting spot a family names: the door of one of its rackets in its home
@@ -81,9 +89,7 @@ function pickSitDownSpot(family: FamilyKey, rackets: RacketBuilding[]): { x: num
     return { x: r.x + r.width / 2, y: r.y + r.height + RACKET_DOOR_DROP, label: r.name };
   }
   const station = STATIONS[home];
-  const borough = NYC_BOROUGHS.find((b) => b.id === home);
-  const area = borough ? borough.name.split('&')[0].trim() : 'home';
-  return { x: station.x, y: station.y, label: `${area} subway station` };
+  return { x: station.x, y: station.y, label: stationLabelOf(home) };
 }
 
 interface SavedEmpireState {
@@ -1049,10 +1055,15 @@ export default function App() {
 
   // One spread object for the canvas: JSX spreads are not excess-property-checked, so this compiles
   // before NycWorldCanvas declares the optional contract props (T-003) and after.
-  const contractsWiring = useMemo(
-    () => ({ contractsView, ...contractsCallbacks }),
-    [contractsView, contractsCallbacks]
-  );
+  /**
+   * Wakes the player at the family's home station with GRACE_MS before any squad: after a betrayal
+   * (Recovery or Return to Title) and after an ordinary death under contract.
+   */
+  const wakeAtHomeStation = useCallback(() => {
+    const home = homeStationOf(playerFamily);
+    (bridgeRef.current as SitDownBridge | null)?.wakeAt?.(home.x, home.y);
+    setGraceUntil(contractsNow() + GRACE_MS);
+  }, [playerFamily, contractsNow]);
 
   const handleChooseSitDown = useCallback(() => {
     (bridgeRef.current as SitDownBridge | null)?.chooseSitDown?.();
@@ -1104,7 +1115,9 @@ export default function App() {
         policeHeat={policeHeat}
         callbacks={worldCallbacks}
         bridgeRef={bridgeRef}
-        {...contractsWiring}
+        /* NycWorldCanvas declares `contracts?: ContractsView` as an optional prop (T-003); passed through a spread
+           so this type-checks before that lands. The contract callbacks ride only in `callbacks` (WorldCallbacks). */
+        {...{ contracts: contractsView }}
       />
 
       {/* STATE 1: TITLE SCREEN OVERLAY */}
@@ -1253,13 +1266,14 @@ export default function App() {
           }}
           onRestartOrRecover={() => {
             if (gameState === 'GAME_OVER') {
-              const bridge = bridgeRef.current as SitDownBridge | null;
-              const home = homeStationOf(playerFamily);
+              const bridge = bridgeRef.current;
+              const station = homeStationLabel(playerFamily).toUpperCase();
               if (betrayal) {
-                // Whacked: the losses were taken at the table. No ordinary Recovery penalties; wake at full health at home.
+                // Whacked: the losses were taken at the table. No ordinary Recovery penalties; wake at full health
+                // at the home station, with a grace period before any squad.
                 setPlayerHp(playerMaxHp);
-                bridge?.wakeAt?.(home.x, home.y);
-                bridge?.triggerHealEffect('LEFT FOR DEAD · BACK ON YOUR FEET');
+                wakeAtHomeStation();
+                bridge?.triggerHealEffect(`LEFT FOR DEAD · WOKE AT ${station}`);
                 setBetrayal(null);
                 sitDownBusyRef.current = false;
               } else {
@@ -1268,10 +1282,11 @@ export default function App() {
                 setPoliceHeat(0);
                 if (hasAnyContract(contractsRef.current)) {
                   // Died under a contract: wake at the home station with a grace period before any squad.
-                  bridge?.wakeAt?.(home.x, home.y);
-                  setGraceUntil(contractsNow() + GRACE_MS);
+                  wakeAtHomeStation();
+                  bridge?.triggerHealEffect(`PATCHED UP · WOKE AT ${station}`);
+                } else {
+                  bridge?.triggerHealEffect('PATCHED UP AT MULBERRY ST.');
                 }
-                bridge?.triggerHealEffect('PATCHED UP AT MULBERRY ST.');
               }
             }
             setGameState('PLAYING');
@@ -1279,6 +1294,7 @@ export default function App() {
           onReturnToTitle={() => {
             if (betrayal) {
               setPlayerHp(playerMaxHp);
+              wakeAtHomeStation();
               setBetrayal(null);
               sitDownBusyRef.current = false;
             }
