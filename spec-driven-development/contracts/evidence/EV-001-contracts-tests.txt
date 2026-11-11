@@ -1,0 +1,160 @@
+TAP version 13
+# Subtest: AC-001 three hits start a contract; two hits do not
+ok 1 - AC-001 three hits start a contract; two hits do not
+  ---
+  duration_ms: 1.115132
+  type: 'test'
+  ...
+# Subtest: AC-001 one kill starts a contract
+ok 2 - AC-001 one kill starts a contract
+  ---
+  duration_ms: 0.129178
+  type: 'test'
+  ...
+# Subtest: AC-001 one shotgun blast scores one hit; a kill scores 3 in total
+ok 3 - AC-001 one shotgun blast scores one hit; a kill scores 3 in total
+  ---
+  duration_ms: 0.815708
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: a family with and without a contract
+ok 4 - AC-001 hostility: a family with and without a contract
+  ---
+  duration_ms: 0.279469
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: the player's own family follows the same rules
+ok 5 - AC-001 hostility: the player's own family follows the same rules
+  ---
+  duration_ms: 0.103102
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: a courier attacks only under its family contract, outside safe passage
+ok 6 - AC-001 hostility: a courier attacks only under its family contract, outside safe passage
+  ---
+  duration_ms: 0.19466
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: a takeover guard attacks
+ok 7 - AC-001 hostility: a takeover guard attacks
+  ---
+  duration_ms: 0.114213
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: a person just hit does not attack
+ok 8 - AC-001 hostility: a person just hit does not attack
+  ---
+  duration_ms: 0.855162
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: NYPD at heat 54 and 55
+ok 9 - AC-001 hostility: NYPD at heat 54 and 55
+  ---
+  duration_ms: 0.30868
+  type: 'test'
+  ...
+# Subtest: AC-001 hostility: a family during its safe-passage window holds fire
+ok 10 - AC-001 hostility: a family during its safe-passage window holds fire
+  ---
+  duration_ms: 0.293955
+  type: 'test'
+  ...
+# Subtest: AC-001 the price follows the stated numbers
+ok 11 - AC-001 the price follows the stated numbers
+  ---
+  duration_ms: 0.124729
+  type: 'test'
+  ...
+# Subtest: AC-001 the price rises by the betrayal and missed-window increases
+ok 12 - AC-001 the price rises by the betrayal and missed-window increases
+  ---
+  duration_ms: 0.286598
+  type: 'test'
+  ...
+# Subtest: AC-001 the risk formula matches the numbers and stays within 5-75%
+ok 13 - AC-001 the risk formula matches the numbers and stays within 5-75%
+  ---
+  duration_ms: 1.640171
+  type: 'test'
+  ...
+# Subtest: AC-002 a request schedules a meeting 1 to 20 minutes out at a valid spot
+ok 14 - AC-002 a request schedules a meeting 1 to 20 minutes out at a valid spot
+  ---
+  duration_ms: 0.383273
+  type: 'test'
+  ...
+# Subtest: AC-002 a second request for the same family is refused
+ok 15 - AC-002 a second request for the same family is refused
+  ---
+  duration_ms: 0.097168
+  type: 'test'
+  ...
+# Subtest: AC-002 the sit-down is refused outside the window, when short of cash, and when an ally is near
+ok 16 - AC-002 the sit-down is refused outside the window, when short of cash, and when an ally is near
+  ---
+  duration_ms: 0.108465
+  type: 'test'
+  ...
+# Subtest: AC-002 the honoured outcome clears the family
+ok 17 - AC-002 the honoured outcome clears the family
+  ---
+  duration_ms: 0.097718
+  type: 'test'
+  ...
+# Subtest: AC-002 the betrayed outcome returns the stated losses and raises the price
+ok 18 - AC-002 the betrayed outcome returns the stated losses and raises the price
+  ---
+  duration_ms: 0.761106
+  type: 'test'
+  ...
+# Subtest: AC-002 a lapsed window adds $1,000
+ok 19 - AC-002 a lapsed window adds $1,000
+  ---
+  duration_ms: 0.21573
+  type: 'test'
+  ...
+# Subtest: AC-002 a window that opened or closed while away reopens for 3 minutes, uncharged
+ok 20 - AC-002 a window that opened or closed while away reopens for 3 minutes, uncharged
+  ---
+  duration_ms: 0.161475
+  type: 'test'
+  ...
+# Subtest: AC-003 the state survives serialising and reloading
+ok 21 - AC-003 the state survives serialising and reloading
+  ---
+  duration_ms: 0.377183
+  type: 'test'
+  ...
+# Subtest: AC-003 an old save with no contracts field loads with empty state
+ok 22 - AC-003 an old save with no contracts field loads with empty state
+  ---
+  duration_ms: 0.082796
+  type: 'test'
+  ...
+# Subtest: AC-003 malformed contracts data loads empty and never throws
+ok 23 - AC-003 malformed contracts data loads empty and never throws
+  ---
+  duration_ms: 0.216419
+  type: 'test'
+  ...
+# Subtest: AC-003 saved values load consistently: contract price floor, bad sit-downs dropped, counts floored
+ok 24 - AC-003 saved values load consistently: contract price floor, bad sit-downs dropped, counts floored
+  ---
+  duration_ms: 0.118929
+  type: 'test'
+  ...
+# Subtest: AC-002 NaN guards: a NaN roll counts as 0.5, non-finite respect XP as 0
+ok 25 - AC-002 NaN guards: a NaN roll counts as 0.5, non-finite respect XP as 0
+  ---
+  duration_ms: 0.199418
+  type: 'test'
+  ...
+1..25
+# tests 25
+# suites 0
+# pass 25
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 119.998225

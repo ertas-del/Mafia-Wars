@@ -463,7 +463,7 @@
   "tasks": [
     {
       "id": "T-001",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high",
       "dependencies": [],
       "worktree": "/home/claude/wt/contracts",
@@ -484,34 +484,116 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "T-001 dispatched to a fresh Opus worker"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 13,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "commits bc886d2, 79add57"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 14,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-001",
+          "evidence": "evidence/EV-001-contracts-tests.txt passes; 88 unit tests pass; tsc clean"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 15,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-002",
+          "evidence": "evidence/EV-002-T-001-review.md: blocking courier finding fixed in 79add57"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 16,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "79add57",
+          "evidence": "committed on ertas-del/new/contracts"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 17,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-001",
+          "review_evidence": "EV-002",
+          "commit": "79add57",
+          "evidence": "EV-001 and EV-002 pass"
+        }
+      ],
+      "evidence": [
+        "EV-001",
+        "EV-002"
+      ]
+    },
+    {
+      "id": "T-002",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high",
+      "dependencies": [
+        "T-001"
+      ],
+      "worktree": "/home/claude/wt/contracts-app",
+      "branch": "wt/contracts-app",
+      "baseline": "79add57",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 18,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 done at 79add57"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 19,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-002 dispatched (wave 2)"
         }
       ],
       "evidence": []
     },
     {
-      "id": "T-002",
-      "state": "PENDING",
-      "owner": "unassigned",
-      "dependencies": [
-        "T-001"
-      ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
-      "evidence": []
-    },
-    {
       "id": "T-003",
-      "state": "PENDING",
-      "owner": "unassigned",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high",
       "dependencies": [
         "T-001"
       ],
-      "worktree": "not yet created",
-      "branch": "not yet created",
-      "baseline": "not yet recorded",
-      "transitions": [],
+      "worktree": "/home/claude/wt/contracts-engine",
+      "branch": "wt/contracts-engine",
+      "baseline": "79add57",
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 20,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-001"
+          ],
+          "evidence": "T-001 done at 79add57"
+        },
+        {
+          "sequence": 2,
+          "event_sequence": 21,
+          "from": "READY",
+          "to": "IN_PROGRESS",
+          "evidence": "T-003 dispatched (wave 2)"
+        }
+      ],
       "evidence": []
     },
     {
@@ -603,7 +685,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001 is IN_PROGRESS; T-002, T-003, T-004 and T-005 are PENDING.
+T-001 is DONE; T-002 and T-003 are IN_PROGRESS as wave 2; T-004 and T-005 are PENDING.
 
 ## Amendments
 
