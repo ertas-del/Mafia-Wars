@@ -372,12 +372,12 @@
     }
   },
   "landing": {
-    "implemented": "not-yet",
-    "verified": "not-yet",
-    "committed": "not-yet",
-    "merged": "not-yet",
-    "pushed": "not-yet",
-    "deployed": "not-yet",
+    "implemented": "complete",
+    "verified": "complete",
+    "committed": "complete",
+    "merged": "complete",
+    "pushed": "complete",
+    "deployed": "complete",
     "emulator_tested": "not-required",
     "device_tested": "not-yet",
     "released": "not-authorized"
@@ -877,7 +877,7 @@
     },
     {
       "id": "T-004",
-      "state": "REVIEWED",
+      "state": "DONE",
       "owner": "controller",
       "dependencies": [
         "T-002",
@@ -927,13 +927,38 @@
           "to": "REVIEWED",
           "review_evidence": "EV-009",
           "evidence": "evidence/whole-change-review.md: blocking soft-lock resolved by PATCH-001"
+        },
+        {
+          "sequence": 6,
+          "event_sequence": 60,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "evidence": "merged into main at 5aaf79f",
+          "verification_evidence": "EV-007, EV-008, EV-010",
+          "review_evidence": "EV-009",
+          "commit": "5aaf79f"
+        },
+        {
+          "sequence": 7,
+          "event_sequence": 61,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "evidence": "Check and Pages deploy green on main at 5aaf79f",
+          "verification_evidence": "EV-007, EV-008, EV-010",
+          "review_evidence": "EV-009",
+          "commit": "5aaf79f"
         }
       ],
-      "evidence": []
+      "evidence": [
+        "EV-007",
+        "EV-008",
+        "EV-009",
+        "EV-010"
+      ]
     },
     {
       "id": "T-005",
-      "state": "PENDING",
+      "state": "READY",
       "owner": "unassigned",
       "dependencies": [
         "T-004"
@@ -941,7 +966,18 @@
       "worktree": "not yet created",
       "branch": "not yet created",
       "baseline": "not yet recorded",
-      "transitions": [],
+      "transitions": [
+        {
+          "sequence": 1,
+          "event_sequence": 62,
+          "from": "PENDING",
+          "to": "READY",
+          "dependencies_done": [
+            "T-004"
+          ],
+          "evidence": "deployed to Pages at 5aaf79f"
+        }
+      ],
       "evidence": []
     }
   ],
@@ -1022,7 +1058,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001, T-002 and T-003 are DONE (T-002 and T-003 carry PATCH-001). T-004 is IN_PROGRESS. T-005 is PENDING.
+T-001, T-002 and T-003 are DONE (T-002 and T-003 carry PATCH-001). T-004 is DONE (merged and deployed at 5aaf79f). T-005, the user's phone test, is READY.
 
 ## Amendments
 
@@ -1034,4 +1070,4 @@ Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008 and EV-0
 
 ## Landing State
 
-Check is green on the branch and the whole-change review is resolved; the merge into main is authorized.
+Merged into main at 5aaf79f, pushed, Check green and deployed to GitHub Pages. The phone test (T-005) is open.
