@@ -1031,17 +1031,37 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       }
       return best;
     };
-    // Alone: no hired (temporary) hit squad member within ALONE_RANGE. Enforcer bodyguards never count.
-    const isAlone = () =>
-      !npcs.some((n) => n.role === 'ally' && n.allyKind !== 'bodyguard' && Math.hypot(n.x - player.x, n.y - player.y) < ALONE_RANGE);
-    // E at the spot, or the HUD tap through the bridge: the engine names the family and whether the player is alone.
+    // A hired (temporary) hit squad member. Enforcer bodyguards never count; the same rule both refuses
+    // the sit-down and sends the crew home, so a crew that blocks a sit-down can always be dismissed.
+    const isHiredAlly = (n: WorldNpc) => n.role === 'ally' && n.allyKind !== 'bodyguard';
+    // Alone: no hired ally within ALONE_RANGE.
+    const isAlone = () => !npcs.some((n) => isHiredAlly(n) && Math.hypot(n.x - player.x, n.y - player.y) < ALONE_RANGE);
+    // PATCH-001: dismiss every hired ally for good, wherever it is, releasing its cast member.
+    const sendCrewHome = () => {
+      let sent = 0;
+      for (let i = npcs.length - 1; i >= 0; i--) {
+        if (!isHiredAlly(npcs[i])) continue;
+        const n = npcs[i];
+        spawnParticles(n.x, n.y, '#10B981', 8, 70);
+        releaseCast(n);
+        npcs.splice(i, 1);
+        sent++;
+      }
+      if (sent > 0) addFloatingText(player.x, player.y - 24, 'CREW SENT HOME', '#10B981');
+    };
+    // E at the spot, or the HUD tap through the bridge. With a hired crew near, the press sends the crew home
+    // and does not sit; otherwise the engine names the family and the player sits down alone.
     const chooseSitDown = (): boolean => {
       const st = stateRef.current;
       if (st.isPaused || st.isTitleScreen) return false;
       refreshContracts();
       const sd = openSitDownNear();
       if (!sd) return false;
-      st.callbacks.onSitDownChosen?.(sd.family, isAlone());
+      if (!isAlone()) {
+        sendCrewHome();
+        return true;
+      }
+      st.callbacks.onSitDownChosen?.(sd.family, true);
       return true;
     };
 
@@ -1947,14 +1967,11 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               respectXp: st.contracts?.respectXp ?? 0,
               ceasefire: st.contracts?.ceasefire ?? false,
             });
-            nearestPrompt = {
-              type: 'sitdown',
-              label: `[E] Sit down with the ${familyName(sit.family)} family — pay $${sit.price.toLocaleString('en-US')} — risk ${Math.round(risk * 100)}%`,
-              sublabel: isAlone()
-                ? `${sit.label} · come alone`
-                : `Refused: your hired crew is within ${ALONE_RANGE} px · send them off`,
-              id: sit.family,
-            };
+            const terms = `$${sit.price.toLocaleString('en-US')} · ${Math.round(risk * 100)}% risk`;
+            // The sublabel is the short price-and-risk line the HUD keeps whole on the phone (PATCH-001).
+            nearestPrompt = isAlone()
+              ? { type: 'sitdown', label: `[E] Sit down with the ${familyName(sit.family)} family`, sublabel: terms, id: sit.family }
+              : { type: 'sitdown', label: '[E] Send your crew home', sublabel: terms, id: sit.family };
           }
 
           const promptKey = nearestPrompt
@@ -2759,18 +2776,21 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           if (sx < view.x - 200 || sx > view.x + view.w + 200 || sy < view.y - 120 || sy > view.y + view.h + 120) continue;
           const vis = FAMILY_COAT_COLORS[f];
           const open = ws === 'open';
-          const top = sy - FIG_TOP - 36;
           const line1 = `${vis.symbol} SIT-DOWN · ${vis.shortFamily}`;
           const line2 = open ? `OPEN · ${clockText(d.windowEnd - fc.now)} LEFT` : `MEET IN ${clockText(d.meetAt - fc.now)}`;
+          // The price and the risk, under the countdown (PATCH-001).
+          const risk = betrayalRisk(fc.s, f, { respectXp: st.contracts?.respectXp ?? 0, ceasefire: st.contracts?.ceasefire ?? false });
+          const line3 = `$${(fc.s.families[f]?.price ?? 0).toLocaleString('en-US')} · ${Math.round(risk * 100)}% RISK`;
+          const top = sy - FIG_TOP - 48;
           ctx.save();
           ctx.textAlign = 'center';
           ctx.textBaseline = 'top';
           ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
           const w1 = ctx.measureText(line1).width;
           ctx.font = '600 10px "JetBrains Mono", monospace';
-          const bw = Math.ceil(Math.max(w1, ctx.measureText(line2).width)) + 14;
+          const bw = Math.ceil(Math.max(w1, ctx.measureText(line2).width, ctx.measureText(line3).width)) + 14;
           ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
-          ctx.fillRect(Math.round(sx - bw / 2), top, bw, 30);
+          ctx.fillRect(Math.round(sx - bw / 2), top, bw, 42);
           ctx.fillStyle = vis.accent;
           ctx.fillRect(Math.round(sx - bw / 2), top, bw, 2);
           ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
@@ -2779,6 +2799,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           ctx.font = '600 10px "JetBrains Mono", monospace';
           ctx.fillStyle = open ? '#FACC15' : vis.accent;
           ctx.fillText(line2, sx, top + 17);
+          ctx.fillStyle = '#F5F0E6';
+          ctx.fillText(line3, sx, top + 29);
           ctx.restore();
         }
       }

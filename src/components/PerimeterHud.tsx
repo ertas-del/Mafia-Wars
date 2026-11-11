@@ -432,7 +432,12 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
               }`}
             >
               <div className="text-xs font-bold text-[#FDE68A] whitespace-nowrap short:text-[11px] short:truncate">{nearPrompt.label}</div>
-              <div className="text-[11px] text-[#A89F91] font-mono tabular-nums whitespace-nowrap short:text-[10px] short:truncate">{nearPrompt.sublabel}</div>
+              {nearPrompt.type === 'sitdown' ? (
+                // The price and the risk on their own short line, never cut off on the phone (PATCH-001).
+                <div className="text-[11px] font-bold text-[#F5F0E6] font-mono tabular-nums whitespace-nowrap">{nearPrompt.sublabel}</div>
+              ) : (
+                <div className="text-[11px] text-[#A89F91] font-mono tabular-nums whitespace-nowrap short:text-[10px] short:truncate">{nearPrompt.sublabel}</div>
+              )}
             </button>
           </div>
         )}
