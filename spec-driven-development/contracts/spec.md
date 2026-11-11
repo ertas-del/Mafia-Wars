@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "specification",
   "specification_id": "contracts",
-  "revision": 1,
+  "revision": 2,
   "path": {"scope": "repository", "value": "spec-driven-development/contracts/spec.md"},
   "required_sections": [
     "Context and Evidence",
@@ -24,14 +24,14 @@
 
 # Contracts and Sit-Downs — Specification
 
-**Path:** `spec-driven-development/contracts/spec.md` · **Revision:** 1 · **Kind:** specification · **Schema:** 1
+**Path:** `spec-driven-development/contracts/spec.md` · **Revision:** 2 · **Kind:** specification · **Schema:** 1
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 1
-**Approved normative digest:** `5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9`
+**Approved revision:** 2
+**Approved normative digest:** `a1fc11bfc3a5f15f18de3908356bc98fd10c6822885394522e3d06e9caa0ae45`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-10T16:40:58-07:00
+**Approval timestamp:** 2026-11-10T18:04:29-07:00
 <!-- sdd-approval-end -->
 
 ## Context and Evidence
@@ -90,7 +90,7 @@ These are my choices, ordered by impact.
 | Meeting spot | The door of one of that family's rackets, in its home borough when it has one. Otherwise its home borough's station. The spot is marked on the street. | medium |
 | Who counts | The player's bullets and melee count, and so do the player's allied bodyguards. Your own family is under the same rules. Hurting civilians adds heat as it does now, but no grudge. | medium |
 | Where you see it | A new Contracts section in the dossier's Turf tab. It shows, for each family, its grudge, contract, price, betrayal risk, and the sit-down countdown and spot, with a Request button. A small HUD chip for each active contract shows the family colour and the next sit-down countdown. | medium |
-| Alone check | A hired hit squad (the temporary allies) within 400 px refuses the sit-down, and the prompt says why. Permanent bodyguards from the Enforcer skill wait at a distance on their own during a sit-down window, so they never block it. | medium |
+| Alone check | A hired hit squad within 400 px refuses the sit-down. In that case the prompt at the spot offers "[E] Send your crew home" instead of the sit-down. Pressing it, or tapping it, dismisses the hired crew for good, and the next prompt is the sit-down itself. Permanent bodyguards from the Enforcer skill wait at a distance on their own during a sit-down window, so they never block it. | medium |
 | Dying under a contract | An ordinary death keeps the usual Recovery, but you wake at your home borough's station, the contract stays, and no squads come for 30 seconds. | medium |
 | Test hooks | With `?tour` only, the existing `window.__cityTour` also offers: set heat, add grudge points, advance the sit-down clock, and spawn a squad now. These hooks drive the smoke runs. | low |
 | Street Ceasefire perk | It no longer stops families attacking, because peace is now the default. It lowers the betrayal risk instead. | low |
@@ -131,7 +131,7 @@ These are my choices, ordered by impact.
 - **FR-004.** The contract price follows the grudge and price numbers default. It also goes up for a betrayal and for a missed sit-down, as those defaults state.
 - **FR-005.** The betrayal risk is computed by the betrayal risk formula and shown to the player before sitting.
 - **FR-006.** The player can request a sit-down with a family that has an active contract. The family sets the time and spot as described in the sit-down timing and meeting spot defaults.
-- **FR-007.** At the spot, during the window, an interact prompt offers the sit-down with its price and risk. It is refused when the player cannot pay or is not alone.
+- **FR-007.** At the spot, during the window, an interact prompt offers the sit-down with its price and risk, readable on a 915×412 screen. It is refused when the player cannot pay. When the player is not alone, the prompt offers to send the hired crew home first.
 - **FR-008.** When the family honours the deal, the price is taken and that family's contract, grudge and kill count are cleared.
 - **FR-009.** When the family betrays the player, the losses and the wake-up follow the "what whacked costs" default, and the contract stays. An ordinary death under a contract follows the "dying under a contract" default.
 - **FR-010.** A missed window lapses as described in the sit-down timing default.

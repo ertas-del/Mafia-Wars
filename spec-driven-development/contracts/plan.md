@@ -3,7 +3,7 @@
   "schema_version": 1,
   "artifact_kind": "implementation-plan",
   "plan_id": "contracts-plan",
-  "revision": 1,
+  "revision": 2,
   "path": {"scope": "repository", "value": "spec-driven-development/contracts/plan.md"},
   "required_sections": [
     "Goal",
@@ -21,8 +21,8 @@
   ],
   "specification": {
     "path": {"scope": "repository", "value": "spec-driven-development/contracts/spec.md"},
-    "revision": 1,
-    "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9"
+    "revision": 2,
+    "digest": "a1fc11bfc3a5f15f18de3908356bc98fd10c6822885394522e3d06e9caa0ae45"
   },
   "binding_fields": [
     "task deliverables and coverage",
@@ -125,19 +125,19 @@
 
 # Contracts and Sit-Downs — Implementation Plan
 
-**Path:** `spec-driven-development/contracts/plan.md` · **Revision:** 1 · **Kind:** implementation plan · **Schema:** 1
+**Path:** `spec-driven-development/contracts/plan.md` · **Revision:** 2 · **Kind:** implementation plan · **Schema:** 1
 
 <!-- sdd-approval-begin -->
 **Approval status:** Approved
-**Approved revision:** 1
-**Approved normative digest:** `ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5`
+**Approved revision:** 2
+**Approved normative digest:** `cb8ebc32539ff915978e2cb1b774e2761f4c8698ee5681ff68067f88c87dfafc`
 **Approver:** User in the current session
-**Approval timestamp:** 2026-11-10T16:46:31-07:00
+**Approval timestamp:** 2026-11-10T18:04:29-07:00
 <!-- sdd-approval-end -->
 
 ## Goal
 
-Deliver specification revision 1. The plan has three parts:
+Deliver specification revision 2, which adds PATCH-001. The plan has three parts:
 
 1. Build every rule as one pure, tested module.
 2. Wire that module into the app and the engine as a parallel pair of tasks.
@@ -294,7 +294,7 @@ These may change without re-approval:
     - Betrayed: `betrayalLosses` is applied. The betrayal Recovery variant shows, with a flag that skips the ordinary Recovery penalties, and the player wakes at the home station.
     - Refused: a toast gives the reason.
   - **Ordinary death under a contract.** The usual Recovery runs, and the player is woken at the home station with 30 seconds of grace.
-  - **HUD.** One chip per family with an active contract, plus the sit-down prompt button, which calls the bridge's `chooseSitDown()`. Controls use `touch:min-h-11`, and numbers use `font-mono tabular-nums`.
+  - **HUD.** One chip per family with an active contract, plus the sit-down prompt button, which calls the bridge's `chooseSitDown()`. The sit-down prompt puts the price and the risk on their own short line ("$5,000 · 24% risk"), so they are not cut off on the phone layout (PATCH-001). Controls use `touch:min-h-11`, and numbers use `font-mono tabular-nums`.
   - **Engine wiring.** App passes `ContractsView` to the canvas and wires the callbacks.
 - **Verification:**
   - EV-003: all unit tests pass. The full type check with stubs is clean in this worktree. The worker's esbuild smoke screenshots show the dossier section, the chip and the betrayal screen. To reach those states without the engine, the smoke run uses a temporary local stub that calls the callbacks; the stub is never committed.
@@ -315,6 +315,7 @@ These may change without re-approval:
   - **Squads and safe passage.** While a family has a contract and no open window, a squad of 2 or 3 spawns every 90 to 150 s of play, with at most one per family. During that family's window it holds fire and sends no squads.
   - **Bodyguards.** Enforcer bodyguards hold back at least 500 px during any open window.
   - **The sit-down spot.** The spot is marked. Within 60 px during the window, a `'sitdown'` prompt shows the price and risk, and E or a tap calls `onSitDownChosen`, passing whether the player is alone.
+  - **Sending the crew home (PATCH-001).** When a hired ally is within 400 px, the prompt becomes "[E] Send your crew home". E or `chooseSitDown()` removes every hired ally (`allyKind: 'hired'`) for good, and shows a toast. The canvas label at the spot shows the price and the risk.
   - **Waking and tapping.** Add `wakeAt` and `chooseSitDown` to the bridge, and read `graceUntil` from the view, so no squads come during the grace period.
   - **Test hooks.** Only with `?tour`, `__cityTour` also gets `setHeat`, `addGrudge`, `advanceClock` and `spawnSquad`. The first three call `onContractsDebug`. `spawnSquad` acts in the engine.
   - **Types.** Add the optional `bridgeTypes` members to `Props`, `WorldCallbacks` and `LiveSimulationBridge`.

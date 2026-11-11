@@ -21,16 +21,16 @@
       "scope": "repository",
       "value": "spec-driven-development/contracts/spec.md"
     },
-    "revision": 1,
-    "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9"
+    "revision": 2,
+    "digest": "a1fc11bfc3a5f15f18de3908356bc98fd10c6822885394522e3d06e9caa0ae45"
   },
   "plan": {
     "path": {
       "scope": "repository",
       "value": "spec-driven-development/contracts/plan.md"
     },
-    "revision": 1,
-    "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5"
+    "revision": 2,
+    "digest": "cb8ebc32539ff915978e2cb1b774e2761f4c8698ee5681ff68067f88c87dfafc"
   },
   "current_state": "EXECUTING",
   "effective_tasks": [
@@ -438,6 +438,55 @@
       "from": "READY",
       "to": "EXECUTING",
       "evidence": "T-001 dispatch"
+    },
+    {
+      "sequence": 9,
+      "event_sequence": 34,
+      "from": "EXECUTING",
+      "to": "CHANGE_CONTROL",
+      "evidence": "whole-change review found a soft-lock (hired crew can never be dismissed); patches/PATCH-001.md"
+    },
+    {
+      "sequence": 10,
+      "event_sequence": 37,
+      "from": "CHANGE_CONTROL",
+      "to": "SPEC_DRAFT",
+      "evidence": "PATCH-001 applied to spec.md as revision 2"
+    },
+    {
+      "sequence": 11,
+      "event_sequence": 38,
+      "from": "SPEC_DRAFT",
+      "to": "AWAITING_SPEC_APPROVAL",
+      "evidence": "PATCH-001 presented for one approval covering both artifacts"
+    },
+    {
+      "sequence": 12,
+      "event_sequence": 40,
+      "from": "AWAITING_SPEC_APPROVAL",
+      "to": "PLAN_DRAFT",
+      "evidence": "PATCH-001 applied to plan.md as revision 2"
+    },
+    {
+      "sequence": 13,
+      "event_sequence": 41,
+      "from": "PLAN_DRAFT",
+      "to": "AWAITING_PLAN_APPROVAL",
+      "evidence": "plan revision 2 presented with the patch"
+    },
+    {
+      "sequence": 14,
+      "event_sequence": 43,
+      "from": "AWAITING_PLAN_APPROVAL",
+      "to": "READY",
+      "evidence": "user answered 'Send them home' and 'Approve the patch'"
+    },
+    {
+      "sequence": 15,
+      "event_sequence": 44,
+      "from": "READY",
+      "to": "EXECUTING",
+      "evidence": "fix-forward for PATCH-001"
     }
   ],
   "artifact_events": [
@@ -458,6 +507,40 @@
       "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5",
       "approver": "User in the current session",
       "timestamp": "2026-11-10T16:46:31-07:00"
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "implementation-plan",
+      "revision": 1,
+      "digest": "ac173d913db67516f494e0a29ace7c9d07926582bd4b35414d5a0a77b792dec5",
+      "reason": "patches/PATCH-001.md",
+      "event_sequence": 35
+    },
+    {
+      "event": "INVALIDATED",
+      "artifact_kind": "specification",
+      "revision": 1,
+      "digest": "5458ebbc0d3f3a5aad143b86fa8645ac212a8982430b9ff9e24ffa324d68f5c9",
+      "reason": "patches/PATCH-001.md",
+      "event_sequence": 36
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "specification",
+      "revision": 2,
+      "digest": "a1fc11bfc3a5f15f18de3908356bc98fd10c6822885394522e3d06e9caa0ae45",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T18:04:29-07:00",
+      "event_sequence": 39
+    },
+    {
+      "event": "APPROVED",
+      "artifact_kind": "implementation-plan",
+      "revision": 2,
+      "digest": "cb8ebc32539ff915978e2cb1b774e2761f4c8698ee5681ff68067f88c87dfafc",
+      "approver": "User in the current session",
+      "timestamp": "2026-11-10T18:04:29-07:00",
+      "event_sequence": 42
     }
   ],
   "tasks": [
@@ -536,8 +619,8 @@
     },
     {
       "id": "T-002",
-      "state": "DONE",
-      "owner": "Opus worker, effort high",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high (PATCH-001)",
       "dependencies": [
         "T-001"
       ],
@@ -604,6 +687,15 @@
           "review_evidence": "EV-004",
           "commit": "d42faeb",
           "evidence": "EV-003 and EV-004 pass; merged"
+        },
+        {
+          "sequence": 8,
+          "event_sequence": 45,
+          "from": "DONE",
+          "to": "IN_PROGRESS",
+          "event": "REOPENED",
+          "reason": "PATCH-001: send the hired crew home at the sit-down; compact price and risk line",
+          "invalid_evidence": "EV-004: predates PATCH-001"
         }
       ],
       "evidence": [
@@ -613,8 +705,8 @@
     },
     {
       "id": "T-003",
-      "state": "DONE",
-      "owner": "Opus worker, effort high",
+      "state": "IN_PROGRESS",
+      "owner": "Opus worker, effort high (PATCH-001)",
       "dependencies": [
         "T-001"
       ],
@@ -681,6 +773,15 @@
           "review_evidence": "EV-006",
           "commit": "adb8b9d",
           "evidence": "EV-005 and EV-006 pass; merged"
+        },
+        {
+          "sequence": 8,
+          "event_sequence": 46,
+          "from": "DONE",
+          "to": "IN_PROGRESS",
+          "event": "REOPENED",
+          "reason": "PATCH-001: send the hired crew home at the sit-down; compact price and risk line",
+          "invalid_evidence": "EV-006: predates PATCH-001"
         }
       ],
       "evidence": [
@@ -796,7 +897,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001, T-002 and T-003 are DONE; T-004 is IN_PROGRESS; T-005 is PENDING.
+T-001 is DONE. T-002 and T-003 are reopened for PATCH-001. T-004 is IN_PROGRESS. T-005 is PENDING.
 
 ## Amendments
 
