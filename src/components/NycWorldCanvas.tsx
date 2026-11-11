@@ -21,7 +21,18 @@ import {
   touchStart,
 } from '../input/touchSticks';
 import { pulse } from '../input/haptics';
-import type { InteractPrompt } from '../world/bridgeTypes';
+import type { ContractsBridge, ContractsCallbacks, ContractsView, InteractPrompt } from '../world/bridgeTypes';
+import {
+  FAMILY_KEYS,
+  NYPD_HEAT_LINE,
+  betrayalRisk,
+  emptyContracts,
+  isFamilyKey,
+  isHostile,
+  tallyAttack,
+  windowState,
+} from '../world/contracts';
+import type { ContractsState, FamilyKey } from '../world/contracts';
 import { CELL, FERRY_TERMINALS, START_POINT, STATIONS, WORLD_H, WORLD_W } from '../world/cityData';
 import type { AreaId, GameBoroughId, Pt } from '../world/cityData';
 import {
@@ -106,6 +117,14 @@ export interface WorldNpc {
   flowDy?: number;
   flowOk?: boolean;
   flowT?: number;
+  /** Set on a contract hit squad's members: the family that sent them. */
+  squadFamily?: FamilyKey;
+  /** Allies only: a permanent Enforcer bodyguard, or a hired (temporary) hit squad member. */
+  allyKind?: 'bodyguard' | 'hired';
+  /** The last attack that hit this NPC; a death is credited to it. */
+  lastAttackId?: number;
+  /** Bodyguards only: seconds spent holding back during a sit-down window. */
+  holdT?: number;
 }
 
 interface Bullet {
@@ -117,6 +136,8 @@ interface Bullet {
   fromPlayer: boolean;
   life: number;
   color: string;
+  /** Player and ally shots: the attack (one trigger pull or one ally shot) these pellets belong to. */
+  attackId?: number;
 }
 
 interface Particle {
@@ -141,7 +162,8 @@ interface FloatingText {
   maxLife: number;
 }
 
-export interface WorldCallbacks {
+/** The contracts callbacks (bridgeTypes.ts) are optional, so App type-checks with or without them. */
+export interface WorldCallbacks extends Partial<ContractsCallbacks> {
   onEarnResources: (cash: number, contraband: number, respectXp: number, heatDelta: number, reason?: string) => void;
   onCollectRacketEnvelope: (racketId: string) => void;
   onOpenRacketModal: (racketId: string) => void;
@@ -153,7 +175,7 @@ export interface WorldCallbacks {
   onTurfCapoDefeated: (racketId: string) => void;
 }
 
-export interface LiveSimulationBridge {
+export interface LiveSimulationBridge extends Partial<ContractsBridge> {
   teleportToBorough: (boroughId: BoroughId) => void;
   teleportToCoords: (x: number, y: number) => void;
   spawnTurfDefenseWave: (racket: RacketBuilding) => void;
@@ -179,6 +201,8 @@ interface NycWorldCanvasProps {
   hasAlliedBodyguards: boolean;
   hasStreetCeasefire: boolean;
   policeHeat: number;
+  /** Contracts state. Undefined means peace with no contracts: heat comes from policeHeat. */
+  contracts?: ContractsView;
   callbacks: WorldCallbacks;
   bridgeRef: React.MutableRefObject<LiveSimulationBridge | null>;
 }
@@ -208,7 +232,40 @@ interface TourHook {
   teleport: (x: number, y: number) => void;
   frameTimeMs: () => number;
   slowestChunkMs: number;
+  /** Contracts test hooks: the first three go to App through onContractsDebug; spawnSquad acts here. */
+  setHeat: (value: number) => void;
+  addGrudge: (family: FamilyKey, points: number) => void;
+  advanceClock: (ms: number) => void;
+  spawnSquad: (family: FamilyKey) => boolean;
 }
+
+// ---- Contracts on the street (src/world/contracts.ts decides; the engine only asks)
+const NO_CONTRACTS: ContractsState = emptyContracts();
+/** A hit NPC with no contract on the player backs away for this long. */
+const FLEE_S = 1.4;
+const FLEE_SPEED = 125;
+/** Squads every 90 to 150 s of play per contracted family; members hunt from this far. */
+const SQUAD_MIN_S = 90;
+const SQUAD_MAX_S = 150;
+const SQUAD_HUNT_RANGE = 1400;
+/** Squads that end up this far away, or this far once their contract is paid, are sent home. */
+const SQUAD_LOST_RANGE = 2400;
+const SQUAD_PAID_RANGE = 640;
+const squadDelay = () => SQUAD_MIN_S + Math.random() * (SQUAD_MAX_S - SQUAD_MIN_S);
+/** The sit-down prompt shows within this range of the spot during the window. */
+const SITDOWN_RANGE = 60;
+/** A hired hit squad member this close refuses the sit-down. */
+const ALONE_RANGE = 400;
+/** Enforcer bodyguards hold back at least this far during an open window. */
+const HOLD_BACK_PX = 520;
+const HOLD_BACK_SNAP_S = 2.5;
+/** Unarmed couriers shove like a brawler, more weakly. */
+const isMeleeRole = (role: WorldNpc['role']) => role === 'brawler' || role === 'courier';
+const meleeDamage = (role: WorldNpc['role']) => (role === 'courier' ? 10 : 18);
+const clockText = (ms: number) => {
+  const s = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
 
 // ---- Street figures (src/world/characterSprite.ts): baked once per look, drawn anchored at the feet.
 /** Bake scale: about 43 px from hat to feet. */
@@ -348,6 +405,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
   hasAlliedBodyguards,
   hasStreetCeasefire,
   policeHeat,
+  contracts,
   callbacks,
   bridgeRef,
 }) => {
@@ -370,6 +428,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     hasAlliedBodyguards,
     hasStreetCeasefire,
     policeHeat,
+    contracts,
     callbacks,
   });
 
@@ -390,6 +449,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       hasAlliedBodyguards,
       hasStreetCeasefire,
       policeHeat,
+      contracts,
       callbacks,
     };
   }, [
@@ -408,6 +468,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     hasAlliedBodyguards,
     hasStreetCeasefire,
     policeHeat,
+    contracts,
     callbacks,
   ]);
 
@@ -804,6 +865,206 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       return d;
     };
 
+    // ---- Contracts. Every hostility decision is isHostile() from src/world/contracts.ts.
+    // The frame context is refreshed at the top of every frame (and by bridge calls made between frames).
+    const fc = { s: NO_CONTRACTS, now: 0, heat: 0, graceUntil: 0, anyOpen: false };
+    const refreshContracts = () => {
+      const st = stateRef.current;
+      const v = st.contracts;
+      const off = v && Number.isFinite(v.nowOffsetMs) ? v.nowOffsetMs : 0;
+      fc.s = v?.state ?? NO_CONTRACTS;
+      fc.now = Date.now() + off;
+      fc.heat = v ? v.heat : st.policeHeat;
+      fc.graceUntil = v && Number.isFinite(v.graceUntil) ? v.graceUntil : 0;
+      fc.anyOpen = false;
+      for (const f of FAMILY_KEYS) if (windowState(fc.s, f, fc.now) === 'open') fc.anyOpen = true;
+    };
+    const hostile = (npc: WorldNpc): boolean =>
+      isHostile({
+        role: npc.role,
+        familyId: npc.familyId,
+        playerFamily: stateRef.current.playerFamily,
+        isTakeoverGuard: npc.racketGuardId !== undefined,
+        heat: fc.heat,
+        now: fc.now,
+        s: fc.s,
+      });
+
+    // A hit NPC that is hostile winds up (as before); anyone else backs away and never fights back.
+    const reactToHit = (npc: WorldNpc, windup: number) => {
+      if (hostile(npc)) {
+        if (npc.state === 'patrol' || npc.state === 'flee') {
+          npc.state = 'windup';
+          npc.stateTimer = windup;
+        }
+      } else {
+        npc.state = 'flee';
+        npc.stateTimer = FLEE_S;
+        npc.goalT = 0;
+        npc.detT = 0;
+      }
+    };
+
+    // Attack tally: every swing, trigger pull or ally shot is one attack. Its hits are reported once, through
+    // tallyAttack, after the frame in which its last pellet is gone and its deaths have been processed.
+    type AttackHit = { npcId: string; family: FamilyKey | null; killed: boolean };
+    const openAttacks = new Map<number, AttackHit[]>();
+    let nextAttackId = 1;
+    const beginAttack = (): number => {
+      const id = nextAttackId++;
+      openAttacks.set(id, []);
+      return id;
+    };
+    const familyOf = (npc: WorldNpc): FamilyKey | null => (isFamilyKey(npc.familyId) ? npc.familyId : null);
+    const noteHit = (attackId: number | undefined, npc: WorldNpc) => {
+      if (attackId === undefined) return;
+      const hits = openAttacks.get(attackId);
+      if (!hits) return;
+      hits.push({ npcId: npc.id, family: familyOf(npc), killed: false });
+      npc.lastAttackId = attackId;
+    };
+    const noteKill = (npc: WorldNpc) => {
+      const hits = npc.lastAttackId !== undefined ? openAttacks.get(npc.lastAttackId) : undefined;
+      if (hits) hits.push({ npcId: npc.id, family: familyOf(npc), killed: true });
+    };
+    const settleAttacks = () => {
+      if (openAttacks.size === 0) return;
+      const cb = stateRef.current.callbacks;
+      for (const [id, hits] of openAttacks) {
+        let live = false;
+        for (let k = 0; k < bullets.length; k++) {
+          if (bullets[k].attackId === id) {
+            live = true;
+            break;
+          }
+        }
+        if (live) continue;
+        openAttacks.delete(id);
+        if (hits.length === 0) continue;
+        const tally = tallyAttack(hits);
+        for (const f of FAMILY_KEYS) {
+          const h = tally[f];
+          if (h && (h.hits > 0 || h.kills > 0)) cb.onFamilyHarmed?.(f, { hits: h.hits, kills: h.kills });
+        }
+      }
+    };
+
+    // Hit squads: 2 or 3 members of a contracted family, spawned just off screen; at most one per family.
+    const squadWait = {} as Record<FamilyKey, number>;
+    for (const f of FAMILY_KEYS) squadWait[f] = squadDelay();
+    const squadAlive = (f: FamilyKey) => npcs.some((n) => n.squadFamily === f);
+    const spawnSquad = (f: FamilyKey): boolean => {
+      if (squadAlive(f)) return false;
+      const size = Math.random() < 0.5 ? 2 : 3;
+      const reach = Math.min(1100, Math.hypot(canvas.width, canvas.height) / 2 + 90);
+      const a = Math.random() * Math.PI * 2;
+      const base = snap(player.x + Math.cos(a) * reach, player.y + Math.sin(a) * reach);
+      for (let i = 0; i < size; i++) {
+        const spot = snap(base.x + (i - 1) * 34, base.y + (i % 2) * 26, 6);
+        npcs.push({
+          id: `squad_${f}_${Date.now()}_${i}`,
+          ...familyDress(f, `${familyName(f)} Hit Man`, isStreetRankCast),
+          role: i === 1 ? 'brawler' : 'soldato',
+          familyId: f,
+          x: spot.x,
+          y: spot.y,
+          vx: 0,
+          vy: 0,
+          hp: 130,
+          maxHp: 130,
+          angle: 0,
+          state: 'patrol',
+          stateTimer: 0,
+          patrolOriginX: spot.x,
+          patrolOriginY: spot.y,
+          hitFlashTimer: 0,
+          squash: 1,
+          cashDrop: 900,
+          contrabandDrop: 2,
+          squadFamily: f,
+        });
+      }
+      const vis = FAMILY_COAT_COLORS[f];
+      addFloatingText(player.x, player.y - 40, `${vis.symbol} ${vis.shortFamily} HIT SQUAD ON YOUR TRAIL`, vis.accent);
+      return true;
+    };
+    // Per frame of play: count down for each contracted family with no open window, no grace and no squad out;
+    // send home squads that are lost far away or whose contract has been paid.
+    const stepSquads = (dt: number) => {
+      for (const f of FAMILY_KEYS) {
+        const g = fc.s.families[f];
+        if (!g || !g.contract) {
+          squadWait[f] = squadDelay();
+          continue;
+        }
+        if (windowState(fc.s, f, fc.now) === 'open' || fc.now < fc.graceUntil || squadAlive(f)) continue;
+        squadWait[f] -= dt;
+        if (squadWait[f] <= 0) {
+          spawnSquad(f);
+          squadWait[f] = squadDelay();
+        }
+      }
+      for (let i = npcs.length - 1; i >= 0; i--) {
+        const n = npcs[i];
+        if (!n.squadFamily) continue;
+        const d = Math.hypot(n.x - player.x, n.y - player.y);
+        const paid = !fc.s.families[n.squadFamily]?.contract;
+        if (d > SQUAD_LOST_RANGE || (paid && d > SQUAD_PAID_RANGE)) {
+          releaseCast(n);
+          npcs.splice(i, 1);
+        }
+      }
+    };
+
+    // Sit-downs: the open window whose spot is nearest the player, within SITDOWN_RANGE.
+    const openSitDownNear = (): { family: FamilyKey; price: number; label: string } | null => {
+      let best: { family: FamilyKey; price: number; label: string } | null = null;
+      let bestD = SITDOWN_RANGE;
+      for (const f of FAMILY_KEYS) {
+        const g = fc.s.families[f];
+        if (!g?.contract || !g.sitDown || windowState(fc.s, f, fc.now) !== 'open') continue;
+        const d = Math.hypot(player.x - g.sitDown.spot.x, player.y - g.sitDown.spot.y);
+        if (d < bestD) {
+          bestD = d;
+          best = { family: f, price: g.price, label: g.sitDown.spot.label };
+        }
+      }
+      return best;
+    };
+    // A hired (temporary) hit squad member. Enforcer bodyguards never count; the same rule both refuses
+    // the sit-down and sends the crew home, so a crew that blocks a sit-down can always be dismissed.
+    const isHiredAlly = (n: WorldNpc) => n.role === 'ally' && n.allyKind !== 'bodyguard';
+    // Alone: no hired ally within ALONE_RANGE.
+    const isAlone = () => !npcs.some((n) => isHiredAlly(n) && Math.hypot(n.x - player.x, n.y - player.y) < ALONE_RANGE);
+    // PATCH-001: dismiss every hired ally for good, wherever it is, releasing its cast member.
+    const sendCrewHome = () => {
+      let sent = 0;
+      for (let i = npcs.length - 1; i >= 0; i--) {
+        if (!isHiredAlly(npcs[i])) continue;
+        const n = npcs[i];
+        spawnParticles(n.x, n.y, '#10B981', 8, 70);
+        releaseCast(n);
+        npcs.splice(i, 1);
+        sent++;
+      }
+      if (sent > 0) addFloatingText(player.x, player.y - 24, 'CREW SENT HOME', '#10B981');
+    };
+    // E at the spot, or the HUD tap through the bridge. With a hired crew near, the press sends the crew home
+    // and does not sit; otherwise the engine names the family and the player sits down alone.
+    const chooseSitDown = (): boolean => {
+      const st = stateRef.current;
+      if (st.isPaused || st.isTitleScreen) return false;
+      refreshContracts();
+      const sd = openSitDownNear();
+      if (!sd) return false;
+      if (!isAlone()) {
+        sendCrewHome();
+        return true;
+      }
+      st.callbacks.onSitDownChosen?.(sd.family, true);
+      return true;
+    };
+
     // Ferry: fade out, move to the other terminal, fade in.
     const ferry = { t: 0, active: false, moved: false, dest: { x: 0, y: 0 }, label: '' };
     const nearestTerminal = (): { id: 'battery' | 'st_george'; d: number } => {
@@ -918,6 +1179,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             id: `ally_${Date.now()}_${i}`,
             ...allyDress('Corvini Cadillac Enforcer'),
             role: 'ally',
+            allyKind: 'hired',
             familyId: 'player',
             x: allySpot.x,
             y: allySpot.y,
@@ -947,6 +1209,31 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         y: player.y,
         boroughId: player.currentBorough,
       }),
+      chooseSitDown: () => {
+        if (chooseSitDown()) soundEngine.playUiClick();
+      },
+      // After a betrayal or a death under contract: wake at (x, y) with nobody mid-attack and no squad on the trail.
+      wakeAt: (x: number, y: number) => {
+        ferry.active = false;
+        teleportPlayer(x, y);
+        for (let i = bullets.length - 1; i >= 0; i--) if (!bullets[i].fromPlayer) bullets.splice(i, 1);
+        for (let i = npcs.length - 1; i >= 0; i--) {
+          const n = npcs[i];
+          if (n.squadFamily) {
+            releaseCast(n);
+            npcs.splice(i, 1);
+          } else if (n.role === 'ally') {
+            const back = snap(player.x + (i % 2 === 0 ? -42 : 42), player.y + 36);
+            n.x = back.x;
+            n.y = back.y;
+          } else if (n.state !== 'patrol') {
+            n.state = 'patrol';
+            n.stateTimer = 1;
+          }
+        }
+        player.hitFlash = 0;
+        addFloatingText(player.x, player.y - 24, 'YOU WAKE UP AT THE STATION', '#F59E0B');
+      },
     };
 
     // Tour hook for the CI city tour: present only when the URL has ?tour.
@@ -955,10 +1242,17 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
     let tourHook: TourHook | null = null;
     try {
       if (new URLSearchParams(window.location.search).has('tour')) {
+        const debug: NonNullable<WorldCallbacks['onContractsDebug']> = (a) => stateRef.current.callbacks.onContractsDebug?.(a);
         tourHook = {
           teleport: (x: number, y: number) => teleportPlayer(x, y),
           frameTimeMs: () => (frameSamples.length ? frameSamples.reduce((a, b) => a + b, 0) / frameSamples.length : 0),
           slowestChunkMs: 0,
+          setHeat: (value: number) => debug({ type: 'heat', value }),
+          addGrudge: (family: FamilyKey, points: number) => {
+            if (isFamilyKey(family)) debug({ type: 'grudge', family, points });
+          },
+          advanceClock: (ms: number) => debug({ type: 'clock', ms }),
+          spawnSquad: (family: FamilyKey) => isFamilyKey(family) && spawnSquad(family),
         };
         tourWin.__cityTour = tourHook;
       }
@@ -1124,10 +1418,11 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         const reachY = player.y + Math.sin(player.angle) * 44;
         spawnParticles(reachX, reachY, '#F59E0B', 7, 110);
 
-        // Hit any NPC within melee arc
+        // Hit any NPC within melee arc; one swing is one attack however many it catches
+        const attackId = beginAttack();
         for (let i = npcs.length - 1; i >= 0; i--) {
           const npc = npcs[i];
-          if (npc.role === 'ally') continue;
+          if (npc.role === 'ally' || npc.hp <= 0) continue;
           const dist = Math.hypot(npc.x - reachX, npc.y - reachY);
           if (dist <= weapon.range) {
             const dmg = Math.round(weapon.damage * st.damageMultiplier * (0.9 + Math.random() * 0.25));
@@ -1140,10 +1435,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             pulse('heavyHit');
             spawnParticles(npc.x, npc.y, '#DC2626', 10, 150);
             addFloatingText(npc.x, npc.y, `-${dmg}`, '#F87171');
-            if (npc.state === 'patrol') {
-              npc.state = 'windup';
-              npc.stateTimer = 0.35;
-            }
+            noteHit(attackId, npc);
+            reactToHit(npc, 0.35);
           }
         }
       } else {
@@ -1155,6 +1448,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         const muzzleY = player.y + Math.sin(player.angle) * 22;
         spawnParticles(muzzleX, muzzleY, '#FBBF24', 5, 90, true);
 
+        // Every pellet of one trigger pull belongs to one attack
+        const attackId = beginAttack();
         for (let p = 0; p < weapon.pellets; p++) {
           const spread = (Math.random() - 0.5) * weapon.spreadAngle;
           const shotAngle = player.angle + spread;
@@ -1168,6 +1463,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             fromPlayer: true,
             life: weapon.range / speed,
             color: '#FDE047',
+            attackId,
           });
         }
         st.callbacks.onEarnResources(0, 0, 0, weapon.heatPerShot);
@@ -1503,6 +1799,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         if (frameSamples.length > 60) frameSamples.shift();
       }
       const st = stateRef.current;
+      refreshContracts();
       // The ferry timer and its teleport wait while paused or on the title screen.
       if (ferry.active && !st.isPaused && !st.isTitleScreen) {
         ferry.t += dt;
@@ -1663,7 +1960,23 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             };
           }
 
-          const promptKey = nearestPrompt ? `${nearestPrompt.type}:${nearestPrompt.id}:${nearestPrompt.label}` : '';
+          // A sit-down spot during its window wins over everything within SITDOWN_RANGE.
+          const sit = openSitDownNear();
+          if (sit) {
+            const risk = betrayalRisk(fc.s, sit.family, {
+              respectXp: st.contracts?.respectXp ?? 0,
+              ceasefire: st.contracts?.ceasefire ?? false,
+            });
+            const terms = `$${sit.price.toLocaleString('en-US')} · ${Math.round(risk * 100)}% risk`;
+            // The sublabel is the short price-and-risk line the HUD keeps whole on the phone (PATCH-001).
+            nearestPrompt = isAlone()
+              ? { type: 'sitdown', label: `[E] Sit down with the ${familyName(sit.family)} family`, sublabel: terms, id: sit.family }
+              : { type: 'sitdown', label: '[E] Send your crew home', sublabel: terms, id: sit.family };
+          }
+
+          const promptKey = nearestPrompt
+            ? `${nearestPrompt.type}:${nearestPrompt.id}:${nearestPrompt.label}:${nearestPrompt.sublabel}`
+            : '';
           if (promptKey !== lastInteractionLabel) {
             lastInteractionLabel = promptKey;
             st.callbacks.onNearInteractableChange(nearestPrompt);
@@ -1677,6 +1990,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               st.callbacks.onOpenRacketModal(nearestPrompt.id);
             } else if (nearestPrompt.type === 'ferry') {
               takeFerry();
+            } else if (nearestPrompt.type === 'sitdown') {
+              chooseSitDown();
             }
           }
 
@@ -1699,6 +2014,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               id: `ally_skill_${Date.now()}_${allyCount}`,
               ...allyDress('Made Bodyguard'),
               role: 'ally',
+              allyKind: 'bodyguard',
               familyId: 'player',
               x: skillSpot.x,
               y: skillSpot.y,
@@ -1719,8 +2035,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           }
         }
 
-        // Spawn NYPD Squad if Police Heat is high (> 55)
-        if (st.policeHeat > 55 && npcs.filter((n) => n.role === 'nypd').length < 3 && Math.random() < dt * 0.35) {
+        // Spawn NYPD Squad while heat is at or above the NYPD line
+        if (fc.heat >= NYPD_HEAT_LINE && npcs.filter((n) => n.role === 'nypd').length < 3 && Math.random() < dt * 0.35) {
           const spawnAngle = Math.random() * Math.PI * 2;
           const nypdSpot = snap(player.x + Math.cos(spawnAngle) * 420, player.y + Math.sin(spawnAngle) * 420);
           npcs.push({
@@ -1760,7 +2076,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           if (b.fromPlayer) {
             for (let j = npcs.length - 1; j >= 0; j--) {
               const npc = npcs[j];
-              if (npc.role === 'ally') continue;
+              if (npc.role === 'ally' || npc.hp <= 0) continue;
               if (Math.hypot(b.x - npc.x, b.y - npc.y) < 18) {
                 npc.hp -= b.damage;
                 npc.hitFlashTimer = 0.12;
@@ -1769,10 +2085,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                 npc.vy += (b.vy / 800) * 95;
                 spawnParticles(npc.x, npc.y, '#DC2626', 7, 130);
                 addFloatingText(npc.x, npc.y, `-${b.damage}`, '#FCA5A5');
-                if (npc.state === 'patrol') {
-                  npc.state = 'windup';
-                  npc.stateTimer = 0.4;
-                }
+                noteHit(b.attackId, npc);
+                reactToHit(npc, 0.4);
                 bullets.splice(i, 1);
                 break;
               }
@@ -1796,7 +2110,8 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           npc.squash += (1 - npc.squash) * Math.min(1, dt * 12);
 
           if (npc.hp <= 0) {
-            // NPC eliminated!
+            // NPC eliminated! The kill is credited to the attack that last hit it.
+            noteKill(npc);
             hitstopTimer = npc.role === 'capo' ? 0.075 : 0.035;
             // Turf Capo takedowns get the longer capo pulse from App instead.
             if (!(npc.role === 'capo' && npc.racketGuardId)) pulse('heavyHit');
@@ -1833,7 +2148,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             if (!guardId && npc.homeArea) {
               // Uptown and Staten Island keep their six civilians: the replacement appears in the same area.
               npcs.push(makeCivilian(npc.homeArea));
-            } else if (!guardId && npc.role !== 'ally' && npc.role !== 'nypd') {
+            } else if (!guardId && !npc.squadFamily && npc.role !== 'ally' && npc.role !== 'nypd') {
               const b = NYC_BOROUGHS[Math.floor(Math.random() * NYC_BOROUGHS.length)];
               const respawnSpot = randomWalkableIn(city, b.id as GameBoroughId, Math.random);
               // The replacement is dressed before the dead member is released, so it is never the same person.
@@ -1875,8 +2190,40 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             const targetFollowX = player.x + (i % 2 === 0 ? -42 : 42);
             const targetFollowY = player.y + 36;
             const distToPlayer = Math.hypot(targetFollowX - npc.x, targetFollowY - npc.y);
+            const fromPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
+            // Enforcer bodyguards hold back during any open sit-down window (they never block it).
+            const holdBack = npc.allyKind === 'bodyguard' && fc.anyOpen && !st.isTitleScreen;
             let allyMoved = false;
-            if (distToPlayer > 24) {
+            if (holdBack) {
+              npc.holdT = (npc.holdT ?? 0) + dt;
+              if (fromPlayer < HOLD_BACK_PX) {
+                const away = fromPlayer > 1 ? Math.atan2(npc.y - player.y, npc.x - player.x) : (i % 2 === 0 ? Math.PI : 0);
+                if (npc.holdT > HOLD_BACK_SNAP_S) {
+                  // Could not walk clear: step out of the way at once, trying the away side first, then around.
+                  for (let k = 0; k < 8; k++) {
+                    const a = away + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * (Math.PI / 4);
+                    const r = HOLD_BACK_PX + 80;
+                    const out = nearestWalkable(city, player.x + Math.cos(a) * r, player.y + Math.sin(a) * r, 4);
+                    if (out && Math.hypot(out.x - player.x, out.y - player.y) >= HOLD_BACK_PX) {
+                      npc.x = out.x;
+                      npc.y = out.y;
+                      break;
+                    }
+                  }
+                  npc.holdT = 0;
+                } else if (!followDetour(npc, dt, 200)) {
+                  walkToward(npc, npc.x + Math.cos(away) * 80, npc.y + Math.sin(away) * 80, 200, dt, false);
+                }
+                trackStuck(npc, dt, true);
+                allyMoved = true;
+              } else {
+                npc.holdT = 0;
+                npc.vx = 0;
+                npc.vy = 0;
+                trackStuck(npc, dt, false);
+              }
+            } else if (distToPlayer > 24) {
+              npc.holdT = 0;
               // Follow along the shared flow field; fall back to a straight line, or an unstuck detour.
               if (!followDetour(npc, dt, 200)) walkToward(npc, targetFollowX, targetFollowY, 200, dt, true);
               trackStuck(npc, dt, true);
@@ -1886,7 +2233,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
               npc.vy *= 0.8;
               trackStuck(npc, dt, false);
             }
-            if (Math.hypot(player.x - npc.x, player.y - npc.y) > 900) {
+            if (!holdBack && fromPlayer > 900) {
               const back = snap(player.x + (i % 2 === 0 ? -42 : 42), player.y + 36);
               npc.x = back.x;
               npc.y = back.y;
@@ -1896,16 +2243,13 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             // Shoot nearest hostile NPC
             npc.stateTimer -= dt;
             if (npc.stateTimer <= 0) {
-              const hostile = npcs.find(
-                (other) =>
-                  other.role !== 'ally' &&
-                  other.role !== 'citizen' &&
-                  (other.state === 'windup' || other.state === 'attack' || other.racketGuardId) &&
-                  Math.hypot(other.x - npc.x, other.y - npc.y) < 320
-              );
-              if (hostile) {
+              // Allies only shoot people who are hostile to the player.
+              const target = st.isTitleScreen
+                ? undefined
+                : npcs.find((other) => other.hp > 0 && Math.hypot(other.x - npc.x, other.y - npc.y) < 320 && hostile(other));
+              if (target) {
                 npc.stateTimer = 0.55;
-                const aim = Math.atan2(hostile.y - npc.y, hostile.x - npc.x);
+                const aim = Math.atan2(target.y - npc.y, target.x - npc.x);
                 npc.angle = aim;
                 bullets.push({
                   x: npc.x + Math.cos(aim) * 16,
@@ -1916,6 +2260,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                   fromPlayer: true,
                   life: 0.45,
                   color: '#34D399',
+                  attackId: beginAttack(),
                 });
               } else {
                 npc.stateTimer = 0.25;
@@ -1924,25 +2269,45 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
             continue;
           }
 
-          // Hostile / Neutral NPC AI
+          // Hostile / Neutral NPC AI. Hostility comes only from isHostile and is checked again at every step:
+          // anyone who stops being hostile (a paid contract, an open sit-down window, heat below the line)
+          // goes straight back to patrol, even mid-windup.
           const distToPlayer = Math.hypot(player.x - npc.x, player.y - npc.y);
-          const isHostileByDefault =
-            npc.racketGuardId !== undefined ||
-            npc.role === 'nypd' ||
-            (!st.hasStreetCeasefire &&
-              npc.familyId !== st.playerFamily &&
-              npc.familyId !== 'civilian' &&
-              npc.role !== 'courier' &&
-              distToPlayer < 175);
+          const isHostileNow = !st.isTitleScreen && hostile(npc);
+          const melee = isMeleeRole(npc.role);
 
           npc.stateTimer -= dt;
 
-          if (npc.state === 'patrol') {
-            const chaseRange = npc.role === 'nypd' ? 640 : 240;
-            if (isHostileByDefault && !st.isTitleScreen && distToPlayer < chaseRange) {
+          if (npc.state !== 'patrol' && npc.state !== 'flee' && !isHostileNow) {
+            npc.state = 'patrol';
+            npc.stateTimer = 0.5 + Math.random();
+            npc.goalT = 0;
+          }
+
+          if (npc.state === 'flee') {
+            if (isHostileNow) {
+              // A contract went out while backing away: turn and fight.
+              npc.state = 'patrol';
+              npc.stateTimer = 0;
+            } else {
+              const away = distToPlayer > 1 ? Math.atan2(npc.y - player.y, npc.x - player.x) : npc.angle;
+              if (!followDetour(npc, dt, FLEE_SPEED)) {
+                walkToward(npc, npc.x + Math.cos(away) * 60, npc.y + Math.sin(away) * 60, FLEE_SPEED, dt, false);
+              }
+              trackStuck(npc, dt, true);
+              if (npc.stateTimer <= 0) {
+                npc.state = 'patrol';
+                npc.stateTimer = 1 + Math.random() * 2;
+                npc.vx = 0;
+                npc.vy = 0;
+              }
+            }
+          } else if (npc.state === 'patrol') {
+            const chaseRange = npc.squadFamily ? SQUAD_HUNT_RANGE : npc.role === 'nypd' ? 640 : 240;
+            if (isHostileNow && distToPlayer < chaseRange) {
               if (distToPlayer < 240 && clearShot(npc.x, npc.y, player.x, player.y)) {
                 npc.state = 'windup';
-                npc.stateTimer = npc.role === 'brawler' ? 0.48 : 0.6;
+                npc.stateTimer = melee ? 0.48 : 0.6;
               } else {
                 // No clear line to the player: walk around the buildings to get one.
                 chase(npc, dt, CHASE_SPEED);
@@ -1973,26 +2338,26 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
           } else if (npc.state === 'windup') {
             // Visible windup telegraph before attack!
             npc.angle = Math.atan2(player.y - npc.y, player.x - npc.x);
-            if (npc.role === 'brawler') {
+            if (melee) {
               // Slowly step in during windup, along the flow field
               chase(npc, dt, 65);
               npc.angle = Math.atan2(player.y - npc.y, player.x - npc.x);
             }
-            if (npc.stateTimer <= 0 && npc.role !== 'brawler' && npc.role !== 'citizen' && !clearShot(npc.x, npc.y, player.x, player.y)) {
+            if (npc.stateTimer <= 0 && !melee && npc.role !== 'citizen' && !clearShot(npc.x, npc.y, player.x, player.y)) {
               // A building is in the way: do not shoot the wall, go around it.
               npc.state = 'patrol';
               npc.stateTimer = 0;
             } else if (npc.stateTimer <= 0) {
               npc.state = 'attack';
               npc.stateTimer = 0.25;
-              if (npc.role === 'brawler') {
-                // Heavy brass-knuckle dash lunge
+              if (melee) {
+                // Heavy brass-knuckle dash lunge (an unarmed courier shoves the same way, more weakly)
                 npc.vx = Math.cos(npc.angle) * 380;
                 npc.vy = Math.sin(npc.angle) * 380;
                 if (distToPlayer < 85 && !st.isTitleScreen && clearShot(npc.x, npc.y, player.x, player.y)) {
                   player.hitFlash = 0.2;
                   camera.shake = Math.max(camera.shake, 7);
-                  st.callbacks.onPlayerDamaged(18, npc.name);
+                  st.callbacks.onPlayerDamaged(meleeDamage(npc.role), npc.name);
                   soundEngine.playMeleeHit(false);
                 }
               } else if (npc.role !== 'citizen') {
@@ -2037,13 +2402,17 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
                 npc.stateTimer = 0.58;
               } else if (sees) {
                 npc.state = 'windup';
-                npc.stateTimer = npc.role === 'brawler' ? 0.45 : 0.58;
+                npc.stateTimer = melee ? 0.45 : 0.58;
               } else {
                 npc.stateTimer = 0.4; // still no line to the player: keep walking round
               }
             }
           }
         }
+
+        // Report every attack whose last pellet is gone (its deaths were processed above), once, as one tally.
+        settleAttacks();
+        if (!st.isTitleScreen) stepSquads(dt);
 
         // Update ambient 1984 NYC traffic: lanes, junction turns, bridges (src/world/traffic.ts)
         stepTraffic(streetCars, city, dt, Math.random);
@@ -2262,6 +2631,42 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
         ctx.restore();
       }
 
+      // Sit-down spots: a family-coloured ring (the prompt range) with the meeting countdown, while waiting or open.
+      if (!st.isTitleScreen) {
+        for (const f of FAMILY_KEYS) {
+          const d = fc.s.families[f]?.sitDown;
+          if (!d) continue;
+          const ws = windowState(fc.s, f, fc.now);
+          if (ws !== 'waiting' && ws !== 'open') continue;
+          const sx = d.spot.x;
+          const sy = d.spot.y;
+          if (sx < view.x - 200 || sx > view.x + view.w + 200 || sy < view.y - 120 || sy > view.y + view.h + 120) continue;
+          const vis = FAMILY_COAT_COLORS[f];
+          const open = ws === 'open';
+          const pulseR = open ? Math.sin(now / 260) * 3 : 0;
+          ctx.save();
+          ctx.fillStyle = open ? 'rgba(250, 204, 21, 0.12)' : 'rgba(9, 9, 11, 0.35)';
+          ctx.strokeStyle = vis.accent;
+          ctx.lineWidth = open ? 3 : 2;
+          ctx.setLineDash(open ? [] : [8, 6]);
+          ctx.beginPath();
+          ctx.ellipse(sx, sy, SITDOWN_RANGE + pulseR, (SITDOWN_RANGE + pulseR) * 0.42, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // A small table with two chairs
+          ctx.fillStyle = '#3F2A1D';
+          ctx.fillRect(sx - 12, sy - 7, 24, 12);
+          ctx.strokeStyle = '#F5F0E6';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx - 12, sy - 7, 24, 12);
+          ctx.fillStyle = vis.accent;
+          ctx.fillRect(sx - 20, sy - 4, 6, 7);
+          ctx.fillRect(sx + 14, sy - 4, 6, 7);
+          ctx.restore();
+        }
+      }
+
       // People: full-body figures from the figure cache. Cull to the view, then sort by the feet so
       // lower bodies draw in front; the player is drawn in the same order.
       drawList.length = 0;
@@ -2284,7 +2689,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       // Ground layer: brawler windup arcs, Capo rings and the player's gold ring.
       for (let k = 0; k < drawList.length; k++) {
         const npc = drawList[k];
-        if (npc.state === 'windup' && npc.role === 'brawler') {
+        if (npc.state === 'windup' && isMeleeRole(npc.role)) {
           ctx.fillStyle = 'rgba(239, 68, 68, 0.22)';
           ctx.strokeStyle = '#EF4444';
           ctx.lineWidth = 2;
@@ -2322,7 +2727,7 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       // Gunman laser-sight telegraph, from the gun hand along the aim (also for gunmen just off screen).
       for (let k = 0; k < npcs.length; k++) {
         const npc = npcs[k];
-        if (npc.state !== 'windup' || npc.role === 'brawler') continue;
+        if (npc.state !== 'windup' || isMeleeRole(npc.role) || npc.role === 'citizen') continue;
         const f = Math.cos(npc.angle) >= 0 ? 1 : -1;
         const lx = npc.x + f * GRIP_DX;
         const ly = npc.y + GRIP_DY;
@@ -2358,6 +2763,47 @@ export const NycWorldCanvas: React.FC<NycWorldCanvasProps> = ({
       // Name tags: at most four, laid out so that none overlap (src/world/tagLayout.ts)
       buildTags(st.isTitleScreen);
       drawTags();
+
+      // Sit-down labels above head height, over the people and tags, so a body on the spot never hides them.
+      if (!st.isTitleScreen) {
+        for (const f of FAMILY_KEYS) {
+          const d = fc.s.families[f]?.sitDown;
+          if (!d) continue;
+          const ws = windowState(fc.s, f, fc.now);
+          if (ws !== 'waiting' && ws !== 'open') continue;
+          const sx = d.spot.x;
+          const sy = d.spot.y;
+          if (sx < view.x - 200 || sx > view.x + view.w + 200 || sy < view.y - 120 || sy > view.y + view.h + 120) continue;
+          const vis = FAMILY_COAT_COLORS[f];
+          const open = ws === 'open';
+          const line1 = `${vis.symbol} SIT-DOWN · ${vis.shortFamily}`;
+          const line2 = open ? `OPEN · ${clockText(d.windowEnd - fc.now)} LEFT` : `MEET IN ${clockText(d.meetAt - fc.now)}`;
+          // The price and the risk, under the countdown (PATCH-001).
+          const risk = betrayalRisk(fc.s, f, { respectXp: st.contracts?.respectXp ?? 0, ceasefire: st.contracts?.ceasefire ?? false });
+          const line3 = `$${(fc.s.families[f]?.price ?? 0).toLocaleString('en-US')} · ${Math.round(risk * 100)}% RISK`;
+          const top = sy - FIG_TOP - 48;
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'top';
+          ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+          const w1 = ctx.measureText(line1).width;
+          ctx.font = '600 10px "JetBrains Mono", monospace';
+          const bw = Math.ceil(Math.max(w1, ctx.measureText(line2).width, ctx.measureText(line3).width)) + 14;
+          ctx.fillStyle = 'rgba(9, 9, 11, 0.85)';
+          ctx.fillRect(Math.round(sx - bw / 2), top, bw, 42);
+          ctx.fillStyle = vis.accent;
+          ctx.fillRect(Math.round(sx - bw / 2), top, bw, 2);
+          ctx.font = '700 11px "Plus Jakarta Sans", sans-serif';
+          ctx.fillStyle = '#F5F0E6';
+          ctx.fillText(line1, sx, top + 4);
+          ctx.font = '600 10px "JetBrains Mono", monospace';
+          ctx.fillStyle = open ? '#FACC15' : vis.accent;
+          ctx.fillText(line2, sx, top + 17);
+          ctx.fillStyle = '#F5F0E6';
+          ctx.fillText(line3, sx, top + 29);
+          ctx.restore();
+        }
+      }
 
       // Draw Floating Damage & Tribute Numbers
       for (const ft of floatingTexts) {

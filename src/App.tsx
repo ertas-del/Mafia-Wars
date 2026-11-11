@@ -8,6 +8,7 @@ import {
   INITIAL_SOCIAL_CONTACTS,
   LeaderboardEntry,
   NARRATIVE_CHAPTERS,
+  NYC_BOROUGHS,
   RacketBuilding,
   SKILL_TREE_NODES,
   SocialContact,
@@ -15,22 +16,81 @@ import {
   WeaponId,
 } from './data/nyc1984Data';
 import { LiveSimulationBridge, NycWorldCanvas, WorldCallbacks } from './components/NycWorldCanvas';
-import { PauseOrEndModal, TitleScreenOverlay } from './components/TitleAndEndModals';
+import { BetrayalReport, PauseOrEndModal, TitleScreenOverlay } from './components/TitleAndEndModals';
 import { DrawerTab, SyndicateDrawerModal } from './components/SyndicateDrawers';
 import { PerimeterHud } from './components/PerimeterHud';
 import { soundEngine } from './audio/soundEngine';
 import { enterPhoneFullscreen, isFullscreen, isTouchModeAttr } from './input/fullscreen';
 import { RotateCard } from './components/RotateCard';
-import type { InteractPrompt } from './world/bridgeTypes';
+import type { ContractsBridge, ContractsCallbacks, ContractsView, InteractPrompt } from './world/bridgeTypes';
 import { mergeSavedById } from './world/saveMerge';
 import { getVibrationEnabled, isVibrationSupported, pulse, setVibrationEnabled } from './input/haptics';
+import {
+  CONTRACT_POINTS,
+  FAMILY_KEYS,
+  GRACE_MS,
+  attemptSitDown,
+  betrayalLosses,
+  emptyContracts,
+  expireLapsed,
+  isFamilyKey,
+  parseContracts,
+  recordHarm,
+  requestSitDown,
+  resumeAfterAbsence,
+  windowState,
+} from './world/contracts';
+import type { ContractsState, FamilyKey } from './world/contracts';
+import { STATIONS } from './world/cityData';
 
 type GameState = 'TITLE_MENU' | 'PLAYING' | 'PAUSED' | 'VICTORY' | 'GAME_OVER';
 
 /** The canvas bridge gains takeFerry(); optional here so this compiles before and after it lands. */
 type FerryBridge = LiveSimulationBridge & { takeFerry?: () => void };
+/** The canvas bridge gains wakeAt() and chooseSitDown() (T-003); optional for the same reason. */
+type SitDownBridge = LiveSimulationBridge & Partial<ContractsBridge>;
 
 const SAVE_STORAGE_KEY = 'commission_1984_empire_v1';
+
+/** The shared random source for sit-down scheduling, spot choice and the betrayal roll. */
+const contractsRand = (): number => Math.random();
+
+/** Racket doors sit on the sidewalk this far below the lot (the engine's doorOf uses the same drop). */
+const RACKET_DOOR_DROP = 15;
+
+const familyShortName = (family: FamilyKey): string =>
+  FIVE_FAMILIES.find((f) => f.id === family)?.name.split(' ')[0] ?? family;
+
+const homeBoroughOf = (family: FamilyId): BoroughId =>
+  FIVE_FAMILIES.find((f) => f.id === family)?.homeBorough ?? 'manhattan_south';
+
+/** A family's home station in world pixels: where the player wakes after a whacking or a death under contract. */
+const homeStationOf = (family: FamilyId): { x: number; y: number } => STATIONS[homeBoroughOf(family)];
+
+/** A borough station's display name, e.g. "Little Italy subway station". */
+const stationLabelOf = (borough: BoroughId): string => {
+  const zone = NYC_BOROUGHS.find((b) => b.id === borough);
+  return `${zone ? zone.name.split('&')[0].trim() : 'home'} subway station`;
+};
+
+const homeStationLabel = (family: FamilyId): string => stationLabelOf(homeBoroughOf(family));
+
+const hasAnyContract =(s: ContractsState): boolean => FAMILY_KEYS.some((k) => s.families[k].contract);
+
+/**
+ * The meeting spot a family names: the door of one of its rackets in its home
+ * borough, chosen at random, or its home borough's station if it holds none there.
+ */
+function pickSitDownSpot(family: FamilyKey, rackets: RacketBuilding[]): { x: number; y: number; label: string } {
+  const home = homeBoroughOf(family);
+  const owned = rackets.filter((r) => r.ownerFamily === family && r.boroughId === home);
+  if (owned.length > 0) {
+    const r = owned[Math.min(owned.length - 1, Math.floor(contractsRand() * owned.length))] ?? owned[0];
+    return { x: r.x + r.width / 2, y: r.y + r.height + RACKET_DOOR_DROP, label: r.name };
+  }
+  const station = STATIONS[home];
+  return { x: station.x, y: station.y, label: stationLabelOf(home) };
+}
 
 interface SavedEmpireState {
   donName: string;
@@ -47,6 +107,10 @@ interface SavedEmpireState {
   rackets: RacketBuilding[];
   contacts: SocialContact[];
   lastSaveTimestamp: number;
+  /** Grudges, contracts and scheduled sit-downs (optional: older saves have none). */
+  contracts?: ContractsState;
+  /** The last contracts-clock time the game was PLAYING; windows that pass after it are reopened, not charged. */
+  contractsSeenAt?: number;
 }
 
 export default function App() {
@@ -106,6 +170,30 @@ export default function App() {
     const t = setTimeout(() => setRecentToast(null), 4000);
     return () => clearTimeout(t);
   }, [recentToast]);
+
+  // Contracts & sit-downs. Every change goes through updateContracts, which applies it to the ref first,
+  // so several reports in one frame (or a report and a tick) build on each other instead of racing.
+  const [contracts, setContractsState] = useState<ContractsState>(() => emptyContracts());
+  const contractsRef = useRef<ContractsState>(contracts);
+  const updateContracts = useCallback((fn: (s: ContractsState) => ContractsState) => {
+    const next = fn(contractsRef.current);
+    if (next === contractsRef.current) return;
+    contractsRef.current = next;
+    setContractsState(next);
+  }, []);
+  // Debug clock (?tour hook): every contract time is read as Date.now() + nowOffsetMs.
+  const [nowOffsetMs, setNowOffsetMs] = useState<number>(0);
+  const nowOffsetRef = useRef<number>(0);
+  const contractsNow = useCallback(() => Date.now() + nowOffsetRef.current, []);
+  /** The contracts clock as of the last tick, for countdowns in the HUD and dossier. */
+  const [clockNow, setClockNow] = useState<number>(() => Date.now());
+  /** No squads before this contracts-clock time (after a death under contract). */
+  const [graceUntil, setGraceUntil] = useState<number>(0);
+  const [betrayal, setBetrayal] = useState<BetrayalReport | null>(null);
+  /** One sit-down roll at a time: held from the attempt until its outcome is settled. */
+  const sitDownBusyRef = useRef<boolean>(false);
+  /** The last contracts-clock time the game was PLAYING (not paused, in Recovery, on the title or blocked in portrait). */
+  const lastPlayingAtRef = useRef<number>(Date.now());
 
   // Derived Family & Skill Tree Multipliers
   const activeFamilySpec = useMemo(
@@ -217,6 +305,16 @@ export default function App() {
           setContacts(mergedContacts);
         }
 
+        // Contracts: malformed or missing data loads empty. Windows that opened or closed since the game
+        // was last PLAYING reopen fresh instead of being charged.
+        const loadNow = Date.now();
+        const seenAt =
+          typeof parsed.contractsSeenAt === 'number' && Number.isFinite(parsed.contractsSeenAt)
+            ? parsed.contractsSeenAt
+            : parsed.lastSaveTimestamp;
+        updateContracts(() => resumeAfterAbsence(parseContracts(parsed.contracts), seenAt, loadNow));
+        lastPlayingAtRef.current = loadNow;
+
         // Calculate Offline Passive Progression since lastSaveTimestamp
         const now = Date.now();
         const elapsedSec = Math.max(0, Math.floor((now - (parsed.lastSaveTimestamp || now)) / 1000));
@@ -247,7 +345,7 @@ export default function App() {
     } catch {
       // Ignore malformed storage
     }
-  }, []);
+  }, [updateContracts]);
 
   // Save empire state periodically & on changes
   useEffect(() => {
@@ -267,6 +365,8 @@ export default function App() {
       rackets,
       contacts,
       lastSaveTimestamp: Date.now(),
+      contracts,
+      contractsSeenAt: lastPlayingAtRef.current,
     };
     try {
       localStorage.setItem(SAVE_STORAGE_KEY, JSON.stringify(payload));
@@ -289,6 +389,7 @@ export default function App() {
     unlockedSkills,
     rackets,
     contacts,
+    contracts,
   ]);
 
   // Phone play: touch mode (pinned <html data-input="touch">), portrait orientation, fullscreen exit
@@ -329,6 +430,42 @@ export default function App() {
 
   // Portrait on a touch device during play: rotate card covers everything and the whole simulation halts
   const isPortraitBlocked = isPortrait && isTouchMode && gameState === 'PLAYING';
+  const portraitBlockedRef = useRef<boolean>(isPortraitBlocked);
+  portraitBlockedRef.current = isPortraitBlocked;
+
+  // Contracts clock: its own 1-second interval, running in every state. Only while PLAYING (and not
+  // blocked in portrait) do windows lapse and get charged; on the tick play resumes, windows that opened
+  // or closed while not playing reopen fresh for 3 minutes instead.
+  useEffect(() => {
+    let wasActive = false;
+    const lastWindow: Partial<Record<FamilyKey, string>> = {};
+    const interval = setInterval(() => {
+      const now = contractsNow();
+      const active = gameStateRef.current === 'PLAYING' && !portraitBlockedRef.current;
+      if (active) {
+        if (!wasActive) updateContracts((s) => resumeAfterAbsence(s, lastPlayingAtRef.current, now));
+        const { state, lapsed } = expireLapsed(contractsRef.current, now);
+        if (lapsed.length > 0) {
+          updateContracts(() => state);
+          const names = lapsed.map(familyShortName).join(', ');
+          showToast(`Missed the ${names} sit-down: price +$1,000. Request another from the dossier.`);
+        } else {
+          for (const k of FAMILY_KEYS) {
+            const ws = windowState(contractsRef.current, k, now);
+            const spot = contractsRef.current.families[k].sitDown?.spot;
+            if (ws === 'open' && lastWindow[k] !== 'open' && spot) {
+              showToast(`The ${familyShortName(k)} family is waiting at ${spot.label}. You have 3 minutes. Come alone.`);
+            }
+          }
+        }
+        for (const k of FAMILY_KEYS) lastWindow[k] = windowState(contractsRef.current, k, now);
+        lastPlayingAtRef.current = now;
+      }
+      wasActive = active;
+      if (gameStateRef.current !== 'TITLE_MENU') setClockNow(now);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [contractsNow, updateContracts, showToast]);
 
   // Continuous 1-second Idle Territory Tick & Rival Leaderboard Tick
   useEffect(() => {
@@ -540,8 +677,144 @@ export default function App() {
     [unlockedWeapons, cash, showToast]
   );
 
+  // Latest values for the contract handlers, so they stay stable for the canvas and never read a stale render.
+  const persicoRespect = contacts.find((c) => c.id === 'contact_persico')?.respect ?? 0;
+  const liveRef = useRef({ cash, respectXp, skillPoints, rackets, ceasefire: persicoRespect >= 40 });
+  liveRef.current = { cash, respectXp, skillPoints, rackets, ceasefire: persicoRespect >= 40 };
+
+  const handleFamilyHarmed = useCallback(
+    (family: FamilyKey, harm: { hits: number; kills: number }) => {
+      if (!isFamilyKey(family)) return;
+      const before = contractsRef.current.families[family];
+      const result = recordHarm(contractsRef.current, family, harm);
+      updateContracts(() => result.state);
+      const after = result.state.families[family];
+      const name = familyShortName(family);
+      if (result.contractStarted) {
+        soundEngine.playPoliceSiren();
+        showToast(`CONTRACT OUT: the ${name} family put $${after.price.toLocaleString()} on your head. Settle it at a sit-down.`);
+      } else if (!after.contract) {
+        if (after.points !== before.points) showToast(`${name} grudge ${after.points}/${CONTRACT_POINTS}`);
+      } else if (after.price !== before.price) {
+        showToast(`${name} contract now $${after.price.toLocaleString()}`);
+      }
+    },
+    [updateContracts, showToast]
+  );
+
+  const handleRequestSitDown = useCallback(
+    (family: FamilyKey) => {
+      const now = contractsNow();
+      const spot = pickSitDownSpot(family, liveRef.current.rackets);
+      const result = requestSitDown(contractsRef.current, family, now, contractsRand, spot);
+      const name = familyShortName(family);
+      if (!result.ok) {
+        showToast(
+          result.reason === 'pending'
+            ? `The ${name} family already named a time and place.`
+            : result.reason === 'no-contract'
+            ? `There is no contract with the ${name} family to settle.`
+            : `The ${name} family would not name a place.`
+        );
+        return;
+      }
+      updateContracts(() => result.state);
+      setClockNow(now);
+      const d = result.state.families[family].sitDown;
+      if (d) {
+        const mins = Math.max(1, Math.round((d.meetAt - now) / 60000));
+        showToast(`${name} reply: meet at ${d.spot.label}, in ${mins} minute${mins === 1 ? '' : 's'}. Come alone.`);
+      }
+    },
+    [contractsNow, updateContracts, showToast]
+  );
+
+  const handleSitDownChosen = useCallback(
+    (family: FamilyKey, alone: boolean) => {
+      if (!isFamilyKey(family) || sitDownBusyRef.current) return;
+      sitDownBusyRef.current = true;
+      const live = liveRef.current;
+      const name = familyShortName(family);
+      const result = attemptSitDown(contractsRef.current, family, {
+        now: contractsNow(),
+        cash: live.cash,
+        alone,
+        respectXp: live.respectXp,
+        ceasefire: live.ceasefire,
+        rand: contractsRand,
+      });
+      if (result.outcome === 'refused') {
+        sitDownBusyRef.current = false;
+        const price = contractsRef.current.families[family].price;
+        showToast(
+          result.reason === 'alone'
+            ? `The ${name} family won't sit: you were told to come alone. Send your hired guns away.`
+            : result.reason === 'cash'
+            ? `The ${name} family wants $${price.toLocaleString()} on the table. You're short.`
+            : `There is no ${name} sit-down open right now.`
+        );
+        return;
+      }
+      if (result.outcome === 'honoured') {
+        const cost = result.cost;
+        setCash((c) => Math.max(0, c - cost));
+        updateContracts(() => result.state);
+        soundEngine.playFavorComplete();
+        showToast(`The ${name} family took the $${cost.toLocaleString()}. The contract is lifted.`);
+        sitDownBusyRef.current = false;
+        return;
+      }
+      // Betrayed: losses come out now; the betrayal Recovery screen lists them. The flag stays held until Recovery.
+      const lost = betrayalLosses({ cash: live.cash, respectXp: live.respectXp, skillPoints: live.skillPoints });
+      setCash((c) => Math.max(0, c - lost.cash));
+      setRespectXp((xp) => Math.max(0, xp - lost.respectXp));
+      setSkillPoints((sp) => Math.max(0, sp - lost.skillPoints));
+      updateContracts(() => result.state);
+      pulse('capoTakedown');
+      soundEngine.playGunshot('shotgun');
+      setBetrayal({
+        family,
+        cashLost: lost.cash,
+        respectLost: lost.respectXp,
+        skillPointsLost: lost.skillPoints,
+        newPrice: result.state.families[family].price,
+      });
+      setOpenDrawerTab(null);
+      setGameState('GAME_OVER');
+    },
+    [contractsNow, updateContracts, showToast]
+  );
+
+  const handleContractsDebug = useCallback<ContractsCallbacks['onContractsDebug']>(
+    (a) => {
+      if (a.type === 'heat') {
+        if (Number.isFinite(a.value)) setPoliceHeat(Math.max(0, Math.min(100, a.value)));
+      } else if (a.type === 'grudge') {
+        // Grudge points arrive as plain hits through recordHarm, exactly as street hits do.
+        if (Number.isFinite(a.points) && a.points > 0) handleFamilyHarmed(a.family, { hits: Math.floor(a.points), kills: 0 });
+      } else if (a.type === 'clock') {
+        if (!Number.isFinite(a.ms)) return;
+        nowOffsetRef.current += a.ms;
+        setNowOffsetMs(nowOffsetRef.current);
+        setClockNow(contractsNow());
+      }
+    },
+    [handleFamilyHarmed, contractsNow]
+  );
+
+  const contractsCallbacks: ContractsCallbacks = useMemo(
+    () => ({
+      onFamilyHarmed: handleFamilyHarmed,
+      onSitDownChosen: handleSitDownChosen,
+      onContractsDebug: handleContractsDebug,
+    }),
+    [handleFamilyHarmed, handleSitDownChosen, handleContractsDebug]
+  );
+
   const worldCallbacks: WorldCallbacks = useMemo(
     () => ({
+      // Spread, so this type-checks before WorldCallbacks declares the optional contract callbacks.
+      ...contractsCallbacks,
       onEarnResources: handleEarnResources,
       onCollectRacketEnvelope: handleCollectRacketEnvelope,
       onOpenRacketModal: (racketId: string) => {
@@ -564,6 +837,7 @@ export default function App() {
       },
     }),
     [
+      contractsCallbacks,
       handleEarnResources,
       handleCollectRacketEnvelope,
       handlePlayerDamaged,
@@ -767,6 +1041,34 @@ export default function App() {
     return Boolean(c && c.respect >= 40);
   }, [contacts]);
 
+  const contractsView: ContractsView = useMemo(
+    () => ({
+      state: contracts,
+      heat: policeHeat,
+      nowOffsetMs,
+      respectXp,
+      ceasefire: hasStreetCeasefire,
+      graceUntil,
+    }),
+    [contracts, policeHeat, nowOffsetMs, respectXp, hasStreetCeasefire, graceUntil]
+  );
+
+  // One spread object for the canvas: JSX spreads are not excess-property-checked, so this compiles
+  // before NycWorldCanvas declares the optional contract props (T-003) and after.
+  /**
+   * Wakes the player at the family's home station with GRACE_MS before any squad: after a betrayal
+   * (Recovery or Return to Title) and after an ordinary death under contract.
+   */
+  const wakeAtHomeStation = useCallback(() => {
+    const home = homeStationOf(playerFamily);
+    (bridgeRef.current as SitDownBridge | null)?.wakeAt?.(home.x, home.y);
+    setGraceUntil(contractsNow() + GRACE_MS);
+  }, [playerFamily, contractsNow]);
+
+  const handleChooseSitDown = useCallback(() => {
+    (bridgeRef.current as SitDownBridge | null)?.chooseSitDown?.();
+  }, []);
+
   const handleResetEmpire = () => {
     localStorage.removeItem(SAVE_STORAGE_KEY);
     setHasSavedEmpire(false);
@@ -783,6 +1085,12 @@ export default function App() {
     setRackets(INITIAL_RACKETS);
     setContacts(INITIAL_SOCIAL_CONTACTS);
     setOfflineReport(null);
+    updateContracts(() => emptyContracts());
+    nowOffsetRef.current = 0;
+    setNowOffsetMs(0);
+    setGraceUntil(0);
+    setBetrayal(null);
+    sitDownBusyRef.current = false;
     showToast('Started fresh 1984 New York Syndicate ledger.');
   };
 
@@ -807,6 +1115,9 @@ export default function App() {
         policeHeat={policeHeat}
         callbacks={worldCallbacks}
         bridgeRef={bridgeRef}
+        /* NycWorldCanvas declares `contracts?: ContractsView` as an optional prop (T-003); passed through a spread
+           so this type-checks before that lands. The contract callbacks ride only in `callbacks` (WorldCallbacks). */
+        {...{ contracts: contractsView }}
       />
 
       {/* STATE 1: TITLE SCREEN OVERLAY */}
@@ -852,6 +1163,9 @@ export default function App() {
           hasOfflineReport={Boolean(offlineReport)}
           nearPrompt={nearPrompt}
           onTakeFerry={() => (bridgeRef.current as FerryBridge | null)?.takeFerry?.()}
+          onChooseSitDown={handleChooseSitDown}
+          contracts={contracts}
+          contractsNow={clockNow}
           recentToast={recentToast}
           onSelectBorough={(bId) => {
             setCurrentBoroughId(bId);
@@ -908,6 +1222,11 @@ export default function App() {
           currentActIndex={currentActIndex}
           offlineReport={offlineReport}
           leaderboard={computedLeaderboard}
+          contracts={contracts}
+          contractsNow={clockNow}
+          respectXp={respectXp}
+          hasStreetCeasefire={hasStreetCeasefire}
+          onRequestSitDown={handleRequestSitDown}
           onTravelToBorough={(bId) => {
             setCurrentBoroughId(bId);
             bridgeRef.current?.teleportToBorough(bId);
@@ -940,20 +1259,45 @@ export default function App() {
           netWorth={netWorth}
           controlledRacketsCount={controlledRacketsCount}
           alliancesCount={alliancesCount}
+          betrayal={gameState === 'GAME_OVER' ? betrayal : null}
           onResume={() => {
             if (isTouchModeAttr()) void enterPhoneFullscreen();
             setGameState('PLAYING');
           }}
           onRestartOrRecover={() => {
             if (gameState === 'GAME_OVER') {
-              setCash((c) => Math.max(500, Math.round(c * 0.9)));
-              setPlayerHp(playerMaxHp);
-              setPoliceHeat(0);
-              bridgeRef.current?.triggerHealEffect('PATCHED UP AT MULBERRY ST.');
+              const bridge = bridgeRef.current;
+              const station = homeStationLabel(playerFamily).toUpperCase();
+              if (betrayal) {
+                // Whacked: the losses were taken at the table. No ordinary Recovery penalties; wake at full health
+                // at the home station, with a grace period before any squad.
+                setPlayerHp(playerMaxHp);
+                wakeAtHomeStation();
+                bridge?.triggerHealEffect(`LEFT FOR DEAD · WOKE AT ${station}`);
+                setBetrayal(null);
+                sitDownBusyRef.current = false;
+              } else {
+                setCash((c) => Math.max(500, Math.round(c * 0.9)));
+                setPlayerHp(playerMaxHp);
+                setPoliceHeat(0);
+                if (hasAnyContract(contractsRef.current)) {
+                  // Died under a contract: wake at the home station with a grace period before any squad.
+                  wakeAtHomeStation();
+                  bridge?.triggerHealEffect(`PATCHED UP · WOKE AT ${station}`);
+                } else {
+                  bridge?.triggerHealEffect('PATCHED UP AT MULBERRY ST.');
+                }
+              }
             }
             setGameState('PLAYING');
           }}
           onReturnToTitle={() => {
+            if (betrayal) {
+              setPlayerHp(playerMaxHp);
+              wakeAtHomeStation();
+              setBetrayal(null);
+              sitDownBusyRef.current = false;
+            }
             setOpenDrawerTab(null);
             setGameState('TITLE_MENU');
           }}
