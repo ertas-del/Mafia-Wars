@@ -11,7 +11,15 @@ import {
 } from '../data/nyc1984Data';
 import { DrawerTab } from './SyndicateDrawers';
 import type { InteractPrompt } from '../world/bridgeTypes';
+import { FAMILY_KEYS, windowState } from '../world/contracts';
+import type { ContractsState } from '../world/contracts';
 import { soundEngine } from '../audio/soundEngine';
+
+/** m:ss for a countdown in ms (never negative). */
+const formatCountdown = (ms: number): string => {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
 
 interface PerimeterHudProps {
   donName: string;
@@ -37,7 +45,13 @@ interface PerimeterHudProps {
   hasOfflineReport: boolean;
   nearPrompt: InteractPrompt | null;
   recentToast: string | null;
+  /** Grudges and contracts: one chip per family with an active contract. */
+  contracts: ContractsState;
+  /** The contracts clock (Date.now() + debug offset) as of the last tick. */
+  contractsNow: number;
   onTakeFerry: () => void;
+  /** Taps the street sit-down prompt: the engine decides the family and whether the player is alone. */
+  onChooseSitDown: () => void;
   onSelectBorough: (boroughId: BoroughId) => void;
   onEquipOrBuyWeapon: (weaponId: WeaponId) => void;
   onOpenDrawer: (tab: DrawerTab, focusId?: string) => void;
@@ -72,7 +86,10 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
   hasOfflineReport,
   nearPrompt,
   recentToast,
+  contracts,
+  contractsNow,
   onTakeFerry,
+  onChooseSitDown,
   onSelectBorough,
   onEquipOrBuyWeapon,
   onOpenDrawer,
@@ -92,6 +109,7 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
   const hpStateLabel = hpPct > 65 ? 'STABLE' : hpPct > 30 ? 'WOUNDED' : 'CRITICAL';
   const heatRounded = Math.round(policeHeat);
   const heatLabel = heatRounded < 25 ? 'LOW WIRE' : heatRounded < 60 ? 'SURVEILLED' : 'RAID IMMINENT';
+  const contractFamilies = FAMILY_KEYS.filter((k) => contracts.families[k].contract);
 
   return (
     <div className="fixed inset-0 z-20 pointer-events-none flex flex-col justify-between p-3.5 md:p-5 short:p-1.5 short:pl-[max(0.375rem,env(safe-area-inset-left))] short:pr-[max(0.375rem,env(safe-area-inset-right))] short:pb-[max(0.375rem,env(safe-area-inset-bottom))]">
@@ -300,6 +318,56 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
             )}
           </div>
 
+          {/* Contract chips: one per family with a price on your head, with the next sit-down countdown */}
+          {contractFamilies.length > 0 && (
+            <div className="flex flex-wrap justify-end items-center gap-1.5 short:flex-nowrap short:gap-1">
+              {contractFamilies.map((k) => {
+                const fam = FIVE_FAMILIES.find((f) => f.id === k) || FIVE_FAMILIES[0];
+                const g = contracts.families[k];
+                const ws = windowState(contracts, k, contractsNow);
+                const shortName = fam.name.split(' ')[0];
+                const d = g.sitDown;
+                const countdown =
+                  d && ws === 'waiting'
+                    ? formatCountdown(d.meetAt - contractsNow)
+                    : d && ws === 'open'
+                    ? formatCountdown(d.windowEnd - contractsNow)
+                    : '';
+                const status =
+                  ws === 'waiting' ? `Sit ${countdown}` : ws === 'open' ? `OPEN ${countdown}` : `$${g.price.toLocaleString()}`;
+                const spoken =
+                  ws === 'waiting'
+                    ? `sit-down in ${countdown}`
+                    : ws === 'open'
+                    ? `sit-down window open, ${countdown} left`
+                    : `price $${g.price.toLocaleString()}`;
+                return (
+                  <button
+                    key={k}
+                    type="button"
+                    data-contract-chip={k}
+                    aria-label={`${shortName} contract: ${spoken}. Open the dossier.`}
+                    title={`${shortName} contract · $${g.price.toLocaleString()}`}
+                    onClick={() => {
+                      soundEngine.playUiClick();
+                      onOpenDrawer('turf');
+                    }}
+                    style={{ borderColor: fam.accentHex }}
+                    className={`inline-flex items-center gap-1.5 px-2 py-1 bg-[#12100E] border-l-4 border rounded shadow font-mono tabular-nums text-[11px] whitespace-nowrap shrink-0 cursor-pointer short:gap-1 short:px-1.5 short:py-0.5 short:text-[10px] touch:min-h-11 touch:min-w-11 ${
+                      ws === 'open' ? 'text-[#FDE68A]' : 'text-[#D6CFC2]'
+                    }`}
+                  >
+                    <span style={{ color: fam.accentHex }} className="font-bold">
+                      {fam.traitSymbol}
+                      <span className="short:hidden"> {shortName}</span>
+                    </span>
+                    <span>{status}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {recentToast && (
             <div className="px-3 py-1.5 bg-[#181512] border border-[#D97706] rounded text-xs text-[#FDE68A] font-mono shadow short:px-2 short:py-0.5 short:text-[10px] short:max-w-full short:truncate">
               {recentToast}
@@ -351,16 +419,20 @@ export const PerimeterHud: React.FC<PerimeterHudProps> = ({
                 soundEngine.playUiClick();
                 if (nearPrompt.type === 'ferry') {
                   onTakeFerry();
+                } else if (nearPrompt.type === 'sitdown') {
+                  onChooseSitDown();
                 } else if (nearPrompt.type === 'contact') {
                   onOpenDrawer('social', nearPrompt.id);
                 } else {
                   onOpenDrawer('turf', nearPrompt.id);
                 }
               }}
-              className="px-4 py-2 bg-[#12100E] hover:bg-[#1C1917] border-2 border-[#F59E0B] rounded-lg shadow-xl text-center cursor-pointer max-w-full short:px-2 short:py-1 touch:min-h-11 touch:min-w-11"
+              className={`px-4 py-2 bg-[#12100E] hover:bg-[#1C1917] border-2 rounded-lg shadow-xl text-center cursor-pointer max-w-full short:px-2 short:py-1 touch:min-h-11 touch:min-w-11 ${
+                nearPrompt.type === 'sitdown' ? 'border-[#DC2626]' : 'border-[#F59E0B]'
+              }`}
             >
               <div className="text-xs font-bold text-[#FDE68A] whitespace-nowrap short:text-[11px] short:truncate">{nearPrompt.label}</div>
-              <div className="text-[11px] text-[#A89F91] font-mono whitespace-nowrap short:text-[10px] short:truncate">{nearPrompt.sublabel}</div>
+              <div className="text-[11px] text-[#A89F91] font-mono tabular-nums whitespace-nowrap short:text-[10px] short:truncate">{nearPrompt.sublabel}</div>
             </button>
           </div>
         )}

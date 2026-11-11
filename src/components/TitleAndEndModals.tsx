@@ -216,12 +216,23 @@ export const TitleScreenOverlay: React.FC<TitleScreenOverlayProps> = ({
   );
 };
 
+/** What a betrayal at a sit-down cost: the amounts already taken, and the contract's new price. */
+export interface BetrayalReport {
+  family: FamilyId;
+  cashLost: number;
+  respectLost: number;
+  skillPointsLost: number;
+  newPrice: number;
+}
+
 interface PauseOrEndModalProps {
   mode: 'PAUSED' | 'GAME_OVER' | 'VICTORY';
   donName: string;
   netWorth: number;
   controlledRacketsCount: number;
   alliancesCount: number;
+  /** Set on GAME_OVER when a family whacked the player at a sit-down: the betrayal Recovery variant. */
+  betrayal?: BetrayalReport | null;
   onResume: () => void;
   onRestartOrRecover: () => void;
   onReturnToTitle: () => void;
@@ -233,10 +244,74 @@ export const PauseOrEndModal: React.FC<PauseOrEndModalProps> = ({
   netWorth,
   controlledRacketsCount,
   alliancesCount,
+  betrayal,
   onResume,
   onRestartOrRecover,
   onReturnToTitle,
 }) => {
+  const betrayedBy = mode === 'GAME_OVER' && betrayal ? FIVE_FAMILIES.find((f) => f.id === betrayal.family) ?? null : null;
+  if (betrayal && betrayedBy) {
+    const shortName = betrayedBy.name.split(' ')[0];
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 max-h-[100dvh] overflow-y-auto overflow-x-hidden short:items-start short:p-3">
+        <div
+          data-recovery="betrayal"
+          className="max-w-lg w-full bg-[#12100E] border border-[#7F1D1D] rounded-lg p-6 shadow-2xl short:my-auto short:p-4"
+        >
+          <div className="text-xs font-mono text-[#EF4444] mb-1">BETRAYED AT THE SIT-DOWN</div>
+          <h2 className="text-2xl font-bold text-[#F5F0E6] short:text-xl">
+            Whacked at the <span style={{ color: betrayedBy.accentHex }}>{shortName}</span> Table
+          </h2>
+          <p className="text-sm text-[#A89F91] mt-2 short:mt-1 short:text-xs">
+            You came alone to make peace, and the {shortName} family whacked you at the table instead. You wake at your
+            home station at full health. Your learned skills are untouched, but the contract stands.
+          </p>
+
+          <div className="mt-5 grid grid-cols-3 gap-3 bg-[#181512] border border-[#2C2520] rounded p-3 text-center font-mono tabular-nums short:mt-3 short:p-2">
+            <div>
+              <div className="text-[11px] text-[#A89F91]">Cash Lost</div>
+              <div className="text-sm font-bold text-[#EF4444]">−${betrayal.cashLost.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#A89F91]">Respect XP Lost</div>
+              <div className="text-sm font-bold text-[#EF4444]">−{betrayal.respectLost.toLocaleString()}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-[#A89F91]">Skill Points Lost</div>
+              <div className="text-sm font-bold text-[#EF4444]">−{betrayal.skillPointsLost}</div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs font-mono tabular-nums text-[#D6CFC2]">
+            <span>
+              {betrayedBy.traitSymbol} {shortName} contract still open
+            </span>
+            <span>
+              New price <strong className="text-[#F59E0B]">${betrayal.newPrice.toLocaleString()}</strong>
+            </span>
+          </div>
+
+          <div className="mt-6 flex flex-wrap items-center justify-end gap-3 short:mt-3">
+            <button
+              type="button"
+              onClick={onRestartOrRecover}
+              className="px-4 py-2 bg-[#B91C1C] hover:bg-[#DC2626] text-white text-xs font-semibold rounded transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11 pointer-coarse:min-h-11"
+            >
+              Wake Up at the Station
+            </button>
+            <button
+              type="button"
+              onClick={onReturnToTitle}
+              className="px-4 py-2 bg-[#26211D] hover:bg-[#3A322B] text-[#D6CFC2] text-xs font-medium rounded border border-[#3A322B] transition-colors whitespace-nowrap shrink-0 cursor-pointer touch:min-h-11 pointer-coarse:min-h-11"
+            >
+              Title Screen
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 max-h-[100dvh] overflow-y-auto overflow-x-hidden short:items-start short:p-3">
       <div className="max-w-lg w-full bg-[#12100E] border border-[#3A322B] rounded-lg p-6 shadow-2xl short:my-auto short:p-4">
