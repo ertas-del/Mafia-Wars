@@ -619,7 +619,7 @@
     },
     {
       "id": "T-002",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high (PATCH-001)",
       "dependencies": [
         "T-001"
@@ -696,6 +696,49 @@
           "event": "REOPENED",
           "reason": "PATCH-001: send the hired crew home at the sit-down; compact price and risk line",
           "invalid_evidence": "EV-004: predates PATCH-001"
+        },
+        {
+          "sequence": 9,
+          "event_sequence": 47,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "PATCH-001 fix-forward commit bd7303a"
+        },
+        {
+          "sequence": 10,
+          "event_sequence": 48,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-003",
+          "evidence": "evidence/patch-001-checks.md: tests, tsc and crew smoke pass"
+        },
+        {
+          "sequence": 11,
+          "event_sequence": 49,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-004",
+          "evidence": "evidence/patch-001-checks.md: fresh review PASS"
+        },
+        {
+          "sequence": 12,
+          "event_sequence": 50,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "bd7303a",
+          "evidence": "committed on ertas-del/new/contracts"
+        },
+        {
+          "sequence": 13,
+          "event_sequence": 51,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-003",
+          "review_evidence": "EV-004",
+          "commit": "bd7303a",
+          "evidence": "PATCH-001 delivered"
         }
       ],
       "evidence": [
@@ -705,7 +748,7 @@
     },
     {
       "id": "T-003",
-      "state": "IN_PROGRESS",
+      "state": "DONE",
       "owner": "Opus worker, effort high (PATCH-001)",
       "dependencies": [
         "T-001"
@@ -782,6 +825,49 @@
           "event": "REOPENED",
           "reason": "PATCH-001: send the hired crew home at the sit-down; compact price and risk line",
           "invalid_evidence": "EV-006: predates PATCH-001"
+        },
+        {
+          "sequence": 9,
+          "event_sequence": 52,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "PATCH-001 fix-forward commit bd7303a"
+        },
+        {
+          "sequence": 10,
+          "event_sequence": 53,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-005",
+          "evidence": "evidence/patch-001-checks.md: tests, tsc and crew smoke pass"
+        },
+        {
+          "sequence": 11,
+          "event_sequence": 54,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-006",
+          "evidence": "evidence/patch-001-checks.md: fresh review PASS"
+        },
+        {
+          "sequence": 12,
+          "event_sequence": 55,
+          "from": "REVIEWED",
+          "to": "COMMITTED",
+          "verification_evidence": "EV-005",
+          "review_evidence": "EV-006",
+          "commit": "bd7303a",
+          "evidence": "committed on ertas-del/new/contracts"
+        },
+        {
+          "sequence": 13,
+          "event_sequence": 56,
+          "from": "COMMITTED",
+          "to": "DONE",
+          "verification_evidence": "EV-005",
+          "review_evidence": "EV-006",
+          "commit": "bd7303a",
+          "evidence": "PATCH-001 delivered"
         }
       ],
       "evidence": [
@@ -897,7 +983,7 @@ Preflight and clarification are done; specification revision 1 is approved and p
 
 ## Task State
 
-T-001 is DONE. T-002 and T-003 are reopened for PATCH-001. T-004 is IN_PROGRESS. T-005 is PENDING.
+T-001, T-002 and T-003 are DONE (T-002 and T-003 carry PATCH-001). T-004 is IN_PROGRESS. T-005 is PENDING.
 
 ## Amendments
 
