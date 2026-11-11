@@ -877,7 +877,7 @@
     },
     {
       "id": "T-004",
-      "state": "IN_PROGRESS",
+      "state": "REVIEWED",
       "owner": "controller",
       "dependencies": [
         "T-002",
@@ -904,6 +904,29 @@
           "from": "READY",
           "to": "IN_PROGRESS",
           "evidence": "controller running scripts/contracts-smoke.mjs"
+        },
+        {
+          "sequence": 3,
+          "event_sequence": 57,
+          "from": "IN_PROGRESS",
+          "to": "IMPLEMENTED",
+          "evidence": "smoke script, CLAUDE.md, integration; branch pushed"
+        },
+        {
+          "sequence": 4,
+          "event_sequence": 58,
+          "from": "IMPLEMENTED",
+          "to": "VERIFIED",
+          "verification_evidence": "EV-007, EV-008",
+          "evidence": "evidence/smoke.md 9/9; evidence/ci-run.md; Check 42936973345 green on 6729a0d"
+        },
+        {
+          "sequence": 5,
+          "event_sequence": 59,
+          "from": "VERIFIED",
+          "to": "REVIEWED",
+          "review_evidence": "EV-009",
+          "evidence": "evidence/whole-change-review.md: blocking soft-lock resolved by PATCH-001"
         }
       ],
       "evidence": []
@@ -925,38 +948,54 @@
   "acceptance_evidence": [
     {
       "criterion": "AC-001",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-002",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-003",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-001"
+      ]
     },
     {
       "criterion": "AC-004",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-007"
+      ]
     },
     {
       "criterion": "AC-005",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-007"
+      ]
     },
     {
       "criterion": "AC-006",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-004",
+        "EV-006",
+        "EV-009"
+      ]
     },
     {
       "criterion": "AC-007",
-      "status": "pending",
-      "evidence": []
+      "status": "verified",
+      "evidence": [
+        "EV-008"
+      ]
     },
     {
       "criterion": "AC-008",
@@ -991,8 +1030,8 @@ None.
 
 ## Evidence
 
-Planned evidence: EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009, EV-010, EV-011. Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014 are not implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007, AC-008 are pending.
+Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008 and EV-009 is recorded; EV-010 (landing) and EV-011 (phone check) follow. Requirements FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008, FR-009, FR-010, FR-011, FR-012, FR-013, FR-014 are implemented; criteria AC-001, AC-002, AC-003, AC-004, AC-005, AC-006, AC-007 are verified and AC-008 is pending the user's phone test.
 
 ## Landing State
 
-Nothing is implemented.
+Check is green on the branch and the whole-change review is resolved; the merge into main is authorized.
