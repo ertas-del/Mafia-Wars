@@ -110,9 +110,12 @@ test("AC-001 hostility: the player's own family follows the same rules", () => {
   assert.equal(hostile(contracted('corvini'), { familyId: 'corvini', playerFamily: 'corvini' }), true);
 });
 
-test('AC-001 hostility: a courier never attacks', () => {
-  assert.equal(hostile(emptyContracts(), { role: 'courier' }), false);
-  assert.equal(hostile(contracted(), { role: 'courier' }), false);
+test('AC-001 hostility: a courier attacks only under its family contract, outside safe passage', () => {
+  assert.equal(hostile(emptyContracts(), { role: 'courier' }), false, 'no contract');
+  assert.equal(hostile(contracted(), { role: 'courier' }), true, 'under contract');
+  assert.equal(hostile(contracted('bellini'), { role: 'courier' }), false, 'another family contract');
+  const s = scheduled('rastelli');
+  assert.equal(hostile(s, { role: 'courier', now: s.families.rastelli.sitDown!.meetAt }), false, 'safe passage');
 });
 
 test('AC-001 hostility: a takeover guard attacks', () => {
@@ -334,8 +337,9 @@ test('AC-003 malformed contracts data loads empty and never throws', () => {
     { v: 1 },
     { v: 1, families: [] },
     { v: 1, families: { rastelli: { points: 'a', contract: true, price: 0, kills: 0, sitDown: null } } },
-    { v: 1, families: { rastelli: { points: 3, contract: true, price: 5000, kills: 0, sitDown: { meetAt: 1 } } } },
-    { v: 1, families: { rastelli: { points: -1, contract: false, price: 0, kills: 0, sitDown: null } } },
+    { v: 1, families: { rastelli: { points: 3, contract: 'yes', price: 5000, kills: 0, sitDown: null } } },
+    { v: 1, families: { rastelli: { points: 3, contract: true, price: NaN, kills: 0, sitDown: null } } },
+    { v: 1, families: { rastelli: 'grudge' } },
     {
       v: 1,
       get families() {
@@ -348,4 +352,41 @@ test('AC-003 malformed contracts data loads empty and never throws', () => {
   const partial = parseContracts({ v: 1, families: { rastelli: { points: 3, contract: true, price: 5000, kills: 0, sitDown: null } } });
   assert.equal(partial.families.rastelli.contract, true);
   assert.deepEqual(partial.families.bellini, emptyContracts().families.bellini);
+});
+
+test('AC-003 saved values load consistently: contract price floor, bad sit-downs dropped, counts floored', () => {
+  const sd = { meetAt: T0 + MIN, windowEnd: T0 + MIN + WINDOW_MS, spot: SPOT };
+  const s = parseContracts({
+    v: 1,
+    families: {
+      // An active contract priced below BASE_PRICE loads at BASE_PRICE; no contract keeps its price (floored at 0).
+      rastelli: { points: 3.7, contract: true, price: 1200, kills: 1.9, sitDown: sd },
+      bellini: { points: -2, contract: false, price: -40, kills: -1, sitDown: { ...sd, windowEnd: sd.meetAt } },
+      valenti: { points: 4, contract: true, price: 9000, kills: 0, sitDown: { ...sd, windowEnd: sd.meetAt - 1 } },
+      moretti: { points: 3, contract: true, price: 5000, kills: 0, sitDown: { meetAt: Infinity, windowEnd: Infinity, spot: SPOT } },
+      corvini: { points: 3, contract: true, price: 5000, kills: 0, sitDown: { ...sd, spot: { x: 1, y: NaN, label: 'x' } } },
+    },
+  });
+  assert.deepEqual(s.families.rastelli, { points: 3, contract: true, price: BASE_PRICE, kills: 1, sitDown: sd });
+  assert.deepEqual(s.families.bellini, { points: 0, contract: false, price: 0, kills: 0, sitDown: null });
+  assert.equal(s.families.valenti.price, 9000);
+  assert.equal(s.families.valenti.sitDown, null, 'window ends before it opens');
+  assert.equal(s.families.moretti.sitDown, null, 'non-finite times');
+  assert.equal(s.families.corvini.sitDown, null, 'non-finite spot');
+  assert.equal(s.families.corvini.contract, true, 'the rest of the entry is kept');
+});
+
+test('AC-002 NaN guards: a NaN roll counts as 0.5, non-finite respect XP as 0', () => {
+  const r = requestSitDown(contracted(), 'rastelli', T0, () => NaN, SPOT);
+  assert.equal(r.state.families.rastelli.sitDown!.meetAt, T0 + MIN + 570000);
+  const s = scheduled();
+  const now = s.families.rastelli.sitDown!.meetAt;
+  for (const xp of [NaN, Infinity, -Infinity]) {
+    assert.equal(betrayalRisk(s, 'rastelli', { respectXp: xp, ceasefire: false }), 0.25);
+    const out = attemptSitDown(s, 'rastelli', { now, cash: 1e6, alone: true, respectXp: xp, ceasefire: false, rand: () => NaN });
+    assert.equal(out.outcome, 'honoured', '0.5 is above a 25% risk');
+  }
+  const risky = recordHarm(scheduled(), 'rastelli', { hits: 0, kills: 10 }).state;
+  const out = attemptSitDown(risky, 'rastelli', { now, cash: 1e6, alone: true, respectXp: 0, ceasefire: false, rand: () => NaN });
+  assert.equal(out.outcome, 'betrayed', '0.5 is below a 75% risk');
 });

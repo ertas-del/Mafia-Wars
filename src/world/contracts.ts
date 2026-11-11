@@ -79,30 +79,43 @@ const withFamily = (s: ContractsState, family: FamilyKey, g: FamilyGrudge): Cont
 // ---------------------------------------------------------------------------
 // Saved data
 
+const wholeCount = (n: number): number => (Number.isFinite(n) && n > 0 ? Math.floor(n) : 0);
+
+/** One draw from `rand`; a NaN draw counts as 0.5. */
+const safeRoll = (rand: () => number): number => {
+  const r = rand();
+  return Number.isNaN(r) ? 0.5 : r;
+};
+
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-const isCount = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0;
 const isFiniteNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
-const parseSitDown = (raw: unknown): SitDown | null | undefined => {
-  if (raw === null || raw === undefined) return null;
-  if (!isObj(raw) || !isFiniteNum(raw.meetAt) || !isFiniteNum(raw.windowEnd) || !isObj(raw.spot)) return undefined;
+/** A usable saved sit-down, or null: anything malformed or with an empty window is dropped. */
+const parseSitDown = (raw: unknown): SitDown | null => {
+  if (!isObj(raw) || !isFiniteNum(raw.meetAt) || !isFiniteNum(raw.windowEnd) || !isObj(raw.spot)) return null;
+  if (raw.windowEnd <= raw.meetAt) return null;
   const spot = raw.spot;
-  if (!isFiniteNum(spot.x) || !isFiniteNum(spot.y) || typeof spot.label !== 'string') return undefined;
+  if (!isFiniteNum(spot.x) || !isFiniteNum(spot.y) || typeof spot.label !== 'string') return null;
   return { meetAt: raw.meetAt, windowEnd: raw.windowEnd, spot: { x: spot.x, y: spot.y, label: spot.label } };
 };
 
 const parseGrudge = (raw: unknown): FamilyGrudge | undefined => {
   if (!isObj(raw)) return undefined;
-  if (!isCount(raw.points) || typeof raw.contract !== 'boolean' || !isCount(raw.price) || !isCount(raw.kills)) return undefined;
-  const sitDown = parseSitDown(raw.sitDown);
-  if (sitDown === undefined) return undefined;
-  return { points: raw.points, contract: raw.contract, price: raw.price, kills: raw.kills, sitDown };
+  if (!isFiniteNum(raw.points) || typeof raw.contract !== 'boolean' || !isFiniteNum(raw.price) || !isFiniteNum(raw.kills)) {
+    return undefined;
+  }
+  const contract = raw.contract;
+  const price = Math.max(contract ? BASE_PRICE : 0, raw.price);
+  return { points: wholeCount(raw.points), contract, price, kills: wholeCount(raw.kills), sitDown: parseSitDown(raw.sitDown) };
 };
 
 /**
- * Reads the saved `contracts` field. Never throws: anything malformed (wrong
- * version, wrong shape, a bad family entry) gives the empty state. A family
- * missing from an otherwise valid save starts with no grudge.
+ * Reads the saved `contracts` field. Never throws: a wrong version, a wrong
+ * shape or a family entry with missing or non-numeric fields gives the empty
+ * state. Within a valid entry, points and kills are floored to non-negative
+ * integers, an active contract is priced at least BASE_PRICE, and a malformed
+ * sit-down (non-finite fields, or a window that ends before it opens) is
+ * dropped. A family missing from an otherwise valid save starts with no grudge.
  */
 export function parseContracts(raw: unknown): ContractsState {
   try {
@@ -124,7 +137,6 @@ export function parseContracts(raw: unknown): ContractsState {
 // ---------------------------------------------------------------------------
 // Grudges, contracts and prices
 
-const wholeCount = (n: number): number => (Number.isFinite(n) && n > 0 ? Math.floor(n) : 0);
 
 /**
  * Adds one finished attack's harm to a family's grudge. Hits are applied before
@@ -201,8 +213,8 @@ export function tallyAttack(
  * - NYPD attack only at heat >= NYPD_HEAT_LINE.
  * - A family member attacks only while that family has a contract and no open
  *   sit-down window (safe passage). The player's own family follows the same rule.
- * - Couriers never attack (unarmed contraband runners); allies, civilians and
- *   anyone without a family never attack.
+ *   This covers every member, couriers and citizens included.
+ * - Allies, civilians and anyone without a family never attack.
  */
 export function isHostile(f: {
   role: string;
@@ -216,7 +228,6 @@ export function isHostile(f: {
   if (f.role === 'ally') return false;
   if (f.isTakeoverGuard) return true;
   if (f.role === 'nypd' || f.familyId === 'nypd') return f.heat >= NYPD_HEAT_LINE;
-  if (f.role === 'courier') return false;
   if (!isFamilyKey(f.familyId)) return false;
   const g = f.s.families[f.familyId];
   if (!g || !g.contract) return false;
@@ -285,9 +296,7 @@ export function requestSitDown(
   if (!spot || !isFiniteNum(spot.x) || !isFiniteNum(spot.y) || typeof spot.label !== 'string') {
     return { state: s, ok: false, reason: 'spot' };
   }
-  let r = rand();
-  if (!Number.isFinite(r)) r = 0;
-  r = Math.min(1, Math.max(0, r));
+  const r = Math.min(1, Math.max(0, safeRoll(rand)));
   const meetAt = now + MEET_MIN_MS + Math.round(r * (MEET_MAX_MS - MEET_MIN_MS));
   const sitDown: SitDown = { meetAt, windowEnd: meetAt + WINDOW_MS, spot: { x: spot.x, y: spot.y, label: spot.label } };
   return { state: withFamily(s, family, { ...cloneGrudge(g), sitDown }), ok: true };
@@ -354,7 +363,7 @@ export function attemptSitDown(
   if (!p.alone) return { outcome: 'refused', reason: 'alone' };
   if (!(p.cash >= g.price)) return { outcome: 'refused', reason: 'cash' };
   const risk = betrayalRisk(s, family, { respectXp: p.respectXp, ceasefire: p.ceasefire });
-  if (p.rand() < risk) {
+  if (safeRoll(p.rand) < risk) {
     const next = cloneGrudge(g);
     next.price += BETRAYAL_PRICE;
     next.sitDown = null;
